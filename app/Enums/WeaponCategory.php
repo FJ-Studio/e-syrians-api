@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum WeaponCategory: string
@@ -11,17 +13,4 @@ enum WeaponCategory: string
     case Grenade = 'grenade';
     case Explosive = 'explosive';
     case Other = 'other';
-
-    public static function getValues(): array
-    {
-        return [
-            self::Pistol,
-            self::Shotgun,
-            self::Sniper,
-            self::MachineGun,
-            self::Grenade,
-            self::Explosive,
-            self::Other,
-        ];
-    }
 }
