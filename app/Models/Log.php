@@ -8,4 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Log extends Model
 {
     use SoftDeletes;
+
+    protected $fillable = [
+        'user_id',
+        'action',
+        'description',
+        'ip_address',
+        'user_agent',
+    ];
 }

@@ -4,6 +4,7 @@ use App\Enums\WeaponDeliveryStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rules\Enum;
 
 return new class extends Migration
 {
@@ -18,7 +19,7 @@ return new class extends Migration
             $table->unsignedBigInteger('weapon_delivery_point_id')->nullable();
             $table->unsignedBigInteger('added_by')->nullable();
             $table->json('updates')->nullable();
-            $table->enum('status', WeaponDeliveryStatus::getValues())->default('new');
+            $table->enum('status', array_column(WeaponDeliveryStatus::cases(), 'value'))->default('new');
             $table->json('deliveries')->nullable();
             $table->timestamps();
             $table->softDeletesTz();
