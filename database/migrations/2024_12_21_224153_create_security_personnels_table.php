@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('security_personnels', function (Blueprint $table) {
             $table->uuid('id');
             $table->string('user_id');
-            $table->string('position');
-            $table->text('description')->nullable();
+            $table->json('position');
+            $table->json('description')->nullable();
             $table->date('expires_at')->nullable();
             $table->timestamps();
             $table->softDeletesTz();

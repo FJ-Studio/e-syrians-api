@@ -6,10 +6,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Translatable\HasTranslations;
 
 class WeaponDeliveryPoint extends Model
 {
     use SoftDeletes;
+    use HasTranslations;
+
+    public $translatable = ['name', 'description'];
 
     protected $fillable = [
         'name',

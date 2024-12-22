@@ -7,10 +7,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Translatable\HasTranslations;
 
 class SecurityPersonnel extends Model
 {
-    use SoftDeletes, HasUuids;
+    use SoftDeletes;
+    use HasUuids;
+    use HasTranslations;
+
+    public $translatable = ['position', 'description'];
 
     protected $fillable = [
         'user_id',
