@@ -61,6 +61,18 @@ class StoreWeaponDeliveryRequest extends FormRequest
                 'min:2',
                 'max:100',
             ],
+            'address' => [
+                'required',
+                'string',
+                'min:5',
+                'max:255',
+            ],
+            'phone' => [
+                'required',
+                'string',
+                'min:10',
+                'max:15',
+            ],
         ];
     }
 }
