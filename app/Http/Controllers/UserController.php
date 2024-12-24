@@ -68,7 +68,9 @@ class UserController extends Controller
 
     public function me(Request $request)
     {
-        return new UserResource($request->user());
+        return response()->json([
+            'data' => new UserResource($request->user()),
+        ], 200, [], JSON_PRETTY_PRINT);
     }
 
     public function social_login(SocialLoginRequest $request)
