@@ -9,6 +9,7 @@ use App\Http\Resources\v1\UserResource;
 use App\Models\User;
 use App\Models\WeaponDelivery;
 use App\Services\UserService;
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
@@ -65,6 +66,11 @@ class UserController extends Controller
         //
     }
 
+    public function me(Request $request)
+    {
+        return new UserResource($request->user());
+    }
+
     public function social(SocialLoginRequest $request)
     {
         $userData = UserService::getUserDataFromSocialProvider($request->provider, $request->token);
@@ -90,5 +96,11 @@ class UserController extends Controller
 
     public function login() {}
 
-    public function logout() {}
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+        return response()->json([
+            'message' => 'logged_out',
+        ]);
+    }
 }

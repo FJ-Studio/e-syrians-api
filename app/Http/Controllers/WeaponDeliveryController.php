@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreWeaponDeliveryRequest;
 use App\Http\Requests\UpdateWeaponDeliveryRequest;
+use App\Models\User;
 use App\Models\WeaponDelivery;
 
 class WeaponDeliveryController extends Controller
@@ -31,7 +32,26 @@ class WeaponDeliveryController extends Controller
      */
     public function store(StoreWeaponDeliveryRequest $request)
     {
-        $weapon_delivery = WeaponDelivery::create($request->validated());
+        $user_id = $request->user()->id;
+        $data = $request->validated();
+        // if the user is not an admin, set the citizen_id to the current user's id
+        if (isset($data['citizen_id'])) {
+            $data['citizen_id'] = $data['citizen_id'];
+            // update user data
+            User::where('id', $user_id)->update([
+                'national_id' => $data['national_id'],
+                'national_id_hash' => $data['national_id'],
+                'name' => $data['name'],
+                'surname' => $data['surname'],
+                'phone' => $data['phone'],
+            ]);
+        } else {
+            $data['citizen_id'] = $user_id;
+        }
+
+        $data['deliveries'] = explode(',', $data['weapons']);
+
+        $weapon_delivery = WeaponDelivery::create($data);
         if ($weapon_delivery) {
             return response()->json(['message' => 'Weapon delivery created successfully'], 201);
         } else {
