@@ -80,14 +80,18 @@ class UserController extends Controller
             ], 401);
         }
         $provider_col = $request->provider . '_id';
-        $user = User::updateOrCreate([
-            'email' => $userData['email'],
-        ], [
-            'name' => $userData['name'],
-            'social_avatar' => $userData['avatar'],
-            'email_verified_at' => now(),
-            $provider_col => $userData['id'],
-        ]);
+
+        $user = User::where('email', $userData['email'])->first();
+        if (!$user) {
+            $user = User::create([
+                'email' => $userData['email'],
+                'name' => $userData['name'],
+                'social_avatar' => $userData['avatar'],
+                'email_verified_at' => now(),
+                $provider_col => $userData['id'],
+            ]);
+            $user->assignRole('citizen');
+        }
         return response()->json([
             'user' => $user,
             'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],

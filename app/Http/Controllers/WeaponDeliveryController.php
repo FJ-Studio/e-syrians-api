@@ -32,22 +32,25 @@ class WeaponDeliveryController extends Controller
      */
     public function store(StoreWeaponDeliveryRequest $request)
     {
-        $user_id = $request->user()->id;
+        $user = $request->user();
         $data = $request->validated();
-        // if the user is not an admin, set the citizen_id to the current user's id
-        if (isset($data['citizen_id'])) {
-            $data['citizen_id'] = $data['citizen_id'];
-            // update user data
-            User::where('id', $user_id)->update([
-                'national_id' => $data['national_id'],
-                'national_id_hash' => $data['national_id'],
-                'name' => $data['name'],
-                'surname' => $data['surname'],
-                'phone' => $data['phone'],
-            ]);
+        // if the user is an admin, citizen_id will come from the request
+        if ($user->hasRole('weapon_delivery_manager')) {
+            if (isset($data['citizen_id'])) {
+                $data['citizen_id'] = $data['citizen_id'];
+            }
         } else {
-            $data['citizen_id'] = $user_id;
+            $data['citizen_id'] = $user->id;
         }
+
+        // update user data
+        User::where('id', $data['citizen_id'])->update([
+            'national_id' => $data['national_id'],
+            'national_id_hash' => $data['national_id'],
+            'name' => $data['name'],
+            'surname' => $data['surname'],
+            'phone' => $data['phone'],
+        ]);
 
         $data['deliveries'] = explode(',', $data['weapons']);
 
