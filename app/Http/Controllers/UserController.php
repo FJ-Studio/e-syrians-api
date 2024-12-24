@@ -71,7 +71,7 @@ class UserController extends Controller
         return new UserResource($request->user());
     }
 
-    public function social(SocialLoginRequest $request)
+    public function social_login(SocialLoginRequest $request)
     {
         $userData = UserService::getUserDataFromSocialProvider($request->provider, $request->token);
         if (!$userData) {

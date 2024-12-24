@@ -6,9 +6,9 @@ use Laravel\Socialite\Facades\Socialite;
 
 class UserService
 {
-    public static function getUserDataFromSocialProvider($provider, $token): array|bool
+    public static function getUserDataFromSocialProvider(string $provider, string $token): array|bool
     {
-        $user = Socialite::driver($provider)->userFromToken($token);
+        $user = (Socialite::driver($provider))->userFromToken($token);
         if ($user) {
             return [
                 'id' => $user->getId(),
