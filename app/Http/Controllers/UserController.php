@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SocialLoginRequest;
-use App\Http\Resources\v1\UserResource;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\WeaponDelivery;
 use App\Services\UserService;
