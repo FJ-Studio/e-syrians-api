@@ -26,4 +26,14 @@ class WeaponDeliveryPoint extends Model
         'latitude',
         'longitude',
     ];
+
+    protected $casts = [
+        'name' => 'array',
+        'description' => 'array',
+    ];
+
+    public function deliveries()
+    {
+        return $this->hasMany(WeaponDelivery::class);
+    }
 }

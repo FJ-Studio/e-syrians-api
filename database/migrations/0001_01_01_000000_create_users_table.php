@@ -16,6 +16,7 @@ return new class extends Migration
             $table->json('name');
             $table->json('surname')->nullable();
             $table->string('national_id')->nullable();
+            $table->string('national_id_hash')->nullable();
             $table->string('email')->unique()->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password')->nullable();
@@ -23,6 +24,8 @@ return new class extends Migration
             $table->timestamp('phone_verified_at')->nullable();
             $table->string('address')->nullable();
             $table->string('photo')->nullable();
+            $table->string('social_avatar')->nullable();
+            $table->string('google_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

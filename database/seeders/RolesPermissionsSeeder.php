@@ -55,7 +55,9 @@ class RolesPermissionsSeeder extends Seeder
             'security_personnel' => [
                 ...$security_personnel_permissions
             ],
-            'citizen' => [],
+            'citizen' => [
+                'weapon_delivery:store',
+            ],
         ];
         foreach ($permissionsByRole as $role => $permissions) {
             $role = Role::firstOrCreate(['name' => $role]);

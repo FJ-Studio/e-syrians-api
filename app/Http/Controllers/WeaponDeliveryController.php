@@ -31,7 +31,12 @@ class WeaponDeliveryController extends Controller
      */
     public function store(StoreWeaponDeliveryRequest $request)
     {
-        //
+        $weapon_delivery = WeaponDelivery::create($request->validated());
+        if ($weapon_delivery) {
+            return response()->json(['message' => 'Weapon delivery created successfully'], 201);
+        } else {
+            return response()->json(['message' => 'Failed to create weapon delivery'], 500);
+        }
     }
 
     /**

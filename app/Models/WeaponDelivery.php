@@ -19,4 +19,24 @@ class WeaponDelivery extends Model
         'status',
         'deliveries',
     ];
+
+    protected $casts = [
+        'updates' => 'array',
+        'deliveries' => 'array',
+    ];
+
+    public function citizen()
+    {
+        return $this->belongsTo(User::class, 'citizen_id', 'id');
+    }
+
+    public function weaponDeliveryPoint()
+    {
+        return $this->belongsTo(WeaponDeliveryPoint::class);
+    }
+
+    public function addedBy()
+    {
+        return $this->belongsTo(User::class, 'added_by', 'id');
+    }
 }

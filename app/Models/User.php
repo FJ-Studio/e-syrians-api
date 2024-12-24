@@ -35,6 +35,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'national_id',
+        'national_id_hash',
         'address',
     ];
 
@@ -61,6 +62,16 @@ class User extends Authenticatable
             'password' => 'hashed',
             'address' => 'encrypted',
             'national_id' => 'encrypted',
+            'national_id_hash' => 'hashed',
         ];
+    }
+
+    public function handovers()
+    {
+        return $this->hasMany(WeaponDelivery::class, 'citizen_id', 'id');
+    }
+    public function received_items()
+    {
+        return $this->hasMany(WeaponDelivery::class, 'added_by', 'id');
     }
 }
