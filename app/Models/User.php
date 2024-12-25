@@ -37,6 +37,11 @@ class User extends Authenticatable
         'national_id',
         'national_id_hash',
         'address',
+        'email_verified_at',
+        'phone_verified_at',
+        'avatar',
+        'social_avatar',
+        'google_id'
     ];
 
     /**
@@ -63,6 +68,7 @@ class User extends Authenticatable
             'address' => 'encrypted',
             'national_id' => 'encrypted',
             'national_id_hash' => 'hashed',
+
         ];
     }
 
