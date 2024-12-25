@@ -95,7 +95,7 @@ class UserController extends Controller
             $user->assignRole('citizen');
         }
         return response()->json([
-            'user' => $user,
+            'user' => new UserResource($user),
             'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
         ]);
     }
