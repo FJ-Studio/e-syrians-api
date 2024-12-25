@@ -62,7 +62,6 @@ class RolesPermissionsSeeder extends Seeder
         foreach ($permissionsByRole as $role => $permissions) {
             $role = Role::firstOrCreate([
                 'name' => $role,
-                'guard_name' => 'sanctum'
             ]);
             foreach ($permissions as $p) {
                 Permission::firstOrCreate([
