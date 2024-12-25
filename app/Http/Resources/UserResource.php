@@ -21,6 +21,8 @@ class UserResource extends JsonResource
             'avatar' => $this->avatar,
             'created_at' => $this->created_at,
             'permissions' => $this->permissions,
+            'p' => $this->getPermissionsViaRoles(),
+            'perms' => $this->getAllPermissions(),
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
             'received_items' => WeaponDeliveryResource::collection($this->whenLoaded('received_items')),
         ];
