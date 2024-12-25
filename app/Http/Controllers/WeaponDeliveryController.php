@@ -44,13 +44,14 @@ class WeaponDeliveryController extends Controller
         }
 
         // update user data
-        User::where('id', $data['citizen_id'])->update([
+        $u = User::where('id', $data['citizen_id'])->first();
+        $u->update([
             'national_id' => $data['national_id'],
             'national_id_hash' => $data['national_id'],
-            'name' => $data['name'],
-            'surname' => $data['surname'],
             'phone' => $data['phone'],
         ]);
+        $u->setTranslation('name', 'ar', $data['name'])->save();
+        $u->setTranslation('surname', 'ar', $data['surname'])->save();
 
         $data['deliveries'] = explode(',', $data['weapons']);
 
