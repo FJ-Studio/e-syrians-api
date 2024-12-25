@@ -26,11 +26,11 @@ class StoreWeaponDeliveryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'weapon_category' => [
+            'weapons' => [
                 'required',
                 'array',
             ],
-            'weapon_category.*' => [
+            'weapons.*' => [
                 'string',
                 Rule::in(array_map(fn($case) => $case->value, WeaponCategory::cases())), // Validate each array element
             ],
