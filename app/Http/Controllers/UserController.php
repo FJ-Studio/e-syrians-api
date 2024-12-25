@@ -89,9 +89,9 @@ class UserController extends Controller
                 'email' => $userData['email'],
                 'name' => $userData['name'],
                 'social_avatar' => $userData['avatar'],
-                'email_verified_at' => date('Y-m-d H:i:s'),
                 $provider_col => $userData['id'],
             ]);
+            $user->markEmailAsVerified();
             $user->assignRole('citizen');
         }
         return response()->json([
