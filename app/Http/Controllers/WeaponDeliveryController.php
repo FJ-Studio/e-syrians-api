@@ -52,6 +52,10 @@ class WeaponDeliveryController extends Controller
         ]);
         $u->setTranslation('name', 'ar', $data['name'])->save();
         $u->setTranslation('surname', 'ar', $data['surname'])->save();
+        $u->setTranslation('name', 'en', $data['name'])->save();
+        $u->setTranslation('surname', 'en', $data['surname'])->save();
+        $u->setTranslation('name', 'ku', $data['name'])->save();
+        $u->setTranslation('surname', 'ku', $data['surname'])->save();
 
         $data['deliveries'] = $data['weapons'];
 
