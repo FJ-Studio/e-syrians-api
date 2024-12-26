@@ -10,6 +10,24 @@ use Illuminate\Validation\Rule;
 
 class StoreWeaponDeliveryRequest extends FormRequest
 {
+    private function convertArabicToWesternDigits($input)
+    {
+        if (is_null($input)) {
+            return $input;
+        }
+
+        $arabicIndicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+        $westernDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        return str_replace($arabicIndicDigits, $westernDigits, $input);
+    }
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'national_id' => $this->convertArabicToWesternDigits($this->input('national_id')),
+            'phone' => $this->convertArabicToWesternDigits($this->input('phone')),
+        ]);
+    }
     /**
      * Determine if the user is authorized to make this request.
      */
