@@ -55,6 +55,7 @@ class RolesPermissionsSeeder extends Seeder
             'security_personnel' => [
                 ...$security_personnel_permissions
             ],
+            'local_census_manager' => [],
             'citizen' => [
                 'weapon_delivery:store',
             ],
