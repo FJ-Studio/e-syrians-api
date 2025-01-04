@@ -162,14 +162,13 @@ class UserController extends Controller
         $data['name_hashed'] = isset($data['name']) ? Helper::HashedValue($data['name']) : null;
         $data['middle_name_hashed'] = isset($data['middle_name']) ? Helper::HashedValue($data['middle_name']) : null;
         $data['last_name_hashed'] = isset($data['last_name']) ? Helper::HashedValue($data['last_name']) : null;
-        $data['national_id_hash'] = isset($data['national_id']) ?  Helper::HashedValue($data['national_id']) : null;
+        $data['national_id_hashed'] = isset($data['national_id']) ?  Helper::HashedValue($data['national_id']) : null;
         $data['phone_hashed'] = isset($data['phone']) ? Helper::HashedValue($data['phone']) : null;
         $data['email_hashed'] = isset($data['email']) ? Helper::HashedValue($data['email']) : null;
-        $data['password'] = Hash::make($data['password']);
         $data['name'] = isset($data['name']) ? Crypt::encrypt($data['name']) : null;
         $data['middle_name'] = isset($data['middle_name']) ? Crypt::encrypt($data['middle_name']) : null;
         $data['last_name'] = isset($data['last_name']) ? Crypt::encrypt($data['last_name']) : null;
-        $data['national_id'] = isset($data['national_id']) ? $data['national_id'] : null;
+        $data['national_id'] = isset($data['national_id']) ? Crypt::encrypt($data['national_id']) : null;
         $data['address'] = isset($data['address']) ? $data['address'] : null;
         $data['estimated_monthly_income'] = isset($data['estimated_monthly_income']) ? $data['estimated_monthly_income'] : null;
         $data['phone'] = isset($data['phone']) ? Crypt::encrypt($data['phone']) : null;

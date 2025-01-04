@@ -12,7 +12,7 @@ class NationalSyrianNumberRule implements Rule
     public function passes($attribute , $value)
     {
         $useridHash = Helper::HashedValue($value);
-        $users = User::query()->where('national_id_hash' , $useridHash)->first();
+        $users = User::query()->where('national_id_hashed' , $useridHash)->first();
         if ($users) {
             return false; // Email is not unique
         }

@@ -18,7 +18,6 @@ class UserResource extends JsonResource
         return [
             'uuid'=>$this->uuid,
             'first_name' => Crypt::decrypt($this->name),
-            'email' => Crypt::decrypt($this->email),
 //            'created_at' => $this->created_at,
 //            'permissions' => $this->getAllPermissions()->pluck('name'),
 //            'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),

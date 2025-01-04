@@ -32,7 +32,7 @@ class User extends Authenticatable
         'last_name_hashed' ,
         'brief_name' ,
         'national_id' ,
-        'national_id_hash' ,
+        'national_id_hashed' ,
         'gender' ,
         'birth_date' ,
         'hometown' ,

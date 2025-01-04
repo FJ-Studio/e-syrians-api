@@ -19,7 +19,7 @@ return new class extends Migration{
             $table->string('last_name_hashed');
             $table->string('brief_name' , 6)->nullable();
             $table->text('national_id')->nullable();
-            $table->string('national_id_hash')->nullable();
+            $table->string('national_id_hashed')->nullable();
             $table->enum('gender' , array_map(fn ($case) => $case->value , \App\Enums\GenderEnum::cases()));
             $table->date('birth_date');
             $table->enum('hometown' , array_map(fn ($case) => $case->value , \App\Enums\HometownEnum::cases()));
