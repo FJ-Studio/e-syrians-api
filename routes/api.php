@@ -13,6 +13,8 @@ Route::prefix('users')->group(function() {
         Route::post('/logout' , [UserController::class , 'logout']);
         Route::post('/verified/{uuid}' , [UserController::class , 'verifier']);
         Route::post('/mark-as-fake/{uuid}' , [UserController::class , 'markAsFake']);
+
+        Route::put('/update/{uuid}' , [UserController::class , 'update']);
     });
     Route::get('' , [UserController::class , 'index']);
     Route::post('/store' , [UserController::class , 'store']);

@@ -22,6 +22,21 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
+
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function ($user) {
+            if ($user->isDirty(['name', 'last_name','national_id','gender','birth_date','hometown'])) {
+                $user->verified_at = null;
+                foreach ($user->verifiers as $verifier) {
+                    $user->verifiers()->updateExistingPivot($verifier->id, ['deleted_at' => now()]);
+                }
+            }
+        });
+    }
     protected $fillable = [
         'slug' ,
         'name' ,
@@ -119,6 +134,7 @@ class User extends Authenticatable
             ->withPivot([
                 'ip_address' ,
                 'user_agent' ,
+                'deleted_at' ,
             ]);
     }
     public function markAsVerified(): void

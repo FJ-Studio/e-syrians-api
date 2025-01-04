@@ -17,7 +17,7 @@ return new class extends Migration{
             $table->string('middle_name_hashed')->nullable();
             $table->text('last_name');
             $table->string('last_name_hashed');
-            $table->string('brief_name' , 6)->nullable();
+            $table->string('brief_name' , 7)->nullable();
             $table->text('national_id')->nullable();
             $table->string('national_id_hashed')->nullable();
             $table->enum('gender' , array_map(fn ($case) => $case->value , \App\Enums\GenderEnum::cases()));

@@ -2,12 +2,14 @@
 declare(strict_types = 1);
 namespace App\Http\Controllers;
 use App\Helper\Helper;
+use Illuminate\Support\Str;
 use App\Http\Requests\UserRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Resources\paginateResource;
 use App\Http\Requests\MarkAsFakeRequest;
+use App\Http\Requests\UserUpdateRequest;
 use App\Http\Requests\SocialLoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -75,7 +77,9 @@ class UserController extends Controller
             return Helper::apiResponse('user_cannot_verified_himself' , 400);
         }
         // check if approved before
-        $check = $user->verifiers()->where('verified_by' , $request->user()->id)->first();
+        $check = $user->verifiers()
+            ->wherePivot('deleted_at', null)
+            ->where('verified_by' , $request->user()->id)->first();
         if ($check) {
             return Helper::apiResponse('user_already_verified' , 400);
         }
@@ -87,7 +91,7 @@ class UserController extends Controller
                 'ip_address' => $request->ip() ,
             ]);
             // check if verified by 3 users
-            if ($user->verifiers()->count() >= 3) {
+            if ($user->verifiers()->wherePivot('deleted_at', null)->count() >= 3) {
                 $user->markAsVerified();
             }
         }
@@ -121,6 +125,19 @@ class UserController extends Controller
     public function edit(WeaponDelivery $weaponDelivery)
     {
         //
+    }
+    public function update(UserUpdateRequest $request , $uuid)
+    {
+        $data = $this->preperData($request);
+        // get value array of values that is not null
+        $data = array_filter($data);
+        $item = User::query()->where('uuid' , $uuid)->first();
+        if (!$item) {
+            return Helper::apiResponse('user_not_found' , 404);
+        }
+        $item->update($data);
+        $data = UserResource::make($item);
+        return Helper::apiResponse($data);
     }
 
     /**
@@ -193,11 +210,40 @@ class UserController extends Controller
             'message' => 'logged_out' ,
         ]);
     }
-    private function preperData(UserRequest $request): array
+    private function preperData($request): array
     {
         $data = $request->validated();
         // brief name =  take first 3 letters from the name and middle name and last name
-        $briefName = substr($data['name'] , 0 , 3) . ',' . substr($data['last_name'] , 0 , 3);
+        //        if ($request->method() == 'PUT' && $request->filled('name')) {
+        //            $data['brief_name'] = preg_replace('/(.)(?=,)/' , substr($data['name'] , 0 , 3) , $request->user()->brief_name);
+        //
+        //        }
+        //        elseif ($request->method() == 'PUT' && $request->filled('last_name')) {
+        //            $data['brief_name'] = preg_replace('/,(.*)/' ,','. substr($data['last_name'] , 0 , 3) , $request->user()->brief_name);
+        //
+        //        }
+        //        else {
+        //            $data['brief_name'] = substr($data['name'] , 0 , 2) . ',' . substr($data['last_name'] , 0 , 2);
+        //
+        //        }
+        if ($request->method() == 'PUT') {
+            $briefName = $request->user()->brief_name;
+            // If 'name' is provided, update the part before the comma
+            if ($request->filled('name')) {
+                $beforeComma = substr($request->input('name') , 0 , 3);
+                $afterComma = Str::after($briefName , ',');
+                $data['brief_name'] = $beforeComma . ',' . $afterComma;
+            }
+            // If 'last_name' is provided, update the part after the comma
+            elseif ($request->filled('last_name')) {
+                $beforeComma = Str::before($briefName , ',');
+                $afterComma = substr($request->input('last_name') , 0 , 3);
+                $data['brief_name'] = $beforeComma . ',' . $afterComma;
+            }
+        }
+        else {
+            $data['brief_name'] = substr($request->input('name' , '') , 0 , 2) . ',' . substr($request->input('last_name' , '') , 0 , 2);
+        }
         $data['name_hashed'] = isset($data['name']) ? Helper::HashedValue($data['name']) : null;
         $data['middle_name_hashed'] = isset($data['middle_name']) ? Helper::HashedValue($data['middle_name']) : null;
         $data['last_name_hashed'] = isset($data['last_name']) ? Helper::HashedValue($data['last_name']) : null;
@@ -212,7 +258,6 @@ class UserController extends Controller
         $data['estimated_monthly_income'] = isset($data['estimated_monthly_income']) ? $data['estimated_monthly_income'] : null;
         $data['phone'] = isset($data['phone']) ? Crypt::encrypt($data['phone']) : null;
         $data['email'] = isset($data['email']) ? Crypt::encrypt($data['email']) : null;
-        $data['brief_name'] = $briefName;
         return $data;
     }
 }
