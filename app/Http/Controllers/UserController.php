@@ -1,16 +1,17 @@
 <?php
-
-declare(strict_types=1);
-
+declare(strict_types = 1);
 namespace App\Http\Controllers;
-
+use App\Helper\Helper;
+use App\Http\Requests\UserRequest;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Crypt;
+use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\SocialLoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\WeaponDelivery;
 use App\Services\UserService;
 use Illuminate\Http\Request;
-
 class UserController extends Controller
 {
     /**
@@ -18,22 +19,26 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
-    }
 
+    }
     /**
      * Show the form for creating a new resource.
      */
-    public function create() {}
-
+    public function create()
+    {
+    }
     /**
      * Store a newly created resource in storage.
      */
-    // public function store($request)
-    // {
+    public function store(UserRequest $request)
+    {
 
-    // }
+        $data = $this->preperData($request);
+        $item = User::query()->create($data);
+        $data = UserResource::make($item);
+        return Helper::apiResponse($data);
 
+    }
     /**
      * Display the specified resource.
      */
@@ -41,7 +46,36 @@ class UserController extends Controller
     {
         //
     }
-
+    public function verifier(Request $request , $uuid)
+    {
+        $user = User::where('uuid' , $uuid)->first();
+        if (!$user) {
+            return Helper::apiResponse('user_not_found' , 404);
+        }
+        if ($user->id == $request->user()->id) {
+            return Helper::apiResponse('user_cannot_verified_himself' , 400);
+        }
+        // check if approved before
+        $check = $user->verifiers()->where('verified_by' , $request->user()->id)->first();
+        if ($check) {
+            return Helper::apiResponse('user_already_verified' , 400);
+        }
+        if ($user) {
+            if (is_null($request->user()->verified_at)) {
+                return Helper::apiResponse('user_not_verified' , 400);
+            }
+            $user->verifiers()->attach($user , [
+                'verified_by' => $request->user()->id ,
+                'user_agent' => $request->header('User-Agent') ,
+                'ip_address' => $request->ip() ,
+            ]);
+            // check if verified by 3 users
+            if ($user->verifiers()->count() >= 3) {
+                $user->markAsVerified();
+            }
+        }
+        return Helper::apiResponse('user_verified' , 200);
+    }
     /**
      * Show the form for editing the specified resource.
      */
@@ -55,9 +89,7 @@ class UserController extends Controller
      */
     // public function update($request, WeaponDelivery $weaponDelivery)
     // {
-
     // }
-
     /**
      * Remove the specified resource from storage.
      */
@@ -65,48 +97,84 @@ class UserController extends Controller
     {
         //
     }
-
     public function me(Request $request)
     {
         return response()->json([
-            'data' => new UserResource($request->user()),
-        ], 200, [], JSON_PRETTY_PRINT);
+            'data' => new UserResource($request->user()) ,
+        ] , 200 , [] , JSON_PRETTY_PRINT);
     }
-
     public function social_login(SocialLoginRequest $request)
     {
-        $userData = UserService::getUserDataFromSocialProvider($request->provider, $request->token);
+        $userData = UserService::getUserDataFromSocialProvider($request->provider , $request->token);
         if (!$userData) {
             return response()->json([
-                'message' => 'invalid_user_token',
-            ], 401);
+                'message' => 'invalid_user_token' ,
+            ] , 401);
         }
         $provider_col = $request->provider . '_id';
-
-        $user = User::where('email', $userData['email'])->first();
+        $user = User::where('email' , $userData['email'])->first();
         if (!$user) {
             $user = User::create([
-                'email' => $userData['email'],
-                'name' => $userData['name'],
-                'social_avatar' => $userData['avatar'],
-                $provider_col => $userData['id'],
+                'email' => $userData['email'] ,
+                'name' => $userData['name'] ,
+                'social_avatar' => $userData['avatar'] ,
+                $provider_col => $userData['id'] ,
             ]);
             $user->markEmailAsVerified();
             $user->assignRole('citizen');
         }
         return response()->json([
-            'user' => new UserResource($user),
-            'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
+            'user' => new UserResource($user) ,
+            'token' => explode('|' , $user->createToken($request->provider)->plainTextToken)[1] ,
         ]);
     }
-
-    public function login() {}
-
+    public function login(UserLoginRequest $request)
+    {
+        $hashedEmail = Helper::HashedValue($request->userId);
+        $user = User::query()->where('email_hashed' , $hashedEmail)
+            ->first();
+        if (!$user) {
+            return Helper::apiResponse('api.user_not_found' , 404);
+        }
+        if (Hash::check($request->password , $user->password)) {
+            $token = $user->createToken('auth_token');
+            return response()->json([
+                'user' => new UserResource($user) ,
+                'token' => $token->plainTextToken ,
+            ]);
+        }
+        else {
+            return Helper::apiResponse('invalid_credentials' , 401);
+        }
+    }
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
         return response()->json([
-            'message' => 'logged_out',
+            'message' => 'logged_out' ,
         ]);
+    }
+    private function preperData(UserRequest $request): array
+    {
+        $data = $request->validated();
+        // brief name =  take first 3 letters from the name and middle name and last name
+        $briefName = substr($data['name'] , 0 , 3) . ',' . substr($data['last_name'] , 0 , 3);
+        $data['name_hashed'] = isset($data['name']) ? Helper::HashedValue($data['name']) : null;
+        $data['middle_name_hashed'] = isset($data['middle_name']) ? Helper::HashedValue($data['middle_name']) : null;
+        $data['last_name_hashed'] = isset($data['last_name']) ? Helper::HashedValue($data['last_name']) : null;
+        $data['national_id_hash'] = isset($data['national_id']) ?  Helper::HashedValue($data['national_id']) : null;
+        $data['phone_hashed'] = isset($data['phone']) ? Helper::HashedValue($data['phone']) : null;
+        $data['email_hashed'] = isset($data['email']) ? Helper::HashedValue($data['email']) : null;
+        $data['password'] = Hash::make($data['password']);
+        $data['name'] = isset($data['name']) ? Crypt::encrypt($data['name']) : null;
+        $data['middle_name'] = isset($data['middle_name']) ? Crypt::encrypt($data['middle_name']) : null;
+        $data['last_name'] = isset($data['last_name']) ? Crypt::encrypt($data['last_name']) : null;
+        $data['national_id'] = isset($data['national_id']) ? $data['national_id'] : null;
+        $data['address'] = isset($data['address']) ? $data['address'] : null;
+        $data['estimated_monthly_income'] = isset($data['estimated_monthly_income']) ? $data['estimated_monthly_income'] : null;
+        $data['phone'] = isset($data['phone']) ? Crypt::encrypt($data['phone']) : null;
+        $data['email'] = isset($data['email']) ? Crypt::encrypt($data['email']) : null;
+        $data['brief_name'] = $briefName;
+        return $data;
     }
 }

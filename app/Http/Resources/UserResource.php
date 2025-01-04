@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserResource extends JsonResource
@@ -15,14 +16,13 @@ class UserResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'avatar' => $this->avatar,
-            'created_at' => $this->created_at,
-            'permissions' => $this->getAllPermissions()->pluck('name'),
-            'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
-            'received_items' => WeaponDeliveryResource::collection($this->whenLoaded('received_items')),
+            'uuid'=>$this->uuid,
+            'first_name' => Crypt::decrypt($this->name),
+            'email' => Crypt::decrypt($this->email),
+//            'created_at' => $this->created_at,
+//            'permissions' => $this->getAllPermissions()->pluck('name'),
+//            'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
+//            'received_items' => WeaponDeliveryResource::collection($this->whenLoaded('received_items')),
         ];
     }
 }
