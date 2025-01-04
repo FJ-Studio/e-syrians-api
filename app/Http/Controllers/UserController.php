@@ -6,6 +6,8 @@ use App\Http\Requests\UserRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Crypt;
 use App\Http\Requests\UserLoginRequest;
+use App\Http\Resources\paginateResource;
+use App\Http\Requests\MarkAsFakeRequest;
 use App\Http\Requests\SocialLoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -17,8 +19,22 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $items = User::query();
+        if ($request->filled('fake')) {
+            $items->markedAsFake();
+        }
+        else {
+            $items->verified();
+        }
+        $items = $items->orderBy('id' , $request->sort ? $request->sort : 'desc');
+        $items = $items->paginate($request->perPage ? $request->perPage : 20);
+        $data['data'] = UserResource::collection($items);
+        if ($items instanceof \Illuminate\Pagination\LengthAwarePaginator) {
+            $data['paginate'] = new paginateResource($items);
+        }
+        return Helper::apiResponse($data);
 
     }
     /**
@@ -48,6 +64,9 @@ class UserController extends Controller
     }
     public function verifier(Request $request , $uuid)
     {
+        if (is_null($request->user()->verified_at)) {
+            return Helper::apiResponse('user_not_verified' , 400);
+        }
         $user = User::where('uuid' , $uuid)->first();
         if (!$user) {
             return Helper::apiResponse('user_not_found' , 404);
@@ -61,9 +80,7 @@ class UserController extends Controller
             return Helper::apiResponse('user_already_verified' , 400);
         }
         if ($user) {
-            if (is_null($request->user()->verified_at)) {
-                return Helper::apiResponse('user_not_verified' , 400);
-            }
+
             $user->verifiers()->attach($user , [
                 'verified_by' => $request->user()->id ,
                 'user_agent' => $request->header('User-Agent') ,
@@ -75,6 +92,28 @@ class UserController extends Controller
             }
         }
         return Helper::apiResponse('user_verified' , 200);
+    }
+    public function markAsFake(MarkAsFakeRequest $request , $uuid)
+    {
+        if (is_null($request->user()->verified_at)) {
+            return Helper::apiResponse('user_not_verified' , 400);
+        }
+        $user = User::where('uuid' , $uuid)->first();
+        if (!$user) {
+            return Helper::apiResponse('user_not_found' , 404);
+        }
+        if ($user->id == $request->user()->id) {
+            return Helper::apiResponse('user_cannot_verified_himself' , 400);
+        }
+        // check if approved before
+        if ($user) {
+
+            if ($user->marked_as_fake_at) {
+                return Helper::apiResponse('user_already_marked_as_fake' , 400);
+            }
+            $user->markAsFake($request->reason);
+        }
+        return Helper::apiResponse('success' , 200);
     }
     /**
      * Show the form for editing the specified resource.
@@ -162,7 +201,7 @@ class UserController extends Controller
         $data['name_hashed'] = isset($data['name']) ? Helper::HashedValue($data['name']) : null;
         $data['middle_name_hashed'] = isset($data['middle_name']) ? Helper::HashedValue($data['middle_name']) : null;
         $data['last_name_hashed'] = isset($data['last_name']) ? Helper::HashedValue($data['last_name']) : null;
-        $data['national_id_hashed'] = isset($data['national_id']) ?  Helper::HashedValue($data['national_id']) : null;
+        $data['national_id_hashed'] = isset($data['national_id']) ? Helper::HashedValue($data['national_id']) : null;
         $data['phone_hashed'] = isset($data['phone']) ? Helper::HashedValue($data['phone']) : null;
         $data['email_hashed'] = isset($data['email']) ? Helper::HashedValue($data['email']) : null;
         $data['name'] = isset($data['name']) ? Crypt::encrypt($data['name']) : null;

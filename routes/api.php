@@ -11,8 +11,9 @@ Route::prefix('users')->group(function() {
     Route::middleware(['auth:sanctum'])->group(function() {
         Route::get('/me' , [UserController::class , 'me']);
         Route::post('/logout' , [UserController::class , 'logout']);
-
         Route::post('/verified/{uuid}' , [UserController::class , 'verifier']);
+        Route::post('/mark-as-fake/{uuid}' , [UserController::class , 'markAsFake']);
     });
-        Route::post('/store' , [UserController::class , 'store']);
+    Route::get('' , [UserController::class , 'index']);
+    Route::post('/store' , [UserController::class , 'store']);
 });

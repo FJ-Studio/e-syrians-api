@@ -103,7 +103,6 @@ class User extends Authenticatable
     {
         return $this->hasMany(WeaponDelivery::class , 'added_by' , 'id');
     }
-
     // scope get verified users
     public function scopeVerified($query)
     {
@@ -113,21 +112,26 @@ class User extends Authenticatable
     {
         return $query->whereNotNull('marked_as_fake_at');
     }
-
     public function verifiers()
     {
-        return $this->belongsToMany(self::class ,'user_verified', 'user_id' , 'verified_by')
+        return $this->belongsToMany(self::class , 'user_verified' , 'user_id' , 'verified_by')
             ->withTimestamps()
             ->withPivot([
-            'ip_address' ,
-            'user_agent',
-        ]);
+                'ip_address' ,
+                'user_agent' ,
+            ]);
     }
-
-    public function markAsVerified():void
+    public function markAsVerified(): void
     {
         $this->update([
             'verified_at' => now() ,
+        ]);
+    }
+    public function markAsFake(string $reason): void
+    {
+        $this->update([
+            'marked_as_fake_at' => now() ,
+            'marked_as_fake_reason' => $reason ,
         ]);
     }
 }
