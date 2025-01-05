@@ -213,19 +213,6 @@ class UserController extends Controller
     private function preperData($request): array
     {
         $data = $request->validated();
-        // brief name =  take first 3 letters from the name and middle name and last name
-        //        if ($request->method() == 'PUT' && $request->filled('name')) {
-        //            $data['brief_name'] = preg_replace('/(.)(?=,)/' , substr($data['name'] , 0 , 3) , $request->user()->brief_name);
-        //
-        //        }
-        //        elseif ($request->method() == 'PUT' && $request->filled('last_name')) {
-        //            $data['brief_name'] = preg_replace('/,(.*)/' ,','. substr($data['last_name'] , 0 , 3) , $request->user()->brief_name);
-        //
-        //        }
-        //        else {
-        //            $data['brief_name'] = substr($data['name'] , 0 , 2) . ',' . substr($data['last_name'] , 0 , 2);
-        //
-        //        }
         if ($request->method() == 'PUT') {
             $briefName = $request->user()->brief_name;
             // If 'name' is provided, update the part before the comma
