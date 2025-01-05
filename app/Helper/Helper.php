@@ -7,7 +7,7 @@ class Helper
     {
         if ($status == 200) {
             $success = true;
-            $Key = "data";
+            $Key = "result";
         }
         else {
             $success = false;
