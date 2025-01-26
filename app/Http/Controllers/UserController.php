@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SocialLoginRequest;
+use App\Http\Requests\User\SocialLoginRequest;
+use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\WeaponDelivery;
+use App\Services\ApiService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
 
@@ -29,10 +31,12 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    // public function store($request)
-    // {
-
-    // }
+    public function store(UserStoreRequest $request)
+    {
+        $user = User::create($request->validated());
+        $user->assignRole('citizen');
+        return ApiService::success(new UserResource($user), '', 201);
+    }
 
     /**
      * Display the specified resource.

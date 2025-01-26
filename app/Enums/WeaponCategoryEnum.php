@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum WeaponCategory: string
+enum WeaponCategoryEnum: string
 {
     case Pistol = 'pistol';
     case Shotgun = 'shotgun';

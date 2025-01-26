@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\WeaponDeliveries;
 
 use App\Enums\WeaponCategory;
+use App\Services\StrService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,14 +13,10 @@ class StoreWeaponDeliveryRequest extends FormRequest
 {
     private function convertArabicToWesternDigits($input)
     {
-        if (is_null($input)) {
+        if (!is_string($input)) {
             return $input;
         }
-
-        $arabicIndicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-        $westernDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-
-        return str_replace($arabicIndicDigits, $westernDigits, $input);
+        return StrService::mapArabicNumbers($input);
     }
     protected function prepareForValidation(): void
     {

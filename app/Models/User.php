@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Services\StrService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use Spatie\Translatable\HasTranslations;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -19,9 +22,28 @@ class User extends Authenticatable
     use Notifiable;
     use HasApiTokens;
     use HasRoles;
-    use HasTranslations;
+    use SoftDeletes;
 
-    public $translatable = ['name', 'surname'];
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            $user->uuid = Str::uuid();
+            $user->handleHashing([
+                'national_id' => 'national_id_hash',
+                'email' => 'email_hashed',
+                'phone' => 'phone_hashed',
+            ]);
+        });
+        static::updating(function ($user) {
+            $user->handleHashing([
+                'national_id' => 'national_id_hash',
+                'email' => 'email_hashed',
+                'phone' => 'phone_hashed',
+            ], true);
+        });
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -29,19 +51,46 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'uuid',
         'name',
+        'middle_name',
         'surname',
-        'email',
-        'password',
-        'phone',
         'national_id',
         'national_id_hash',
+        'gender',
+        'birth_date',
+        'hometown',
+        'email',
+        'email_hashed',
+        'phone',
+        'phone_hashed',
+        'social_avatar',
+        'google_id',
+        'password',
+        'country',
+        'city',
+        'shelter',
         'address',
         'email_verified_at',
         'phone_verified_at',
-        'avatar',
-        'social_avatar',
-        'google_id'
+        'photo',
+        'education_level',
+        'skills',
+        'marital_status',
+        'current_source_income',
+        'estimated_monthly_income',
+        'number_of_dependents',
+        'health_status',
+        'health_insurance',
+        'easy_access_to_healthcare_services',
+        'religious_affiliation',
+        'communication',
+        'more_info',
+        'other_nationalities',
+        'languages',
+        'verified_at',
+        'marked_as_fake_at',
+        'marked_as_fake_reason',
     ];
 
     /**
@@ -67,17 +116,65 @@ class User extends Authenticatable
             'password' => 'hashed',
             'address' => 'encrypted',
             'national_id' => 'encrypted',
-            'national_id_hash' => 'hashed',
-
         ];
     }
 
+    /**
+     * Hash the specified fields
+     *
+     * @param array<string> $fields
+     * @param bool $checkDirty
+     * @return void
+     */
+    public function handleHashing(array $fields, bool $checkDirty = false)
+    {
+        foreach ($fields as $original => $hashed) {
+            if ($checkDirty && !$this->isDirty($original)) {
+                continue;
+            }
+            if (!empty($this->{$original})) {
+                $this->{$hashed} = StrService::hash($this->{$original});
+            }
+        }
+    }
+
+    /**
+     * When a user handovers weapon(s)
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function handovers()
     {
         return $this->hasMany(WeaponDelivery::class, 'citizen_id', 'id');
     }
+
+    /**
+     * When an authorized user adds weapon(s) to the system
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function received_items()
     {
         return $this->hasMany(WeaponDelivery::class, 'added_by', 'id');
+    }
+
+    /**
+     * Get the verifications that this user has received
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function verifiers()
+    {
+        return $this->hasMany(UserVerification::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get the verifications that this user has made
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function verifications()
+    {
+        return $this->hasMany(UserVerification::class, 'verifier_id', 'id');
     }
 }
