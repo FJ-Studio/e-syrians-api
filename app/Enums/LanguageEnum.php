@@ -7,6 +7,7 @@ namespace App\Enums;
 enum LanguageEnum: string
 {
     case Arabic = 'arabic';
+    case Kurdish = 'kurdish';
     case English = 'english';
     case French = 'french';
     case Spanish = 'spanish';
@@ -22,23 +23,5 @@ enum LanguageEnum: string
     case Persian = 'persian';
     case Urdu = 'urdu';
     case Hindi = 'hindi';
-    case Bengali = 'bengali';
-    case Punjabi = 'punjabi';
-    case Telugu = 'telugu';
-    case Marathi = 'marathi';
-    case Tamil = 'tamil';
-    case Gujarati = 'gujarati';
-    case Kannada = 'kannada';
-    case Malayalam = 'malayalam';
-    case Oriya = 'oriya';
-    case Assamese = 'assamese';
-    case Maithili = 'maithili';
-    case Santali = 'santali';
-    case Kashmiri = 'kashmiri';
-    case Nepali = 'nepali';
-    case Konkani = 'konkani';
-    case Dogri = 'dogri';
-    case Manipuri = 'manipuri';
-    case Bodo = 'bodo';
-    case Sanskrit = 'sanskrit';
+    case Other = 'other';
 }

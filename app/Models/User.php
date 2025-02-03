@@ -77,7 +77,7 @@ class User extends Authenticatable
         'education_level',
         'skills',
         'marital_status',
-        'current_source_income',
+        'source_of_income',
         'estimated_monthly_income',
         'number_of_dependents',
         'health_status',
@@ -89,8 +89,11 @@ class User extends Authenticatable
         'other_nationalities',
         'languages',
         'verified_at',
+        'verification_reason',
         'marked_as_fake_at',
         'marked_as_fake_reason',
+        'record_place',
+        'record_id',
     ];
 
     /**
@@ -166,6 +169,11 @@ class User extends Authenticatable
     public function verifiers()
     {
         return $this->hasMany(UserVerification::class, 'user_id', 'id');
+    }
+
+    public function activeVerifiers()
+    {
+        return $this->verifiers()->whereNull('cancelled_at');
     }
 
     /**

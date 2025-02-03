@@ -6,7 +6,6 @@ namespace App\Enums;
 
 enum IncomeSourceEnum: string
 {
-
     case StableJob = 'stable-job';
     case Freelance = 'freelance';
     case AidSupport = 'aid-support';

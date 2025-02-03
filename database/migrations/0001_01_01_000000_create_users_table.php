@@ -43,7 +43,7 @@ return new class extends Migration
             $table->enum('education_level', array_map(fn($case) => $case->value, \App\Enums\EducationLevelEnum::cases()))->nullable();
             $table->text('skills')->nullable();
             $table->enum('marital_status', array_map(fn($case) => $case->value, \App\Enums\MaritalStatusEnum::cases()))->nullable();
-            $table->enum('current_source_income', array_map(fn($case) => $case->value, \App\Enums\IncomeSourceEnum::cases()))->nullable();
+            $table->enum('source_of_income', array_map(fn($case) => $case->value, \App\Enums\IncomeSourceEnum::cases()))->nullable();
             $table->decimal('estimated_monthly_income')->nullable();
             $table->integer('number_of_dependents')->nullable();
             // health
@@ -51,14 +51,21 @@ return new class extends Migration
             $table->boolean('health_insurance')->nullable();
             $table->boolean('easy_access_to_healthcare_services')->nullable();
             // other
+            $table->enum(
+                'ethnicity',
+                array_map(fn($case) => $case->value, \App\Enums\EthnicityEnum::cases())
+            )->nullable();
             $table->enum('religious_affiliation', array_map(fn($case) => $case->value, \App\Enums\ReligiousAffiliationEnum::cases()))->nullable();
             $table->text('communication')->nullable();
             $table->text('more_info')->nullable();
             $table->text('other_nationalities')->nullable();
             $table->text('languages')->nullable();
             $table->timestampTz('verified_at')->nullable();
+            $table->text('verification_reason')->nullable();
             $table->timestampTz('marked_as_fake_at')->nullable();
             $table->text('marked_as_fake_reason')->nullable();
+            $table->string('record_place')->nullable();
+            $table->string('record_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();
