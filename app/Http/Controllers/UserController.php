@@ -33,7 +33,14 @@ class UserController extends Controller
      */
     public function store(UserStoreRequest $request)
     {
-        $user = User::create($request->validated());
+        $data = $request->validated();
+        if ($data['languages']) {
+            $data['languages'] = implode(',', $data['languages']);
+        }
+        if ($data['other_nationalities']) {
+            $data['other_nationalities'] = implode(',', $data['other_nationalities']);
+        }
+        $user = User::create($data);
         $user->assignRole('citizen');
         return ApiService::success(new UserResource($user), '', 201);
     }
