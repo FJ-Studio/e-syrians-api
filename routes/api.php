@@ -11,7 +11,7 @@ Route::prefix('weapons-delivery')->group(function () {
 });
 
 Route::prefix('users')->group(function () {
-    Route::post('/register', [UserController::class, 'store']);
+    Route::post('/register', [UserController::class, 'store'])->middleware(([Recaptcha::class]));
     Route::middleware(['guest', 'throttle:6,1'])->post('/login/social', [UserController::class, 'social_login']);
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/me', [UserController::class, 'me']);
