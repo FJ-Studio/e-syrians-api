@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Services\ApiService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -21,7 +22,7 @@ class Recaptcha
         $recaptchaToken = $request->input('recaptcha_token');
 
         if (!$recaptchaToken) {
-            return response()->json(['message' => 'reCAPTCHA token is required'], 400);
+            return ApiService::error(400, 'reCAPTCHA token is required');
         }
         $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
             'secret' => config('services.recaptcha.secret'),
@@ -32,7 +33,7 @@ class Recaptcha
         $result = $response->json();
 
         if (!$result['success'] || $result['score'] < 0.7) {
-            return response()->json(['message' => 'reCAPTCHA validation failed'], 403);
+            return ApiService::error(403, 'reCAPTCHA verification failed');
         }
         return $next($request);
     }
