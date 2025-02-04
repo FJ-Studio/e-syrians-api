@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeaponDeliveryController;
+use App\Http\Middleware\Recaptcha;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('weapons-delivery')->group(function () {
@@ -16,3 +18,5 @@ Route::prefix('users')->group(function () {
         Route::post('/logout', [UserController::class, 'logout']);
     });
 });
+
+Route::get('/stats', [StatsController::class, 'index'])->middleware(([Recaptcha::class]));
