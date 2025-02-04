@@ -33,7 +33,7 @@ class UserStoreRequest extends FormRequest
             'birth_date' => ['required', 'date'],
             'hometown' => ['required', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\HometownEnum::cases()))],
             // E-data
-            'email' => ['nullable', 'email', 'unique:users,email'],
+            'email' => ['nullable', 'email:rfc,dns,spoof,strict', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:255'],
             'social_avatar' => ['nullable', 'string', 'max:255'],
             'photo' => ['nullable', 'string', 'max:255'],
