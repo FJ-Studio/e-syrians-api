@@ -19,4 +19,4 @@ Route::prefix('users')->group(function () {
     });
 });
 
-Route::get('/stats', [StatsController::class, 'index'])->middleware(([Recaptcha::class]));
+Route::get('/stats', [StatsController::class, 'index'])->middleware((['throttle:10,1']));
