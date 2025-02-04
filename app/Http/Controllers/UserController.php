@@ -34,10 +34,10 @@ class UserController extends Controller
     public function store(UserStoreRequest $request)
     {
         $data = $request->validated();
-        if ($data['languages']) {
+        if (isset($data['languages'])) {
             $data['languages'] = implode(',', $data['languages']);
         }
-        if ($data['other_nationalities']) {
+        if (isset($data['other_nationalities'])) {
             $data['other_nationalities'] = implode(',', $data['other_nationalities']);
         }
         $user = User::create($data);
