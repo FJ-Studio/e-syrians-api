@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('middle_name')->nullable();
             $table->string('surname');
-            $table->string('national_id');
-            $table->string('national_id_hash');
+            $table->string('national_id')->nullable();
+            $table->string('national_id_hash')->nullable();
             $table->enum('gender', array_map(fn($case) => $case->value, \App\Enums\GenderEnum::cases()));
             $table->date('birth_date');
             $table->enum('hometown', array_map(fn($case) => $case->value, \App\Enums\HometownEnum::cases()));
