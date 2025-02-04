@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\ApiService;
 use App\Services\StatsService;
 
 class StatsController extends Controller
@@ -13,8 +14,6 @@ class StatsController extends Controller
      */
     public function index()
     {
-        return response()->json([
-            'daily_users' => StatsService::getDailyUsersStats(),
-        ]);
+        return ApiService::success(['daily_users' => StatsService::getDailyUsersStats(),]);
     }
 }
