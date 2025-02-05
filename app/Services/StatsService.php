@@ -143,16 +143,26 @@ class StatsService
         )
             ->groupBy($field, 'verification_status')
             ->get()
-            ->groupBy('verification_status');
+            ->groupBy('verification_status'); // Group by verified/unverified
 
         $stats = [];
 
         foreach (['verified', 'unverified'] as $status) {
-            foreach ($data[$status] ?? [] as $data) {
-                $key = $data->$field ?? 'unknown';
-                $stats[$key][$status] = $data->count ?? 0;
+            foreach ($data[$status] ?? [] as $entry) {
+                $key = $entry->$field ?? 'unknown';
+
+                // Ensure both verified & unverified keys exist for each value
+                if (!isset($stats[$key])) {
+                    $stats[$key] = [
+                        'verified' => 0,
+                        'unverified' => 0,
+                    ];
+                }
+
+                $stats[$key][$status] = $entry->count;
             }
         }
+
         return $stats;
     }
 }

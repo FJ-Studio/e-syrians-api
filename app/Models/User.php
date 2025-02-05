@@ -94,6 +94,7 @@ class User extends Authenticatable
         'marked_as_fake_reason',
         'record_place',
         'record_id',
+        'ethnicity',
     ];
 
     /**
