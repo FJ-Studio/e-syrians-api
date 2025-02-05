@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\WeaponDeliveries;
 
-use App\Enums\WeaponCategory;
+use App\Enums\WeaponCategoryEnum;
 use App\Services\StrService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -47,7 +47,7 @@ class StoreWeaponDeliveryRequest extends FormRequest
             ],
             'weapons.*' => [
                 'string',
-                Rule::in(array_map(fn($case) => $case->value, WeaponCategory::cases())), // Validate each array element
+                Rule::in(array_map(fn($case) => $case->value, WeaponCategoryEnum::cases())), // Validate each array element
             ],
             'notes' => [
                 'required',

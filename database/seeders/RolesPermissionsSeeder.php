@@ -39,6 +39,10 @@ class RolesPermissionsSeeder extends Seeder
             'qr_code:generate',
         ];
 
+        $citizen_permissions = [
+            'weapon_delivery:store',
+        ];
+
         $permissionsByRole = [
             'admin' => [
                 ...$identity_verification_manager_permissions,
@@ -56,7 +60,7 @@ class RolesPermissionsSeeder extends Seeder
                 ...$security_personnel_permissions
             ],
             'citizen' => [
-                'weapon_delivery:store',
+                ...$citizen_permissions,
             ],
         ];
         foreach ($permissionsByRole as $role => $permissions) {

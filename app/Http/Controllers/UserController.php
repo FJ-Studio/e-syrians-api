@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\User\CredentialsLoginRequest;
 use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\WeaponDelivery;
 use App\Services\ApiService;
+use App\Services\StrService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -105,13 +109,33 @@ class UserController extends Controller
             $user->markEmailAsVerified();
             $user->assignRole('citizen');
         }
-        return response()->json([
+        return ApiService::success([
             'user' => new UserResource($user),
             'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
         ]);
     }
 
-    public function login() {}
+    public function login(CredentialsLoginRequest $request)
+    {
+        $identifier = StrService::hash($request->input('identifier'));
+        $password = $request->input('password');
+        $user = User::whereNotNull('email_hashed')->where('email_hashed', $identifier)
+            ->orWhere(function ($query) use ($identifier) {
+                $query->whereNotNull('phone_hashed')->where('phone_hashed', $identifier);
+            })
+            ->orWhere(function ($query) use ($identifier) {
+                $query->whereNotNull('national_id_hashed')->where('national_id_hashed', $identifier);
+            })
+            ->first();
+
+        if (!$user || !Hash::check($password, $user->password)) {
+            return ApiService::error(401);
+        }
+        return ApiService::success([
+            'user' => new UserResource($user),
+            'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
+        ]);
+    }
 
     public function logout(Request $request)
     {

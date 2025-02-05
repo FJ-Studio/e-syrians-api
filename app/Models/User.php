@@ -31,14 +31,14 @@ class User extends Authenticatable
         static::creating(function ($user) {
             $user->uuid = Str::uuid();
             $user->handleHashing([
-                'national_id' => 'national_id_hash',
+                'national_id' => 'national_id_hashed',
                 'email' => 'email_hashed',
                 'phone' => 'phone_hashed',
             ]);
         });
         static::updating(function ($user) {
             $user->handleHashing([
-                'national_id' => 'national_id_hash',
+                'national_id' => 'national_id_hashed',
                 'email' => 'email_hashed',
                 'phone' => 'phone_hashed',
             ], true);
@@ -56,7 +56,7 @@ class User extends Authenticatable
         'middle_name',
         'surname',
         'national_id',
-        'national_id_hash',
+        'national_id_hashed',
         'gender',
         'birth_date',
         'hometown',
