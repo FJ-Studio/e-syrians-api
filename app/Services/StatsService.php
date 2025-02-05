@@ -21,7 +21,7 @@ class StatsService
     }
     public static function getAgeStats(): array
     {
-        return Cache::get('e-syrians.cache.age', []);
+        return Cache::get(config('e-syrians.cache.age'), []);
     }
     public static function calculateDailyUsersStats(): void
     {
@@ -85,6 +85,6 @@ class StatsService
             )->whereNull('verified_at')->count();
         }
 
-        Cache::forever('e-syrians.cache.age', $ageStatistics);
+        Cache::forever(config('e-syrians.cache.age'), $ageStatistics);
     }
 }
