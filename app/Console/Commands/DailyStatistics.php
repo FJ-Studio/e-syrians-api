@@ -9,14 +9,14 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 
-class StatsDailyUsers extends Command
+class DailyStatistics extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'app:stats-daily-users';
+    protected $signature = 'app:daily-statistics';
 
     /**
      * The console command description.

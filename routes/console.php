@@ -2,4 +2,4 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('app:stats-daily-users')->dailyAt('23:58');
+Schedule::command('app:daily-statistics')->dailyAt('23:58');
