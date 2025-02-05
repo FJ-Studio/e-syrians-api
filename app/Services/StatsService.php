@@ -77,12 +77,12 @@ class StatsService
             $ageStatistics['verified'][$label] = User::whereBetween(
                 DB::raw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE())'),
                 [$min, $max]
-            )->where('verified', true)->count();
+            )->whereNotNull('verified_at')->count();
 
             $ageStatistics['unverified'][$label] = User::whereBetween(
                 DB::raw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE())'),
                 [$min, $max]
-            )->where('verified', false)->count();
+            )->whereNull('verified_at')->count();
         }
 
         Cache::forever('e-syrians.cache.age', $ageStatistics);
