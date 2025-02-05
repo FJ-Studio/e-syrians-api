@@ -143,7 +143,7 @@ class StatsService
         ];
 
         foreach (['verified', 'unverified'] as $status) {
-            foreach ($ethnicities[$status] ?? [] as $data) {
+            foreach ($data[$status] ?? [] as $data) {
                 $key = $data->$field ?? 'unknown';
                 $stats[$status][$key] = $data->count;
             }
