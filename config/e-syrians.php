@@ -6,7 +6,7 @@ return [
         'daily_registrants' => 'daily_registrants',
         'gender' => 'gender',
         'age' => 'age',
-        'province' => 'province',
+        'hometown' => 'hometown',
         'country' => 'country',
         'ethnicity' => 'ethnicity',
         'religion' => 'religion',

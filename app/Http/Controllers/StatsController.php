@@ -18,6 +18,9 @@ class StatsController extends Controller
             'daily_users' => StatsService::getDailyUsersStats(),
             'gender' => StatsService::getGenderStats(),
             'age' => StatsService::getAgeStats(),
+            'ethnicity' => StatsService::getEthnicityStats(),
+            'country' => StatsService::getCountryStats(),
+            'hometown' => StatsService::getHometownStats(),
         ]);
     }
 }

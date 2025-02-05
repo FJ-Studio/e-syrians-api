@@ -23,6 +23,20 @@ class StatsService
     {
         return Cache::get(config('e-syrians.cache.age'), []);
     }
+    public static function getEthnicityStats(): array
+    {
+        return Cache::get(config('e-syrians.cache.ethnicity'), []);
+    }
+
+    public static function getCountryStats(): array
+    {
+        return Cache::get(config('e-syrians.cache.country'), []);
+    }
+    public static function getHometownStats(): array
+    {
+        return Cache::get(config('e-syrians.cache.hometown'), []);
+    }
+
     public static function calculateDailyUsersStats(): void
     {
         // Get the current date
@@ -86,5 +100,54 @@ class StatsService
         }
 
         Cache::forever(config('e-syrians.cache.age'), $ageStatistics);
+    }
+    public static function calculateEthnicityStats(): void
+    {
+        $ethnicityKey = config('e-syrians.cache.ethnicity');
+        $ethnicityStats = new self();
+        Cache::forever($ethnicityKey, $ethnicityStats->groupUsersByField('religious_affiliation'));
+    }
+    public static function calculateReligionStats(): void
+    {
+        // Get the cache key
+        $religionKey = config('e-syrians.cache.religion');
+        $religionStatistics = new self();
+        Cache::forever($religionKey, $religionStatistics->groupUsersByField('religious_affiliation'));
+    }
+    public static function calculateCountryStats(): void
+    {
+        $countryKey = config('e-syrians.cache.country');
+        $countryStatistics = new self();
+        Cache::forever($countryKey, $countryStatistics->groupUsersByField('country'));
+    }
+    public static function calculateHometownStats(): void
+    {
+        $hometownKey = config('e-syrians.cache.hometown');
+        $hometownStatistics = new self();
+        Cache::forever($hometownKey, $hometownStatistics->groupUsersByField('hometown'));
+    }
+    public function groupUsersByField(string $field): array
+    {
+        $data = User::select(
+            $field,
+            DB::raw('COUNT(*) as count'),
+            DB::raw('CASE WHEN verified_at IS NOT NULL THEN "verified" ELSE "unverified" END as verification_status')
+        )
+            ->groupBy($field, 'verification_status')
+            ->get()
+            ->groupBy('verification_status');
+
+        $stats = [
+            'verified' => [],
+            'unverified' => [],
+        ];
+
+        foreach (['verified', 'unverified'] as $status) {
+            foreach ($ethnicities[$status] ?? [] as $data) {
+                $key = $data->$field ?? 'unknown';
+                $stats[$status][$key] = $data->count;
+            }
+        }
+        return $stats;
     }
 }
