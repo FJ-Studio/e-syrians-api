@@ -37,5 +37,6 @@ class DailyStatistics extends Command
         StatsService::calculateEthnicityStats();
         StatsService::calculateCountryStats();
         StatsService::calculateHometownStats();
+        StatsService::calculateReligionStats();
     }
 }
