@@ -44,6 +44,9 @@ class StatsDailyUsers extends Command
             ];
             // Store the updated statistics permanently
             Cache::forever($cacheKey, $statistics);
+            $this->info('Daily users stats have been calculated and cached successfully.');
         }
+        // gender stats
+        $genderKey = config('e-syrians.cache.gender');
     }
 }

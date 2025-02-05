@@ -14,6 +14,9 @@ class StatsController extends Controller
      */
     public function index()
     {
-        return ApiService::success(['daily_users' => StatsService::getDailyUsersStats(),]);
+        return ApiService::success([
+            'daily_users' => StatsService::getDailyUsersStats(),
+            'gender' => StatsService::getGenderStats(),
+        ]);
     }
 }

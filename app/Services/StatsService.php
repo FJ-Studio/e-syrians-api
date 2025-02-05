@@ -12,4 +12,8 @@ class StatsService
     {
         return Cache::get(config('e-syrians.cache.daily_registrants'), []);
     }
+    public static function getGenderStats(): array
+    {
+        return Cache::get(config('e-syrians.cache.gender'), []);
+    }
 }
