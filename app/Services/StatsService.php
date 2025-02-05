@@ -19,6 +19,10 @@ class StatsService
     {
         return Cache::get(config('e-syrians.cache.gender'), []);
     }
+    public static function getAgeStats(): array
+    {
+        return Cache::get('e-syrians.cache.age', []);
+    }
     public static function calculateDailyUsersStats(): void
     {
         // Get the current date
@@ -81,6 +85,6 @@ class StatsService
             )->where('verified', false)->count();
         }
 
-        Cache::forever('user_age_statistics', $ageStatistics);
+        Cache::forever('e-syrians.cache.age', $ageStatistics);
     }
 }
