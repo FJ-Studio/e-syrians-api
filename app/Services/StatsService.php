@@ -62,11 +62,15 @@ class StatsService
         Cache::forever(
             $genderKey,
             [
-                'unverified_m' => User::where('gender', 'm')->whereNull('verified_at')->count(),
-                'unverified_f' => User::where('gender', 'f')->whereNull('verified_at')->count(),
-                'verified_m' => User::where('gender', 'm')->whereNotNull('verified_at')->count(),
-                'verified_f' => User::where('gender', 'f')->whereNotNull('verified_at')->count(),
-                'unknown' => User::whereNull('gender')->count(),
+                'f' => [
+                    'verified' => User::where('gender', 'f')->whereNotNull('verified_at')->count(),
+                    'unverified' => User::where('gender', 'f')->whereNull('verified_at')->count()
+                ],
+                'm' => [
+                    'verified' => User::where('gender', 'm')->whereNotNull('verified_at')->count(),
+                    'unverified' =>
+                    User::where('gender', 'm')->whereNull('verified_at')->count(),
+                ],
             ]
         );
     }
