@@ -96,12 +96,12 @@ class StatsService
         ];
 
         foreach ($ageGroups as $label => [$min, $max]) {
-            $ageStatistics['verified'][$label] = User::whereBetween(
+            $ageStatistics[$label]['verified'] = User::whereBetween(
                 DB::raw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE())'),
                 [$min, $max]
             )->whereNotNull('verified_at')->count();
 
-            $ageStatistics['unverified'][$label] = User::whereBetween(
+            $ageStatistics[$label]['unverified'] = User::whereBetween(
                 DB::raw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE())'),
                 [$min, $max]
             )->whereNull('verified_at')->count();
