@@ -36,6 +36,10 @@ class StatsService
     {
         return Cache::get(config('e-syrians.cache.hometown'), []);
     }
+    public static function getReligionStats(): array
+    {
+        return Cache::get(config('e-syrians.cache.religion'), []);
+    }
 
     public static function calculateDailyUsersStats(): void
     {
@@ -109,7 +113,7 @@ class StatsService
     {
         $ethnicityKey = config('e-syrians.cache.ethnicity');
         $ethnicityStats = new self();
-        Cache::forever($ethnicityKey, $ethnicityStats->groupUsersByField('religious_affiliation'));
+        Cache::forever($ethnicityKey, $ethnicityStats->groupUsersByField('ethnicity'));
     }
     public static function calculateReligionStats(): void
     {

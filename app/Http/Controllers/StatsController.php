@@ -21,6 +21,7 @@ class StatsController extends Controller
             'ethnicity' => StatsService::getEthnicityStats(),
             'country' => StatsService::getCountryStats(),
             'hometown' => StatsService::getHometownStats(),
+            'religion' => StatsService::getReligionStats(),
         ]);
     }
 }
