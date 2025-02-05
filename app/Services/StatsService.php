@@ -137,10 +137,7 @@ class StatsService
             ->get()
             ->groupBy('verification_status');
 
-        $stats = [
-            'verified' => [],
-            'unverified' => [],
-        ];
+        $stats = [];
 
         foreach (['verified', 'unverified'] as $status) {
             foreach ($data[$status] ?? [] as $data) {
