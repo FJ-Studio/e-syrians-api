@@ -90,11 +90,6 @@ class StatsService
             '91+' => [61, 200],
         ];
 
-        $ageStatistics = [
-            'verified' => [],
-            'unverified' => [],
-        ];
-
         foreach ($ageGroups as $label => [$min, $max]) {
             $ageStatistics[$label]['verified'] = User::whereBetween(
                 DB::raw('TIMESTAMPDIFF(YEAR, birth_date, CURDATE())'),
