@@ -19,6 +19,14 @@ class Poll extends Model
         'deletion_reason',
     ];
 
+    protected $casts = [
+        'audience' => 'array',
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+        'max_selections' => 'integer',
+        'audience_can_add_options' => 'boolean',
+    ];
+
     /** 
      * Get the user that created the poll.
      */
