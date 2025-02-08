@@ -8,6 +8,8 @@ use App\Models\Poll;
 use App\Models\PollOption;
 use App\Services\ApiService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PollController extends Controller
 {
@@ -24,42 +26,53 @@ class PollController extends Controller
      */
     public function store(StorePollRequest $request)
     {
-        $audience = [
-            'gender' => $request->input('gender', []),
-            'age_range' => [
-                'min' => $request->input('min_age'),
-                'max' => $request->input('max_age'),
-            ],
-            'country' => $request->input('country', []), // Now an array
-            'religious_affiliation' => $request->input('religious_affiliation', []),
-            'hometown' => $request->input('hometown', []),
-            'ethnicity' => $request->input('ethnicity', []),
-        ];
-        // Create the poll
-        $poll = Poll::create([
-            'question' => $request->question,
-            'start_date' => $request->start_date,
-            'end_date' => now()->addDays($request->duration),
-            'max_selections' => $request->max_selections,
-            'audience_can_add_options' => $request->audience_can_add_options,
-            'audience' => json_encode($audience), // Store as JSON
-            'created_by' => Auth::id(),
-        ]);
-        // Step 2: Insert Poll Options
-        $options = collect($request->input('options'))->map(function ($option) use ($poll) {
-            return [
-                'poll_id' => $poll->id,
-                'option_text' => $option,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        });
+        try {
+            return DB::transaction(function () use ($request) {
+                // Build Audience JSON
+                $audience = [
+                    'gender' => $request->input('gender', []),
+                    'age_range' => [
+                        'min' => $request->input('min_age'),
+                        'max' => $request->input('max_age'),
+                    ],
+                    'country' => $request->input('country', []),
+                    'religious_affiliation' => $request->input('religious_affiliation', []),
+                    'hometown' => $request->input('hometown', []),
+                    'ethnicity' => $request->input('ethnicity', []),
+                ];
 
-        PollOption::insert($options->toArray());
+                // Create Poll
+                $poll = Poll::create([
+                    'question' => $request->question,
+                    'start_date' => $request->start_date,
+                    'end_date' => now()->addDays($request->duration),
+                    'max_selections' => $request->max_selections,
+                    'audience_can_add_options' => $request->audience_can_add_options,
+                    'audience' => json_encode($audience, JSON_THROW_ON_ERROR), // Prevent encoding errors
+                    'created_by' => Auth::id(),
+                ]);
 
-        return ApiService::success(
-            new PollResource($poll),
-        );
+                // Insert Poll Options (Bulk Insert)
+                $options = collect($request->input('options'))->map(fn($option) => [
+                    'poll_id' => $poll->id,
+                    'option_text' => $option,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                PollOption::insert($options->toArray());
+
+                return ApiService::success(new PollResource($poll));
+            });
+        } catch (\Throwable $e) {
+            Log::error('Poll creation failed', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+                'request' => $request->all(),
+            ]);
+
+            return ApiService::error(500);
+        }
     }
 
     /**
