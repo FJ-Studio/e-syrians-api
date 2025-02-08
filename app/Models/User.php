@@ -186,4 +186,35 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserVerification::class, 'verifier_id', 'id');
     }
+
+    /**
+     * Get the polls that this user has created
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function polls()
+    {
+        return $this->hasMany(Poll::class, 'created_by', 'id');
+    }
+
+    /**
+     * Get the votes that this user has cast
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function votes()
+    {
+        return $this->hasMany(PollVote::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get the reactions that this user has made
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+
+    public function reactions()
+    {
+        return $this->hasMany(PollReaction::class);
+    }
 }

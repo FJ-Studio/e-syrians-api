@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class PollOption extends Model
+{
+    use SoftDeletes;
+
+    protected $fillable = [
+        'poll_id',
+        'option_text',
+        'created_by', // by default, the user who created the poll option
+    ];
+
+    /**
+     * Get the poll that the poll option belongs to.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function poll()
+    {
+        return $this->belongsTo(Poll::class);
+    }
+
+    /**
+     * Get the votes for the poll option.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function votes()
+    {
+        return $this->hasMany(PollVote::class);
+    }
+
+    /**
+     * Get the user that created the poll option.
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+}
