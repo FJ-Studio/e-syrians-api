@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class Poll extends Model
 {
@@ -18,6 +19,7 @@ class Poll extends Model
         'audience_can_add_options',
         'created_by',
         'deletion_reason',
+        'deleted_at',
     ];
 
     protected $casts = [
@@ -27,6 +29,23 @@ class Poll extends Model
         'max_selections' => 'integer',
         'audience_can_add_options' => 'boolean',
     ];
+
+    protected $appends = ['ups_count', 'downs_count'];
+
+    public function getUpsCountAttribute()
+    {
+        return Cache::remember("poll_{$this->id}_ups_count", 60, function () {
+            return $this->ups()->count();
+        });
+    }
+
+    public function getDownsCountAttribute()
+    {
+        return Cache::remember("poll_{$this->id}_downs_count", 60, function () {
+            return $this->downs()->count();
+        });
+    }
+
 
     /** 
      * Get the user that created the poll.
@@ -59,7 +78,7 @@ class Poll extends Model
         return $this->hasMany(PollReaction::class);
     }
     /** 
-     * Get the reactions ups reactions for the poll.
+     * Get the upvote reactions for the poll.
      */
     public function ups()
     {
@@ -67,7 +86,7 @@ class Poll extends Model
     }
 
     /** 
-     * Get the reactions downs reactions for the poll.
+     * Get the downvote reactions for the poll.
      */
     public function downs()
     {

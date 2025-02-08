@@ -3,9 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class PollReaction extends Model
 {
+    protected static function booted()
+    {
+        static::saved(function ($reaction) {
+            Cache::forget("poll_{$reaction->poll_id}_ups_count");
+            Cache::forget("poll_{$reaction->poll_id}_downs_count");
+        });
+
+        static::deleted(function ($reaction) {
+            Cache::forget("poll_{$reaction->poll_id}_ups_count");
+            Cache::forget("poll_{$reaction->poll_id}_downs_count");
+        });
+    }
+
     protected $fillable = [
         'poll_id',
         'user_id',
