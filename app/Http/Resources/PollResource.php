@@ -30,8 +30,7 @@ class PollResource extends JsonResource
             'user' => new UserResource($this->whenLoaded('user')),
             'options' => PollOptionResource::collection($this->whenLoaded('options')),
             'votes' => PollVoteResource::collection($this->whenLoaded('votes')),
-            'ups' => 0,
-            'downs' => 0,
+            'reactions' => PollReactionResource::collection($this->whenLoaded('reactions')),
         ];
     }
 }

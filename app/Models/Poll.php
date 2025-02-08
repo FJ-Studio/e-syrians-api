@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Poll extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'question',
         'start_date',
@@ -48,5 +49,28 @@ class Poll extends Model
     public function votes()
     {
         return $this->hasMany(PollVote::class);
+    }
+
+    /** 
+     * Get the reactions for the poll.
+     */
+    public function reactions()
+    {
+        return $this->hasMany(PollReaction::class);
+    }
+    /** 
+     * Get the reactions ups reactions for the poll.
+     */
+    public function ups()
+    {
+        return $this->reactions()->where('reaction', 'up');
+    }
+
+    /** 
+     * Get the reactions downs reactions for the poll.
+     */
+    public function downs()
+    {
+        return $this->reactions()->where('reaction', 'down');
     }
 }
