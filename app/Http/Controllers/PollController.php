@@ -45,7 +45,7 @@ class PollController extends Controller
                 $poll = Poll::create([
                     'question' => $request->question,
                     'start_date' => $request->start_date,
-                    'end_date' => now()->addDays($request->duration),
+                    'end_date' => now()->addDays((int)($request->duration)),
                     'max_selections' => $request->max_selections,
                     'audience_can_add_options' => $request->audience_can_add_options,
                     'audience' => json_encode($audience, JSON_THROW_ON_ERROR), // Prevent encoding errors
