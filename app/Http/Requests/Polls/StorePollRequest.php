@@ -7,6 +7,7 @@ use App\Enums\EthnicityEnum;
 use App\Enums\GenderEnum;
 use App\Enums\HometownEnum;
 use App\Enums\ReligiousAffiliationEnum;
+use App\Enums\RevealResultsEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePollRequest extends FormRequest
@@ -32,6 +33,8 @@ class StorePollRequest extends FormRequest
             'duration' => ['required', 'integer', 'min:1', 'max:365'],
             'max_selections' => ['required', 'integer', 'min:1', 'max:10'],
             'audience_can_add_options' => ['required', 'boolean'],
+            'reveal_results' => ['required', 'in:' . implode(',', array_map(fn($case) => $case->value, RevealResultsEnum::cases()))],
+            'voters_are_visible' => ['required', 'boolean'],
             // options
             'options' => ['required', 'array', 'min:2', 'max:100'],
             'options.*' => ['required', 'string', 'max:255'],

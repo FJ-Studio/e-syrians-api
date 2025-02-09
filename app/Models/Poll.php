@@ -20,6 +20,8 @@ class Poll extends Model
         'created_by',
         'deletion_reason',
         'deleted_at',
+        'reveal_results',
+        'voters_are_visible',
     ];
 
     protected $casts = [
@@ -28,6 +30,7 @@ class Poll extends Model
         'end_date' => 'datetime',
         'max_selections' => 'integer',
         'audience_can_add_options' => 'boolean',
+        'voters_are_visible' => 'boolean',
     ];
 
     protected $appends = ['ups_count', 'downs_count'];

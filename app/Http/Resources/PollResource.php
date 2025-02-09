@@ -24,9 +24,9 @@ class PollResource extends JsonResource
             'audience' => $this->audience, // No need for json_decode()
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn() => $this->deleted_at->toISOString()),
-
+            'reveal_results' => $this->reveal_results,
+            'voters_are_visible' => $this->voters_are_visible,
             // Relations (Only return if they are loaded)
             'user' => $this->relationLoaded('user')
                 ? new UserResource($this->user)
