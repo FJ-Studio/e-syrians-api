@@ -32,8 +32,8 @@ class PollController extends Controller
                 $audience = [
                     'gender' => $request->input('gender', []),
                     'age_range' => [
-                        'min' => $request->input('min_age'),
-                        'max' => $request->input('max_age'),
+                        'min' => $request->input('min_age', 13),
+                        'max' => $request->input('max_age', 120),
                     ],
                     'country' => $request->input('country', []),
                     'religious_affiliation' => $request->input('religious_affiliation', []),
@@ -48,10 +48,11 @@ class PollController extends Controller
                     'end_date' => now()->addDays((int)($request->duration)),
                     'max_selections' => $request->max_selections,
                     'audience_can_add_options' => $request->audience_can_add_options,
-                    'audience' => json_encode($audience, JSON_THROW_ON_ERROR), // Prevent encoding errors
                     'created_by' => Auth::id(),
-                    // 'reveal_results' => $request->reveal_results,
+                    'reveal_results' => $request->reveal_results,
                     'voters_are_visible' => $request->voters_are_visible,
+                    'audience' => json_encode($audience), // Prevent encoding errors
+
                 ]);
 
                 // Insert Poll Options (Bulk Insert)
