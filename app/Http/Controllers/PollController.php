@@ -59,6 +59,7 @@ class PollController extends Controller
                 $options = collect($request->input('options'))->map(fn($option) => [
                     'poll_id' => $poll->id,
                     'option_text' => $option,
+                    'created_by' => Auth::id(),
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
