@@ -32,7 +32,6 @@ class StorePollRequest extends FormRequest
             'question' => ['required', 'string', 'max:255'],
             'start_date' => [
                 'required',
-                'date',
                 Rule::date()->todayOrAfter(),
             ],
             'duration' => ['required', 'integer', 'min:1', 'max:365'],
