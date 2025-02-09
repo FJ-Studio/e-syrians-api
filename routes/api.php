@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PollController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeaponDeliveryController;
@@ -16,6 +17,16 @@ Route::prefix('users')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/me', [UserController::class, 'me']);
         Route::post('/logout', [UserController::class, 'logout']);
+    });
+});
+
+Route::prefix('polls')->group(function () {
+    Route::middleware(['auth:sanctum'])->post('/', [PollController::class, 'store']);
+    Route::get('/{poll}', [PollController::class, 'show']);
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/', [PollController::class, 'index']);
+        Route::put('/{poll}', [PollController::class, 'update']);
+        Route::delete('/{poll}', [PollController::class, 'destroy']);
     });
 });
 
