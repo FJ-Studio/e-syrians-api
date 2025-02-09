@@ -51,7 +51,7 @@ class PollController extends Controller
                     'created_by' => Auth::id(),
                     'reveal_results' => $request->reveal_results,
                     'voters_are_visible' => $request->voters_are_visible,
-                    'audience' => json_encode($audience), // Prevent encoding errors
+                    'audience' => ($audience),
 
                 ]);
 
