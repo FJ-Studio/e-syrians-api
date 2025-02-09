@@ -9,7 +9,7 @@ use App\Enums\HometownEnum;
 use App\Enums\ReligiousAffiliationEnum;
 use App\Enums\RevealResultsEnum;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+
 
 class StorePollRequest extends FormRequest
 {
@@ -30,10 +30,7 @@ class StorePollRequest extends FormRequest
     {
         return [
             'question' => ['required', 'string', 'max:255'],
-            'start_date' => [
-                'required',
-                Rule::date()->todayOrAfter(),
-            ],
+            'start_date' => ['required', 'date', 'after_or_equal:today'],
             'duration' => ['required', 'integer', 'min:1', 'max:365'],
             'max_selections' => ['required', 'integer', 'min:1', 'max:10'],
             'audience_can_add_options' => ['required', 'boolean'],

@@ -7,6 +7,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,5 +23,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (ValidationException $e, Request $request) {
             return ApiService::error(422, $e->errors());
+        });
+        $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            return ApiService::error(404, $e->getMessage());
+        });
+        $exceptions->render(function (HttpException $e, Request $request) {
+            return ApiService::error(500, $e->getMessage());
         });
     })->create();
