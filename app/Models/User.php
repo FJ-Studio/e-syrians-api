@@ -64,7 +64,7 @@ class User extends Authenticatable
         'email_hashed',
         'phone',
         'phone_hashed',
-        'social_avatar',
+        'avatar',
         'google_id',
         'password',
         'country',
@@ -73,7 +73,6 @@ class User extends Authenticatable
         'address',
         'email_verified_at',
         'phone_verified_at',
-        'photo',
         'education_level',
         'skills',
         'marital_status',
@@ -95,6 +94,18 @@ class User extends Authenticatable
         'record_place',
         'record_id',
         'ethnicity',
+        // social links
+        'facebook_link',
+        'github_link',
+        'twitter_link',
+        'linkedin_link',
+        'instagram_link',
+        'youtube_link',
+        'tiktok_link',
+        'pinterest_link',
+        'twitch_link',
+        'snapchat_link',
+        'website',
     ];
 
     /**

@@ -101,7 +101,7 @@ class UserController extends Controller
             // $user = User::create([
             //     'email' => $userData['email'],
             //     'name' => $userData['name'],
-            //     'social_avatar' => $userData['avatar'],
+            //     'avatar' => $userData['avatar'],
             //     $provider_col => $userData['id'],
             // ]);
             // $user->markEmailAsVerified();

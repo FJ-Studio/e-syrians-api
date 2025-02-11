@@ -35,8 +35,6 @@ class UserStoreRequest extends FormRequest
             // E-data
             'email' => ['nullable', 'email:rfc,dns,spoof,strict', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:255'],
-            'social_avatar' => ['nullable', 'string', 'max:255'],
-            'photo' => ['nullable', 'string', 'max:255'],
             'google_id' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:6'],
             // Location

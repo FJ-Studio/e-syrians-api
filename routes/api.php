@@ -4,7 +4,6 @@ use App\Http\Controllers\PollController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeaponDeliveryController;
-use App\Http\Middleware\Recaptcha;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('weapons-delivery')->group(function () {

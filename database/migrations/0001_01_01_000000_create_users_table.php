@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('phone_hashed')->nullable();
             $table->timestamp('phone_verified_at')->nullable();
-            $table->string('social_avatar')->nullable();
+            $table->string('avatar')->nullable();
             $table->string('google_id')->nullable();
             $table->string('password')->nullable();
             // location
@@ -38,7 +38,6 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->boolean('shelter')->nullable();
             $table->text('address')->nullable();
-            $table->string('photo')->nullable();
             // education and work
             $table->enum('education_level', array_map(fn($case) => $case->value, \App\Enums\EducationLevelEnum::cases()))->nullable();
             $table->text('skills')->nullable();
@@ -61,7 +60,7 @@ return new class extends Migration
             $table->text('other_nationalities')->nullable();
             $table->text('languages')->nullable();
             $table->timestampTz('verified_at')->nullable();
-            $table->text('verification_reason')->nullable();
+            $table->enum('verification_reason', array_map(fn($case) => $case->value, \App\Enums\VerificationReasonEnum::cases()))->nullable();
             $table->timestampTz('marked_as_fake_at')->nullable();
             $table->text('marked_as_fake_reason')->nullable();
             $table->string('record_place')->nullable();

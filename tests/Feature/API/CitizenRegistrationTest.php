@@ -34,7 +34,6 @@ it('Guests registration with full info', function () {
         'city' => 'New York',
         'shelter' => false,
         'address' => '123 Main St',
-        'photo' => 'https://example.com/photo.jpg',
         'education_level' => 'postgraduate',
         'skills' => 'PHP, Laravel, Vue.js',
         'marital_status' => 'single',
