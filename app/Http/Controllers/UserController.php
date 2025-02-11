@@ -96,18 +96,20 @@ class UserController extends Controller
                 'message' => 'invalid_user_token',
             ], 401);
         }
-        $provider_col = $request->provider . '_id';
 
         $user = User::where('email', $userData['email'])->first();
         if (!$user) {
-            $user = User::create([
-                'email' => $userData['email'],
-                'name' => $userData['name'],
-                'social_avatar' => $userData['avatar'],
-                $provider_col => $userData['id'],
-            ]);
-            $user->markEmailAsVerified();
-            $user->assignRole('citizen');
+            return ApiService::error(401);
+            // will no longer create an account for the user
+            // $provider_col = $request->provider . '_id';
+            // $user = User::create([
+            //     'email' => $userData['email'],
+            //     'name' => $userData['name'],
+            //     'social_avatar' => $userData['avatar'],
+            //     $provider_col => $userData['id'],
+            // ]);
+            // $user->markEmailAsVerified();
+            // $user->assignRole('citizen');
         }
         return ApiService::success([
             'user' => new UserResource($user),
