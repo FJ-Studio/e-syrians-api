@@ -126,13 +126,13 @@ class UserController extends Controller
             })
             ->first();
 
-        if (!$user || !Hash::check($password, $user->password)) {
-            return ApiService::error(401);
+        if ($user && Hash::check($password, $user->password)) {
+            return ApiService::success([
+                'user' => new UserResource($user),
+                'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
+            ]);
         }
-        return ApiService::success([
-            'user' => new UserResource($user),
-            'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
-        ]);
+        return ApiService::error(401);
     }
 
     public function logout(Request $request)
