@@ -12,6 +12,7 @@ Route::prefix('weapons-delivery')->group(function () {
 
 Route::prefix('users')->group(function () {
     Route::middleware(['guest', 'throttle:6,1'])->post('/register', [UserController::class, 'store']);
+    Route::middleware(['guest', 'throttle:6,1'])->post('/login', [UserController::class, 'login']);
     Route::middleware(['guest', 'throttle:6,1'])->post('/login/social', [UserController::class, 'social_login']);
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/me', [UserController::class, 'me']);
