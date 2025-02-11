@@ -126,6 +126,8 @@ class UserController extends Controller
             })
             ->first();
 
+        dd($user);
+
         if ($user && Hash::check($password, $user->password)) {
             return ApiService::success([
                 'user' => new UserResource($user),
