@@ -126,12 +126,11 @@ class UserController extends Controller
             })
             ->first();
 
-        dd($user);
 
         if ($user && Hash::check($password, $user->password)) {
             return ApiService::success([
                 'user' => new UserResource($user),
-                'token' => explode('|', $user->createToken(date('YYYY-mm-dd-H:i:s'))->plainTextToken)[1],
+                // 'token' => explode('|', $user->createToken(date('YYYY-mm-dd-H:i:s'))->plainTextToken)[1],
             ]);
         }
         return ApiService::error(401);
