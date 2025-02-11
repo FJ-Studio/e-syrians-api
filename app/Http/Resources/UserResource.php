@@ -16,15 +16,25 @@ class UserResource extends JsonResource
      */
     public function toArray($request)
     {
+        $isOwner = $request->user() && $request->user()->id === $this->id;
+        $request_for = $request->get('request_for', false);
+
         return [
-            'id' => $this->id,
+            // 'id' => $this->id,
+            'uuid' => $this->uuid,
             'name' => $this->name,
-            'email' => $this->email,
+            'surname' => $this->surname,
             'avatar' => $this->avatar,
             'created_at' => $this->created_at,
-            'roles' => $this->getRoleNames()->pluck('name'),
-            'uuid' => $this->uuid,
-            'permissions' => $this->getAllPermissions()->pluck('name'),
+
+            $this->mergeWhen($isOwner, [
+                'national_id' => $this->national_id,
+                'middle_name' => $this->middle_name,
+                'email' => $this->email,
+                'roles' => $this->getRoleNames()->pluck('name'),
+                'permissions' => $this->getAllPermissions()->pluck('name'),
+            ]),
+
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
             'received_items' => WeaponDeliveryResource::collection($this->whenLoaded('received_items')),
         ];

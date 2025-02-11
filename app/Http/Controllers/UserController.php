@@ -83,18 +83,14 @@ class UserController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json([
-            'data' => new UserResource($request->user()),
-        ], 200, [], JSON_PRETTY_PRINT);
+        return ApiService::success(new UserResource($request->user()));
     }
 
     public function social_login(SocialLoginRequest $request)
     {
         $userData = UserService::getUserDataFromSocialProvider($request->provider, $request->token);
         if (!$userData) {
-            return response()->json([
-                'message' => 'invalid_user_token',
-            ], 401);
+            return ApiService::error(401);
         }
 
         $user = User::where('email', $userData['email'])->first();
