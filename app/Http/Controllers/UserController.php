@@ -129,7 +129,7 @@ class UserController extends Controller
         if ($user && Hash::check($password, $user->password)) {
             return ApiService::success([
                 'user' => new UserResource($user),
-                'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
+                'token' => explode('|', $user->createToken()->plainTextToken)[1],
             ]);
         }
         return ApiService::error(401);
