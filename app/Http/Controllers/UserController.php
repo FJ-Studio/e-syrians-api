@@ -143,7 +143,7 @@ class UserController extends Controller
 
             $user = $request->user();
 
-            if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= 1) {
+            if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verifications.basic_data_updates_limit')) {
                 return ApiService::error(403, 'basic_info_updates_limit_reached');
             }
             $data = $request->validated();
