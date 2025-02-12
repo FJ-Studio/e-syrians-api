@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserResource extends JsonResource
@@ -72,6 +73,7 @@ class UserResource extends JsonResource
                 'languages' => $this->languages,
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
+                'can_update_basic_info' => $this->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) < config('e-syrians.verifications.basic_data_updates_limit'),
             ]),
 
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
