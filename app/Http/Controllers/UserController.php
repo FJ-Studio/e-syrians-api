@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\ProfileChangeTypeEnum;
 use App\Http\Requests\User\CredentialsLoginRequest;
 use App\Http\Requests\User\SocialLoginRequest;
+use App\Http\Requests\User\UpdateUserBasicInfoRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
+use App\Models\ProfileUpdate;
 use App\Models\User;
 use App\Models\WeaponDelivery;
 use App\Services\ApiService;
@@ -96,16 +99,6 @@ class UserController extends Controller
         $user = User::where('email', $userData['email'])->first();
         if (!$user) {
             return ApiService::error(401);
-            // will no longer create an account for the user
-            // $provider_col = $request->provider . '_id';
-            // $user = User::create([
-            //     'email' => $userData['email'],
-            //     'name' => $userData['name'],
-            //     'avatar' => $userData['avatar'],
-            //     $provider_col => $userData['id'],
-            // ]);
-            // $user->markEmailAsVerified();
-            // $user->assignRole('citizen');
         }
         return ApiService::success([
             'user' => new UserResource($user),
@@ -144,5 +137,33 @@ class UserController extends Controller
         ]);
     }
 
-    public function update_basic_info() {}
+    public function update_basic_info(UpdateUserBasicInfoRequest $request)
+    {
+
+        $user = $request->user();
+
+        if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData) >= 1) {
+            return ApiService::error(403, 'basic_info_updates_limit_reached');
+        }
+
+        try {
+            $data = $request->validated();
+            $user->update($data);
+            // update the user verifications after updating user basic info
+            $user->verifications()
+                ->whereNull('canceled_at')
+                ->update([
+                    'canceled_at' => now(),
+                    'cancelation_payload' => [
+                        'reason' => 'user_updated_basic_info',
+                    ],
+                ]);
+
+            $user->markAsUnverified();
+
+            return ApiService::success(new UserResource($user));
+        } catch (\Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
+    }
 }

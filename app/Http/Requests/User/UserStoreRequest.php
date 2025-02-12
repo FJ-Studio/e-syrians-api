@@ -25,9 +25,9 @@ class UserStoreRequest extends FormRequest
     {
         return [
             // Personal data
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'min:2'],
+            'surname' => ['required', 'string', 'max:255', 'min:2'],
             'middle_name' => ['nullable', 'string', 'max:255'],
-            'surname' => ['required', 'string', 'max:255'],
             'national_id' => ['nullable', 'string', 'max:15', 'min:9'],
             'gender' => ['required', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\GenderEnum::cases()))],
             'birth_date' => ['required', 'date'],
@@ -54,7 +54,7 @@ class UserStoreRequest extends FormRequest
             'easy_access_to_healthcare_services' => ['nullable', 'boolean'],
             // Other
             'ethnicity' =>
-            ['nullable', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\EthnicityEnum::cases()))],
+            ['required', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\EthnicityEnum::cases()))],
             'religious_affiliation' => ['nullable', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\ReligiousAffiliationEnum::cases()))],
             'marital_status' => ['nullable', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\MaritalStatusEnum::cases()))],
             'communication' => ['nullable', 'string'],

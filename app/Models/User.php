@@ -6,22 +6,24 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enums\ProfileChangeTypeEnum;
 use App\Services\StrService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
+    use HasApiTokens;
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
-    use Notifiable;
-    use HasApiTokens;
     use HasRoles;
+    use Notifiable;
     use SoftDeletes;
 
     protected static function boot()
@@ -137,17 +139,16 @@ class User extends Authenticatable
     /**
      * Hash the specified fields
      *
-     * @param array<string> $fields
-     * @param bool $checkDirty
+     * @param  array<string>  $fields
      * @return void
      */
     public function handleHashing(array $fields, bool $checkDirty = false)
     {
         foreach ($fields as $original => $hashed) {
-            if ($checkDirty && !$this->isDirty($original)) {
+            if ($checkDirty && ! $this->isDirty($original)) {
                 continue;
             }
-            if (!empty($this->{$original})) {
+            if (! empty($this->{$original})) {
                 $this->{$hashed} = StrService::hash($this->{$original});
             }
         }
@@ -223,9 +224,41 @@ class User extends Authenticatable
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-
     public function reactions()
     {
         return $this->hasMany(PollReaction::class);
+    }
+
+    /**
+     * Get the profile update that this user has made
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function profileUpdates()
+    {
+        return $this->hasMany(ProfileUpdate::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get the profile update that this user has made
+     * @param string $change_Type
+     * @return int
+     */
+
+    public function getProfileUpdatesCount(string $change_Type)
+    {
+        return $this->profileUpdates()->where(
+            'change_type',
+            $change_Type
+        )->count();
+    }
+
+    /**
+     * Reset the user's profile verification
+     */
+    public function markAsUnverified()
+    {
+        $this->verified_at = null;
+        $this->save();
     }
 }
