@@ -73,7 +73,7 @@ class UserResource extends JsonResource
                 'languages' => $this->languages,
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
-                'can_update_basic_info' => $this->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) < config('e-syrians.verifications.basic_data_updates_limit'),
+                'can_update_basic_info' => ($this->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) < config('e-syrians.verification.basic_data_updates_limit')),
             ]),
 
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
