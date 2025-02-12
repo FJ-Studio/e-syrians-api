@@ -148,13 +148,17 @@ class UserController extends Controller
             }
             $data = $request->validated();
             $user->update($data);
+            $user->profileUpdates()->create([
+                'change_type' => ProfileChangeTypeEnum::BasicData->value,
+                'meta_data' => [],
+            ]);
             // update the user verifications after updating user basic info
             $user->verifications()
                 ->whereNull('cancelled_at')
                 ->update([
                     'cancelled_at' => now(),
                     'cancelation_payload' => [
-                        'reason' => 'user_updated_basic_info',
+                        'reaso  n' => 'user_updated_basic_info',
                     ],
                 ]);
 
