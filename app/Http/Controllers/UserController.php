@@ -139,14 +139,13 @@ class UserController extends Controller
 
     public function update_basic_info(UpdateUserBasicInfoRequest $request)
     {
-
-        $user = $request->user();
-
-        if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= 1) {
-            return ApiService::error(403, 'basic_info_updates_limit_reached');
-        }
-
         try {
+
+            $user = $request->user();
+
+            if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= 1) {
+                return ApiService::error(403, 'basic_info_updates_limit_reached');
+            }
             $data = $request->validated();
             $user->update($data);
             // update the user verifications after updating user basic info
