@@ -142,7 +142,7 @@ class UserController extends Controller
 
         $user = $request->user();
 
-        if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData) >= 1) {
+        if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= 1) {
             return ApiService::error(403, 'basic_info_updates_limit_reached');
         }
 
