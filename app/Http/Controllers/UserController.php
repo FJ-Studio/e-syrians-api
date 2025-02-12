@@ -143,4 +143,6 @@ class UserController extends Controller
             'message' => 'logged_out',
         ]);
     }
+
+    public function update_basic_info() {}
 }
