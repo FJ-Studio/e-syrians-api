@@ -150,9 +150,9 @@ class UserController extends Controller
             $user->update($data);
             // update the user verifications after updating user basic info
             $user->verifications()
-                ->whereNull('canceled_at')
+                ->whereNull('cancelled_at')
                 ->update([
-                    'canceled_at' => now(),
+                    'cancelled_at' => now(),
                     'cancelation_payload' => [
                         'reason' => 'user_updated_basic_info',
                     ],
