@@ -20,6 +20,7 @@ use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -175,6 +176,21 @@ class UserController extends Controller
             $data = $request->validated();
             $user->update($data);
             return ApiService::success([]);
+        } catch (\Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
+    }
+    public function update_avatar(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $path = $request->file('avatar')->storeAs('avatars', $user->uuid, 's3');
+            $user->avatar = $path; // Store path in the database
+            $user->save();
+            $url = Storage::disk('s3')->url($path); // Get the file URL
+            return ApiService::success([
+                'url' => $url,
+            ]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }
