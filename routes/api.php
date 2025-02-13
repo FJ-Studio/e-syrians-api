@@ -22,6 +22,7 @@ Route::prefix('users')->group(function () {
         Route::post('/update/social', [UserController::class, 'update_social_links']);
         Route::post('/update/avatar', [UserController::class, 'update_avatar']);
         Route::post('/update/address', [UserController::class, 'update_address']);
+        Route::post('/update/census', [UserController::class, 'update_census']);
     });
 });
 

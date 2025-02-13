@@ -229,4 +229,22 @@ class UserController extends Controller
             return ApiService::error(500, $e->getMessage());
         }
     }
+    public function update_census(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $data = $request->validated();
+            $data = $request->validated();
+            if (isset($data['languages'])) {
+                $data['languages'] = implode(',', $data['languages']);
+            }
+            if (isset($data['other_nationalities'])) {
+                $data['other_nationalities'] = implode(',', $data['other_nationalities']);
+            }
+            $user->update($data);
+            return ApiService::success([]);
+        } catch (\Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
+    }
 }
