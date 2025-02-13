@@ -11,7 +11,7 @@ class UpdateUserCivilianRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,8 @@ class UpdateUserCivilianRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'national_id' => ['required', 'string', 'max:255'],
+            'record_id' => ['required', 'string', 'max:255'],
         ];
     }
 }
