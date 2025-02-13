@@ -11,6 +11,7 @@ use App\Http\Requests\User\UpdateSocialLinksRequest;
 use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
 use App\Http\Requests\User\UpdateUserAddressRequest;
+use App\Http\Requests\User\UpdateUserCensusDataRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
 use App\Models\ProfileUpdate;
@@ -229,7 +230,7 @@ class UserController extends Controller
             return ApiService::error(500, $e->getMessage());
         }
     }
-    public function update_census(Request $request)
+    public function update_census(UpdateUserCensusDataRequest $request)
     {
         try {
             $user = $request->user();
