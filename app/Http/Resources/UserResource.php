@@ -46,6 +46,7 @@ class UserResource extends JsonResource
 
             $this->mergeWhen($isOwner, [
                 'national_id' => $this->national_id,
+                'record_id' => $this->record_id,
                 'gender' => $this->gender,
                 'ethnicity' => $this->ethnicity,
                 'phone' => $this->phone,
