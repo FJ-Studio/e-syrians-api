@@ -8,6 +8,7 @@ use App\Enums\ProfileChangeTypeEnum;
 use App\Http\Requests\User\CredentialsLoginRequest;
 use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UpdateSocialLinksRequest;
+use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
@@ -180,16 +181,30 @@ class UserController extends Controller
             return ApiService::error(500, $e->getMessage());
         }
     }
-    public function update_avatar(Request $request)
+    public function update_avatar(UpdateUserAvatarRequest $request)
     {
         try {
             $user = $request->user();
+
             $file = $request->file('avatar');
             $ext = $file->getClientOriginalExtension();
-            $path = $file->storeAs('avatars', $user->uuid . '.' . $ext, 's3');
-            $user->avatar = $path; // Store path in the database
+            $fileName = $user->uuid . '.' . $ext;
+
+            // Delete old avatar if it exists
+            if (!empty($user->avatar) && Storage::disk('s3')->exists($user->avatar)) {
+                Storage::disk('s3')->delete($user->avatar);
+            }
+
+            // Upload new avatar
+            $path = $file->storeAs('avatars', $fileName, 's3');
+
+            // Update user avatar path
+            $user->avatar = $path;
             $user->save();
-            $url = Storage::disk('s3')->url($path); // Get the file URL
+
+            // Generate the full URL
+            $url = Storage::disk('s3')->url($path);
+
             return ApiService::success([
                 'url' => $url,
             ]);
