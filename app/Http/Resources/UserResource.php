@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class UserResource extends JsonResource
 {
@@ -41,6 +42,7 @@ class UserResource extends JsonResource
             'twitch_link' => $this->twitch_link,
             'website' => $this->website,
             'github_link' => $this->github_link,
+            'avatar' => Storage::disk('s3')->url($this->avatar),
 
             $this->mergeWhen($isOwner, [
                 'gender' => $this->gender,
