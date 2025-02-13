@@ -7,7 +7,6 @@ use App\Http\Controllers\WeaponDeliveryController;
 use App\Http\Middleware\SetAppLocalization;
 use Illuminate\Support\Facades\Route;
 
-// Route::middleware([SetAppLocalization::class], function () {
 Route::prefix('weapons-delivery')->group(function () {
     Route::middleware(['auth:sanctum'])->post('/', [WeaponDeliveryController::class, 'store']);
 });
@@ -37,4 +36,3 @@ Route::prefix('polls')->group(function () {
 });
 
 Route::get('/stats', [StatsController::class, 'index'])->middleware((['throttle:10,1']));
-// });
