@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'locales' => [
+        'en' => 'English',
+        'ar' => 'Arabic',
+        'ku' => 'Kurdish',
+    ],
     'verification' => [
         // The number of registrants required to verify a profile
         'min' => 3,
