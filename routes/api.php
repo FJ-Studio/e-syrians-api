@@ -21,7 +21,7 @@ Route::prefix('users')->group(function () {
         Route::post('/update/basic-info', [UserController::class, 'update_basic_info']);
         Route::post('/update/social', [UserController::class, 'update_social_links']);
         Route::post('/update/avatar', [UserController::class, 'update_avatar']);
-        Route::post('/update/civilian', [UserController::class, 'update_civilian']);
+        Route::post('/update/address', [UserController::class, 'update_address']);
     });
 });
 

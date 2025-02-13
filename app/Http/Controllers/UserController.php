@@ -10,7 +10,7 @@ use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UpdateSocialLinksRequest;
 use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
-use App\Http\Requests\User\UpdateUserCivilianRequest;
+use App\Http\Requests\User\UpdateUserAddressRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
 use App\Models\ProfileUpdate;
@@ -145,7 +145,7 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verification.basic_data_updates_limit')) {
+            if ($user->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verification.basic_data_updates_limit')) {
                 return ApiService::error(403, 'basic_info_updates_limit_reached');
             }
             $data = $request->validated();
@@ -214,9 +214,13 @@ class UserController extends Controller
         }
     }
 
-    public function update_civilian(UpdateUserCivilianRequest $request)
+    public function update_address(UpdateUserAddressRequest $request)
     {
         try {
+            $user = $request->user();
+            if ($user->getAddressUpdatesCount(ProfileChangeTypeEnum::Address->value) >= config('e-syrians.verification.country_updates_limit')) {
+                return ApiService::error(403, 'country_updates_limit_reached');
+            }
             $user = $request->user();
             $data = $request->validated();
             $user->update($data);

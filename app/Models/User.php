@@ -245,12 +245,20 @@ class User extends Authenticatable
      * @return int
      */
 
-    public function getProfileUpdatesCount(string $change_Type)
+    public function getTotalUpdatesCount(string $change_Type)
     {
         return $this->profileUpdates()->where(
             'change_type',
             $change_Type
         )->count();
+    }
+
+    public function getAddressUpdatesCount()
+    {
+        return $this->profileUpdates()
+            ->where('change_type', ProfileChangeTypeEnum::Address->value)
+            ->where('created_at', '>=', now()->subYear())
+            ->count();
     }
 
     /**

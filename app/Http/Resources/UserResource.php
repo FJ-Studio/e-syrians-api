@@ -43,9 +43,9 @@ class UserResource extends JsonResource
             'website' => $this->website,
             'github_link' => $this->github_link,
             'avatar' => Storage::disk('s3')->temporaryUrl($this->avatar, now()->addMinutes(60)),
+            'country' => $this->country,
 
             $this->mergeWhen($isOwner, [
-                'national_id' => $this->national_id,
                 'record_id' => $this->record_id,
                 'gender' => $this->gender,
                 'ethnicity' => $this->ethnicity,
@@ -75,9 +75,10 @@ class UserResource extends JsonResource
                 'verification_reason' => $this->verification_reason,
                 'marked_as_fake_at' => $this->marked_as_fake_at,
                 'languages' => $this->languages,
+                'other_nationalities' => $this->other_nationalities,
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
-                'basic_info_updates' => (int)(config('e-syrians.verification.basic_data_updates_limit') - $this->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
+                'basic_info_updates' => (int)(config('e-syrians.verification.basic_data_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
             ]),
 
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
