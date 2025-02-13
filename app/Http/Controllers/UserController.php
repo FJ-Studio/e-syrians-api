@@ -10,6 +10,7 @@ use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UpdateSocialLinksRequest;
 use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
+use App\Http\Requests\User\UpdateUserCivilianRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
 use App\Models\ProfileUpdate;
@@ -208,6 +209,18 @@ class UserController extends Controller
             return ApiService::success([
                 'url' => $url,
             ]);
+        } catch (\Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
+    }
+
+    public function update_civilian(UpdateUserCivilianRequest $request)
+    {
+        try {
+            $user = $request->user();
+            $data = $request->validated();
+            $user->update($data);
+            return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }
