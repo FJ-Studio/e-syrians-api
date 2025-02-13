@@ -184,7 +184,9 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            $path = $request->file('avatar')->storeAs('avatars', $user->uuid, 's3');
+            $file = $request->file('avatar');
+            $ext = $file->getClientOriginalExtension();
+            $path = $file->storeAs('avatars', $user->uuid . '.' . $ext, 's3');
             $user->avatar = $path; // Store path in the database
             $user->save();
             $url = Storage::disk('s3')->url($path); // Get the file URL
