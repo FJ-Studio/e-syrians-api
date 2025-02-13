@@ -196,7 +196,7 @@ class UserController extends Controller
             }
 
             // Upload new avatar
-            $path = $file->storeAs('avatars', $fileName, 's3', ['visibility' => 'public']);
+            $path = $file->storeAs('avatars', $fileName, 's3');
 
             // Update user avatar path
             $user->avatar = $path;
