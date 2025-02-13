@@ -18,6 +18,7 @@ Route::prefix('users')->group(function () {
         Route::get('/me', [UserController::class, 'me']);
         Route::post('/logout', [UserController::class, 'logout']);
         Route::post('/update/basic-info', [UserController::class, 'update_basic_info']);
+        Route::post('/update/social', [UserController::class, 'update_social_links']);
     });
 });
 

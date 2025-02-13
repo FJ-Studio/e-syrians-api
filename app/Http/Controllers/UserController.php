@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\ProfileChangeTypeEnum;
 use App\Http\Requests\User\CredentialsLoginRequest;
 use App\Http\Requests\User\SocialLoginRequest;
+use App\Http\Requests\User\UpdateSocialLinksRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Resources\UserResource;
@@ -140,10 +141,8 @@ class UserController extends Controller
     public function update_basic_info(UpdateUserBasicInfoRequest $request)
     {
         try {
-
             $user = $request->user();
-
-            if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verifications.basic_data_updates_limit')) {
+            if ($user->getProfileUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verification.basic_data_updates_limit')) {
                 return ApiService::error(403, 'basic_info_updates_limit_reached');
             }
             $data = $request->validated();
@@ -163,8 +162,19 @@ class UserController extends Controller
                 ]);
 
             $user->markAsUnverified();
+            return ApiService::success([]);
+        } catch (\Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
+    }
 
-            return ApiService::success(new UserResource($user));
+    public function update_social_links(UpdateSocialLinksRequest $request)
+    {
+        try {
+            $user = $request->user();
+            $data = $request->validated();
+            $user->update($data);
+            return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }

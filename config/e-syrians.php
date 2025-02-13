@@ -11,6 +11,7 @@ return [
         'max' => 25,
         // Number of allowed data updates before losing verifications
         'basic_data_updates_limit' => 2,
+        'social_links_updates_limit' => 5,
     ],
     'cache' => [
         'daily_registrants' => 'daily_registrants',
