@@ -42,7 +42,7 @@ class UserResource extends JsonResource
             'twitch_link' => $this->twitch_link,
             'website' => $this->website,
             'github_link' => $this->github_link,
-            'avatar' => Storage::disk('s3')->temporaryUrl($user->avatar, now()->addMinutes(60)),
+            'avatar' => Storage::disk('s3')->temporaryUrl($this->avatar, now()->addMinutes(60)),
 
             $this->mergeWhen($isOwner, [
                 'gender' => $this->gender,
