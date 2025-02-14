@@ -46,6 +46,7 @@ class UserResource extends JsonResource
             'country' => $this->country,
             'gender' => $this->gender,
             'ethnicity' => $this->ethnicity,
+            'verified_at' => $this->verified_at,
 
             $this->mergeWhen($isOwner, [
                 'record_id' => $this->record_id,
@@ -71,7 +72,6 @@ class UserResource extends JsonResource
                 'more_info' => $this->more_info,
                 'email_verified_at' => $this->email_verified_at,
                 'phone_verified_at' => $this->phone_verified_at,
-                'verified_at' => $this->verified_at,
                 'verification_reason' => $this->verification_reason,
                 'marked_as_fake_at' => $this->marked_as_fake_at,
                 'languages' => $this->languages,
