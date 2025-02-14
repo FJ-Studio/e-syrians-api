@@ -26,22 +26,28 @@ class CanVerify
         if (!$user->verified_at) {
             return ApiService::error(403, 'you_are_not_verified');
         }
-        // 3. user cannot verify more than the count of verifications he got
-        $receivedVerifications = $user->verifiers()->count();
-        $givenVerifications = $user->verifications()->count();
-        $threshold = config('e-syrians.verification'); // array
-        // A. If you do not have enough verifications
-        if ($receivedVerifications < $threshold['min']) {
-            return ApiService::error(403, 'you_do not_have_enough_verifications');
+
+        // first registrant can verify without restrictions
+        // TODO: include admins in this exception
+        if ($user->verification_reason !== 'first_registrant') {
+            // 3. user cannot verify more than the count of verifications he got
+            $receivedVerifications = $user->verifiers()->count();
+            $givenVerifications = $user->verifications()->count();
+            $threshold = config('e-syrians.verification'); // array
+            // A. If you do not have enough verifications
+            if ($receivedVerifications < $threshold['min']) {
+                return ApiService::error(403, 'you_do not_have_enough_verifications');
+            }
+            // B. If you have reached the maximum verifications allowed to make
+            if ($givenVerifications >= $threshold['max']) {
+                return ApiService::error(403, 'you_have_reached_the_maximum_verifications');
+            }
+            // C. If the difference between verifiers and number of verifications is less than the threshold
+            if ($receivedVerifications - $givenVerifications < $threshold['diff']) {
+                return ApiService::error(403, 'you_do_not_have_enough_verifications');
+            }
         }
-        // B. If you have reached the maximum verifications allowed to make
-        if ($givenVerifications >= $threshold['max']) {
-            return ApiService::error(403, 'you_have_reached_the_maximum_verifications');
-        }
-        // C. If the difference between verifiers and number of verifications is less than the threshold
-        if ($receivedVerifications - $givenVerifications < $threshold['diff']) {
-            return ApiService::error(403, 'you_do_not_have_enough_verifications');
-        }
+
         $targetUuid = $request->input('uuid');
         // 4. user cannot verify himself
         if ($user->uuid === $targetUuid) {
