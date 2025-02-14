@@ -19,13 +19,16 @@ Route::prefix('users')->group(function () {
     Route::middleware(['guest', 'throttle:6,1'])->post('/login/social', [UserController::class, 'social_login']);
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/me', [UserController::class, 'me']);
-        Route::post('/logout', [UserController::class, 'logout']);
+        Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class);
+
+        Route::get('/my-polls', [UserController::class, 'my_polls']);
+
         Route::post('/update/basic-info', [UserController::class, 'update_basic_info']);
         Route::post('/update/social', [UserController::class, 'update_social_links']);
         Route::post('/update/avatar', [UserController::class, 'update_avatar']);
         Route::post('/update/address', [UserController::class, 'update_address']);
         Route::post('/update/census', [UserController::class, 'update_census']);
-        Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class);
+        Route::post('/logout', [UserController::class, 'logout']);
     });
 });
 

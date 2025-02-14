@@ -245,4 +245,11 @@ class UserController extends Controller
             return ApiService::error(500, $e->getMessage());
         }
     }
+
+    public function my_polls(Request $request)
+    {
+        $user = $request->user();
+        $polls = $user->polls()->with(['options'])->paginate();
+        return ApiService::success($polls);
+    }
 }
