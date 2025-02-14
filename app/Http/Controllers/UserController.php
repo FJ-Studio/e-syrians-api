@@ -13,6 +13,7 @@ use App\Http\Requests\User\UpdateUserBasicInfoRequest;
 use App\Http\Requests\User\UpdateUserAddressRequest;
 use App\Http\Requests\User\UpdateUserCensusDataRequest;
 use App\Http\Requests\User\UserStoreRequest;
+use App\Http\Requests\User\VerifyUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\ProfileUpdate;
 use App\Models\User;
@@ -226,5 +227,14 @@ class UserController extends Controller
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }
+    }
+
+    public function verify(VerifyUserRequest $request)
+    {
+        $user = $request->user();
+        $targetUuid = $request->input('uuid');
+        $targetUser = User::where('uuid', $targetUuid)->firstOrFail();
+        $targetUser->verifiers()->attach($user->id);
+        return ApiService::success([]);
     }
 }
