@@ -36,7 +36,7 @@ class CanVerify
             $threshold = config('e-syrians.verification'); // array
             // A. If you do not have enough verifications
             if ($receivedVerifications < $threshold['min']) {
-                return ApiService::error(403, 'you_do not_have_enough_verifications');
+                return ApiService::error(403, 'you_do_not_have_enough_verifications');
             }
             // B. If you have reached the maximum verifications allowed to make
             if ($givenVerifications >= $threshold['max']) {
@@ -59,7 +59,7 @@ class CanVerify
             return ApiService::error(403, 'circular_verification_not_allowed');
         }
         // 6. user cannot verify the same user more than once
-        if ($user->verifications()->where('user_id', $targetUser->id)->exists()) {
+        if ($user->verifications()->where('user_id', $targetUser->id)->whereNull('cancelled_at')->exists()) {
             return ApiService::error(403, 'you_have_already_verified_this_user');
         }
         return $next($request);
