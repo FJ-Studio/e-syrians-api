@@ -4,6 +4,7 @@ use App\Http\Controllers\PollController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeaponDeliveryController;
+use App\Http\Middleware\CanVerify;
 use App\Http\Middleware\SetAppLocalization;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,7 @@ Route::prefix('users')->group(function () {
         Route::post('/update/avatar', [UserController::class, 'update_avatar']);
         Route::post('/update/address', [UserController::class, 'update_address']);
         Route::post('/update/census', [UserController::class, 'update_census']);
+        Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class);
     });
 });
 
