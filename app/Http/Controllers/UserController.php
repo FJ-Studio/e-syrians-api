@@ -249,7 +249,7 @@ class UserController extends Controller
     public function my_polls(Request $request)
     {
         $user = $request->user();
-        $polls = $user->polls()->with(['options'])->get();
+        $polls = $user->polls()->withTrashed()->with('options')->get();
         return ApiService::success($polls);
     }
 }
