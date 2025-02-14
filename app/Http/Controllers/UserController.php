@@ -59,26 +59,10 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(WeaponDelivery $weaponDelivery)
+    public function show(User $user)
     {
-        //
+        return ApiService::success(new UserResource($user));
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(WeaponDelivery $weaponDelivery)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    // public function update($request, WeaponDelivery $weaponDelivery)
-    // {
-
-    // }
 
     /**
      * Remove the specified resource from storage.

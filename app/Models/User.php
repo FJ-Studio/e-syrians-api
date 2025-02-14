@@ -110,6 +110,11 @@ class User extends Authenticatable
         'website',
     ];
 
+    public function getRouteKeyName()
+    {
+        return 'uuid'; // This tells Laravel to use 'uuid' instead of 'id' in routes
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

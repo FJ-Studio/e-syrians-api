@@ -12,6 +12,8 @@ Route::prefix('weapons-delivery')->group(function () {
 });
 
 Route::prefix('users')->group(function () {
+    Route::get('/{user:uuid}', [UserController::class, 'show']);
+
     Route::middleware(['guest', 'throttle:6,1'])->post('/register', [UserController::class, 'store']);
     Route::middleware(['guest', 'throttle:6,1'])->post('/login', [UserController::class, 'login']);
     Route::middleware(['guest', 'throttle:6,1'])->post('/login/social', [UserController::class, 'social_login']);
