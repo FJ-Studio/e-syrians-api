@@ -45,10 +45,10 @@ class UserResource extends JsonResource
             'avatar' => Storage::disk('s3')->temporaryUrl($this->avatar, now()->addMinutes(60)),
             'country' => $this->country,
             'gender' => $this->gender,
+            'ethnicity' => $this->ethnicity,
 
             $this->mergeWhen($isOwner, [
                 'record_id' => $this->record_id,
-                'ethnicity' => $this->ethnicity,
                 'phone' => $this->phone,
                 'national_id' => $this->national_id,
                 'middle_name' => $this->middle_name,
