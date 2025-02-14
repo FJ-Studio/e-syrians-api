@@ -44,10 +44,10 @@ class UserResource extends JsonResource
             'github_link' => $this->github_link,
             'avatar' => Storage::disk('s3')->temporaryUrl($this->avatar, now()->addMinutes(60)),
             'country' => $this->country,
+            'gender' => $this->gender,
 
             $this->mergeWhen($isOwner, [
                 'record_id' => $this->record_id,
-                'gender' => $this->gender,
                 'ethnicity' => $this->ethnicity,
                 'phone' => $this->phone,
                 'national_id' => $this->national_id,
