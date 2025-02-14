@@ -231,10 +231,18 @@ class UserController extends Controller
 
     public function verify(VerifyUserRequest $request)
     {
-        $user = $request->user();
-        $targetUuid = $request->input('uuid');
-        $targetUser = User::where('uuid', $targetUuid)->firstOrFail();
-        $targetUser->verifiers()->attach($user->id);
-        return ApiService::success([]);
+        try {
+            $user = $request->user();
+            $targetUuid = $request->input('uuid');
+            $targetUser = User::where('uuid', $targetUuid)->firstOrFail();
+            $targetUser->verifiers()->create([
+                'verifier_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+            return ApiService::success([]);
+        } catch (\Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
     }
 }
