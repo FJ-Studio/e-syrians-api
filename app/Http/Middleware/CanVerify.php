@@ -58,6 +58,10 @@ class CanVerify
         if ($user->verifiers()->where('verifier_id', $targetUser->id)->exists()) {
             return ApiService::error(403, 'circular_verification_not_allowed');
         }
+        // 6. user cannot verify the same user more than once
+        if ($user->verifications()->where('user_id', $targetUser->id)->exists()) {
+            return ApiService::error(403, 'you_have_already_verified_this_user');
+        }
         return $next($request);
     }
 }
