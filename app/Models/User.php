@@ -274,4 +274,36 @@ class User extends Authenticatable
         $this->verified_at = null;
         $this->save();
     }
+
+    public function canVerify(): array
+    {
+        // 1. check if user is not banned
+        if ($this->marked_as_fake_at) {
+            return [false, 'your_account_is_banned'];
+        }
+        // 2. check if user is verified
+        if (!$this->verified_at) {
+            return [false, 'you_are_not_verified'];
+        }
+        // 3. check the user verifications status
+        $receivedVerifications = $this->verifiers()->count();
+        $givenVerifications = $this->verifications()->count();
+        $threshold = config('e-syrians.verification');
+        // A. If the user exceeded the maximum number of verifications allowed
+        if ($givenVerifications >= $threshold['max']) {
+            return [false, 'you_have_reached_the_maximum_verifications'];
+        }
+        // B. If the user is not of the first registrants
+        if ($this->verification_reason !== 'first_registrant') {
+            // B. If user A does not have enough verifications
+            if ($receivedVerifications < $threshold['min']) {
+                return [false, 'you_do_not_have_enough_verifications'];
+            }
+            // C. If the difference between verifiers and number of verifications is less than the threshold
+            if ($receivedVerifications - $givenVerifications < $threshold['diff']) {
+                return [false, 'you_do_not_have_enough_verifications'];
+            }
+        }
+        return [true, ''];
+    }
 }
