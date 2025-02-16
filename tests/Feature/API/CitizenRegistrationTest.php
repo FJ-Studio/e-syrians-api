@@ -12,6 +12,7 @@ it('Guests registration with minimal info', function () {
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
         'country' => 'SY',
+        'ethnicity' => 'arab',
     ]);
     // Assert the response status is 201
     $response->assertStatus(201);
@@ -22,7 +23,7 @@ it('Guests registration with full info', function () {
         'name' => 'Feras',
         'middle_name' => 'Mahmoud',
         'surname' => 'Jobeir',
-        'email' => rand(1, 9999) . 'info@gmail.com.com',
+        'email' => rand(1, 9999) . 'info@gmail.com',
         'gender' => 'm',
         'birth_date' => '1992-01-23',
         'phone' => '123456789' . rand(1, 999),
@@ -50,6 +51,8 @@ it('Guests registration with full info', function () {
         'languages[]' => 'arabic',
         'languages[]' => 'english',
         'verified_at' => '2025-01-01',
+        'ethnicity' => 'arab',
+
     ]);
     // Assert the response status is 201
     $response->assertStatus(201);
