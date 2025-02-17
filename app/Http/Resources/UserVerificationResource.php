@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 
-class VerificationResource extends JsonResource
+class UserVerificationResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -21,6 +21,8 @@ class VerificationResource extends JsonResource
             'verifier_id' => $this->verifier_id,
             'status' => $this->status,
             'created_at' => $this->created_at,
+            'cancelation_payload' => $this->cancelation_payload,
+            'cancelled_at' => $this->cancelled_at,
             'updated_at' => $this->updated_at,
             'user' => $this->whenLoaded('user', function () {
                 return [

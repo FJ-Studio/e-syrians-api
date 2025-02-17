@@ -15,8 +15,7 @@ use App\Http\Requests\User\UpdateUserCensusDataRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\VerifyUserRequest;
 use App\Http\Resources\UserResource;
-use App\Http\Resources\VerificationResource;
-use App\Models\ProfileUpdate;
+use App\Http\Resources\UserVerificationResource;
 use App\Models\User;
 use App\Models\WeaponDelivery;
 use App\Services\ApiService;
@@ -146,7 +145,7 @@ class UserController extends Controller
                 ->update([
                     'cancelled_at' => now(),
                     'cancelation_payload' => [
-                        'reaso  n' => 'user_updated_basic_info',
+                        'reason' => 'user_updated_basic_info',
                     ],
                 ]);
 
@@ -273,7 +272,7 @@ class UserController extends Controller
     {
         $user = $request->user();
         return ApiService::success(
-            VerificationResource::collection(
+            UserVerificationResource::collection(
                 $user->verifiers()->with('verifier')->get()
             )
         );
