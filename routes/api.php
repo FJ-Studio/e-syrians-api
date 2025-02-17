@@ -22,6 +22,8 @@ Route::prefix('users')->group(function () {
         Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class);
 
         Route::get('/my-polls', [UserController::class, 'my_polls']);
+        Route::get('/my-verifications', [UserController::class, 'my_verifications']);
+        Route::get('/my-verifiers', [UserController::class, 'my_verifiers']);
 
         Route::post('/update/basic-info', [UserController::class, 'update_basic_info']);
         Route::post('/update/social', [UserController::class, 'update_social_links']);
