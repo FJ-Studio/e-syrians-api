@@ -94,4 +94,22 @@ class PollController extends Controller
     {
         //
     }
+
+    public function status(Poll $poll)
+    {
+        // validate the status to be boolean
+        try {
+            if ($poll->trashed()) {
+                // Restore the poll if it is already soft deleted
+                $poll->restore();
+                return ApiService::success([]);
+            } else {
+                // Soft delete the poll
+                $poll->delete();
+                return ApiService::success([]);
+            }
+        } catch (\Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
+    }
 }

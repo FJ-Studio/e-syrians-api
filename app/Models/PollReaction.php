@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Cache;
 
 class PollReaction extends Model
 {
+    
     protected static function booted()
     {
         static::saved(function ($reaction) {

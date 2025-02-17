@@ -39,6 +39,7 @@ Route::prefix('polls')->group(function () {
         Route::get('/', [PollController::class, 'index']);
         Route::put('/{poll}', [PollController::class, 'update']);
         Route::delete('/{poll}', [PollController::class, 'destroy']);
+        Route::post('/status/{poll}', [PollController::class, 'status']);
     });
 });
 
