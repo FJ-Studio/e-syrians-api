@@ -249,7 +249,16 @@ class UserController extends Controller
     public function my_polls(Request $request)
     {
         $user = $request->user();
-        $polls = $user->polls()->withTrashed()->with('options')->withCount('votes')->get();
-        return ApiService::success($polls);
+        $polls = $user->polls()
+            ->withTrashed()
+            ->withCount('votes')
+            ->paginate(25);
+        return ApiService::success([
+            'polls' => $polls['data'],
+            'total' => $polls->total(),
+            'per_page' => $polls->perPage(),
+            'current_page' => $polls->currentPage(),
+            'last_page' => $polls->lastPage(),
+        ]);
     }
 }
