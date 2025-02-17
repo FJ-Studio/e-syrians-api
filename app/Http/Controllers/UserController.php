@@ -264,29 +264,15 @@ class UserController extends Controller
     public function my_verifications(Request $request)
     {
         $user = $request->user();
-        $verifications = $user->verifications()
+        return ApiService::success($user->verifications()
             ->with('verifier')
-            ->paginate(25);
-        return ApiService::success([
-            'verifications' => $verifications->items(),
-            'total' => $verifications->total(),
-            'per_page' => $verifications->perPage(),
-            'current_page' => $verifications->currentPage(),
-            'last_page' => $verifications->lastPage(),
-        ]);
+            ->get());
     }
     public function my_verifiers(Request $request)
     {
         $user = $request->user();
-        $verifiers = $user->verifiers()
+        return ApiService::success($user->verifiers()
             ->with('user')
-            ->paginate(25);
-        return ApiService::success([
-            'verifiers' => $verifiers->items(),
-            'total' => $verifiers->total(),
-            'per_page' => $verifiers->perPage(),
-            'current_page' => $verifiers->currentPage(),
-            'last_page' => $verifiers->lastPage(),
-        ]);
+            ->get());
     }
 }
