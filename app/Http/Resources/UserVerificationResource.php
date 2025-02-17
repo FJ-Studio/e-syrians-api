@@ -23,7 +23,6 @@ class UserVerificationResource extends JsonResource
             'created_at' => $this->created_at,
             'cancelation_payload' => $this->cancelation_payload,
             'cancelled_at' => $this->cancelled_at,
-            'updated_at' => $this->updated_at,
             'user' => $this->whenLoaded('user', function () {
                 return [
                     'uuid' => $this->user->uuid,
