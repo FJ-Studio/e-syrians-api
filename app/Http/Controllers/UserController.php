@@ -15,6 +15,7 @@ use App\Http\Requests\User\UpdateUserCensusDataRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\VerifyUserRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\VerificationResource;
 use App\Models\ProfileUpdate;
 use App\Models\User;
 use App\Models\WeaponDelivery;
@@ -271,8 +272,10 @@ class UserController extends Controller
     public function my_verifiers(Request $request)
     {
         $user = $request->user();
-        return ApiService::success($user->verifiers()
-            ->with('verifier')
-            ->get());
+        return ApiService::success(
+            VerificationResource::collection(
+                $user->verifiers()->with('verifier')->get()
+            )
+        );
     }
 }
