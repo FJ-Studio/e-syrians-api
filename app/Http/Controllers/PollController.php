@@ -7,6 +7,7 @@ use App\Http\Resources\PollResource;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Services\ApiService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -95,10 +96,10 @@ class PollController extends Controller
         //
     }
 
-    public function status(Poll $poll)
+    public function status(Request $request, $pollId)
     {
-        // validate the status to be boolean
         try {
+            $poll = Poll::withTrashed()->findOrFail($pollId);
             if ($poll->trashed()) {
                 // Restore the poll if it is already soft deleted
                 $poll->restore();
