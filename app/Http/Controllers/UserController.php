@@ -265,14 +265,14 @@ class UserController extends Controller
     {
         $user = $request->user();
         return ApiService::success($user->verifications()
-            ->with('verifier')
+            ->with('user')
             ->get());
     }
     public function my_verifiers(Request $request)
     {
         $user = $request->user();
         return ApiService::success($user->verifiers()
-            ->with('user')
+            ->with('verifier')
             ->get());
     }
 }
