@@ -254,7 +254,7 @@ class UserController extends Controller
             ->withCount('votes')
             ->paginate(25);
         return ApiService::success([
-            'polls' => $polls['data'],
+            'polls' => $polls->items(),
             'total' => $polls->total(),
             'per_page' => $polls->perPage(),
             'current_page' => $polls->currentPage(),
