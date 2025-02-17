@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class VerificationResource extends JsonResource
 {
@@ -25,16 +26,16 @@ class VerificationResource extends JsonResource
                 return [
                     'uuid' => $this->user->uuid,
                     'name' => $this->user->name,
-                    'email' => $this->user->email,
-                    'avatar' => $this->user->avatar,
+                    'surname' => $this->user->surname,
+                    'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(60)) : null,
                 ];
             }),
             'verifier' => $this->whenLoaded('verifier', function () {
                 return [
                     'uuid' => $this->verifier->uuid,
                     'name' => $this->verifier->name,
-                    'email' => $this->verifier->email,
-                    'avatar' => $this->verifier->avatar,
+                    'surname' => $this->verifier->surname,
+                    'avatar' => $this->verifier->avatar ? Storage::disk('s3')->temporaryUrl($this->verifier->avatar, now()->addMinutes(60)) : null,
                 ];
             }),
         ];
