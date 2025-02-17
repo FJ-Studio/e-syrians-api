@@ -252,7 +252,7 @@ class UserController extends Controller
         $polls = $user->polls()
             ->withTrashed()
             ->withCount('votes')
-            ->paginate(25);
+            ->paginate(1);
         return ApiService::success([
             'polls' => $polls->items(),
             'total' => $polls->total(),
