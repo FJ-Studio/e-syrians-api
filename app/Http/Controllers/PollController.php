@@ -22,6 +22,7 @@ class PollController extends Controller
         $polls = Poll::whereYear('start_date', 2025)
             ->whereMonth('start_date', 2)
             ->with('user')
+            ->with('options')
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count'
