@@ -136,7 +136,6 @@ class PollController extends Controller
     }
     public function vote(StorePollVoteRequest $request)
     {
-        dd($request->all());
         // poll is not deleted
         $poll = Poll::findOrFail($request->poll_id);
         // poll is not expired
