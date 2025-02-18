@@ -17,7 +17,7 @@ class PollController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $polls = Poll::whereYear('start_date', 2025)
             ->whereMonth('start_date', 2)
