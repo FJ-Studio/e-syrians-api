@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeaponDeliveryController;
 use App\Http\Middleware\CanVerify;
 use App\Http\Middleware\SetAppLocalization;
+use App\Http\Middleware\UserIsVerified;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('weapons-delivery')->group(function () {
@@ -43,7 +44,7 @@ Route::prefix('polls')->group(function () {
         // Route::put('/{poll}', [PollController::class, 'update']);
         // Route::delete('/{poll}', [PollController::class, 'destroy']);
         Route::post('/status/{poll}', [PollController::class, 'status']);
-        Route::post('/vote', [PollController::class, 'vote']);
+        Route::post('/vote', [PollController::class, 'vote'])->middleware(UserIsVerified::class);
         Route::post('/react', [PollController::class, 'react']);
     });
 });

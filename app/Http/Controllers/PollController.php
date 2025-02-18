@@ -7,6 +7,7 @@ use App\Http\Resources\PollResource;
 use App\Models\Poll;
 use App\Models\PollOption;
 use App\Services\ApiService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -132,24 +133,56 @@ class PollController extends Controller
             return ApiService::error(500, $e->getMessage());
         }
     }
-    public function vote()
+    public function vote(Request $request)
     {
-        // user is not banned
-        // user is verified
         // poll is not deleted
+        $poll = Poll::findOrFail($request->poll_id);
         // poll is not expired
+        if ($poll->end_date->isPast()) {
+            return ApiService::error(400, 'Poll has expired');
+        }
         // user has not voted before
+        if ($poll->votes()->where('user_id', Auth::id())->exists()) {
+            return ApiService::error(400, 'User has already voted');
+        }
         // user is in the poll's audience
+        $in_audience = UserService::canAnswerPoll($poll->id, request()->user());
+        if (!$in_audience[0]) {
+            return ApiService::error(400, 'User is not in the poll\'s audience');
+        }
         // user has not reached the max selections
+        if (count($request->poll_option_id) > $poll->max_selections) {
+            return ApiService::error(400, 'User has reached the max selections');
+        }
         // options are valid and belong to the poll
+        $options = PollOption::whereIn('id', $request->poll_option_id)->where('poll_id', $poll->id)->get();
+        if ($options->count() !== count($request->poll_option_id)) {
+            return ApiService::error(400, 'Invalid options');
+        }
+        // save the vote
+        $poll->votes()->createMany(
+            collect($request->poll_option_id)->map(fn($optionId) => [
+                'user_id' => request()->user()->id,
+                'poll_option_id' => $optionId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ])->toArray()
+        );
+        return ApiService::success([]);
     }
-    public function react()
+    public function react(Request $request)
     {
-        // user is not banned
+
         // user is verified
+        // middleware
         // poll is not deleted
+        $poll = Poll::findOrFail($request->poll_id);
         // poll is not expired
+        if ($poll->end_date->isPast()) {
+            return ApiService::error(400, 'Poll has expired');
+        }
         // user has not reacted before
+
         // user is in the poll's audience
     }
 }
