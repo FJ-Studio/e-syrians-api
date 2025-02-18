@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class PollOptionResource extends JsonResource
 {
@@ -17,9 +18,17 @@ class PollOptionResource extends JsonResource
         return [
             'id' => $this->id,
             'poll_id' => $this->poll_id,
-            'option' => $this->option,
+            'option_text' => $this->option,
             'votes' => $this->votes,
             'created_at' => $this->created_at,
+            'user' => $this->whenLoaded('user', function () {
+                return [
+                    'uuid' => $this->user->uuid,
+                    'name' => $this->user->name,
+                    'surname' => $this->user->surname,
+                    'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(60)) : null,
+                ];
+            }),
         ];
     }
 }
