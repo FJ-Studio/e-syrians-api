@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Polls\StorePollRequest;
+use App\Http\Requests\Polls\StorePollVoteRequest;
 use App\Http\Resources\PollResource;
 use App\Models\Poll;
 use App\Models\PollOption;
@@ -133,8 +134,9 @@ class PollController extends Controller
             return ApiService::error(500, $e->getMessage());
         }
     }
-    public function vote(Request $request)
+    public function vote(StorePollVoteRequest $request)
     {
+        dd($request->all());
         // poll is not deleted
         $poll = Poll::findOrFail($request->poll_id);
         // poll is not expired

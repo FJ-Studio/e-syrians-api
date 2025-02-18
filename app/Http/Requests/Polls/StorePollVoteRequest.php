@@ -11,7 +11,7 @@ class StorePollVoteRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,9 @@ class StorePollVoteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'poll_option_id' => ['required', 'array'],
+            'poll_option_id.*' => ['required', 'integer', 'exists:poll_options,id'],
+            'poll_id' => ['required', 'integer', 'exists:polls,id'],
         ];
     }
 }
