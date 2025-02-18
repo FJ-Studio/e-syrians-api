@@ -21,13 +21,13 @@ class PollResource extends JsonResource
             'end_date' => $this->end_date->toISOString(),
             'max_selections' => $this->max_selections,
             'audience_can_add_options' => $this->audience_can_add_options,
-            'audience' => $this->audience, // No need for json_decode()
+            'audience' => $this->audience,
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn() => $this->deleted_at->toISOString()),
             'reveal_results' => $this->reveal_results,
             'voters_are_visible' => $this->voters_are_visible,
-            // Relations (Only return if they are loaded)
+
             'user' => $this->relationLoaded('user')
                 ? new UserResource($this->user)
                 : null,

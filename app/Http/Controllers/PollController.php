@@ -19,7 +19,15 @@ class PollController extends Controller
      */
     public function index()
     {
-        //
+        $polls = Poll::whereYear('start_date', 2025)
+            ->whereMonth('start_date', 2)
+            ->withCount([
+                'ups as ups_count',
+                'downs as downs_count'
+            ])
+            ->orderByRaw('(ups_count - downs_count) DESC')
+            ->get();
+        return (PollResource::collection($polls));
     }
 
     /**

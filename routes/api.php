@@ -36,10 +36,10 @@ Route::prefix('users')->group(function () {
 });
 
 Route::prefix('polls')->group(function () {
-    Route::middleware(['auth:sanctum'])->post('/', [PollController::class, 'store']);
+    Route::get('/', [PollController::class, 'index']);
     Route::get('/{poll}', [PollController::class, 'show']);
     Route::middleware(['auth:sanctum'])->group(function () {
-        Route::get('/', [PollController::class, 'index']);
+        Route::post('/', [PollController::class, 'store']);
         Route::put('/{poll}', [PollController::class, 'update']);
         Route::delete('/{poll}', [PollController::class, 'destroy']);
         Route::post('/status/{poll}', [PollController::class, 'status']);
