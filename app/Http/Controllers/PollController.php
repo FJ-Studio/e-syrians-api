@@ -140,25 +140,25 @@ class PollController extends Controller
         $poll = Poll::findOrFail($request->poll_id);
         // poll is not expired
         if ($poll->end_date->isPast()) {
-            return ApiService::error(400, 'Poll has expired');
+            return ApiService::error(400, 'poll_has_expired');
         }
         // user has not voted before
         if ($poll->votes()->where('user_id', Auth::id())->exists()) {
-            return ApiService::error(400, 'User has already voted');
+            return ApiService::error(400, 'you_have_already_voted');
         }
         // user is in the poll's audience
         $in_audience = UserService::canAnswerPoll($poll->id, request()->user());
         if (!$in_audience[0]) {
-            return ApiService::error(400, 'User is not in the poll\'s audience');
+            return ApiService::error(400, 'user_is_not_in_poll_audience');
         }
         // user has not reached the max selections
         if (count($request->poll_option_id) > $poll->max_selections) {
-            return ApiService::error(400, 'User has reached the max selections');
+            return ApiService::error(400, 'user_has_reached_the_max_selections');
         }
         // options are valid and belong to the poll
         $options = PollOption::whereIn('id', $request->poll_option_id)->where('poll_id', $poll->id)->get();
         if ($options->count() !== count($request->poll_option_id)) {
-            return ApiService::error(400, 'Invalid options');
+            return ApiService::error(400, 'invalid_options');
         }
         // save the vote
         $poll->votes()->createMany(
