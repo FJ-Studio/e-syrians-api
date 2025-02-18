@@ -18,7 +18,7 @@ class PollOptionResource extends JsonResource
         return [
             'id' => $this->id,
             'poll_id' => $this->poll_id,
-            'option_text' => $this->option,
+            'option_text' => $this->option_text,
             'votes' => $this->votes,
             'created_at' => $this->created_at,
             'user' => $this->whenLoaded('user', function () {
