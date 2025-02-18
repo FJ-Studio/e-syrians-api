@@ -26,6 +26,8 @@ class PollResource extends JsonResource
             'created_at' => $this->created_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn() => $this->deleted_at->toISOString()),
             'reveal_results' => $this->reveal_results,
+            'ups_count' => $this->ups_count,
+            'downs_count' => $this->downs_count,
             'voters_are_visible' => $this->voters_are_visible,
 
             'user' => $this->relationLoaded('user')
