@@ -95,8 +95,17 @@ class PollController extends Controller
      */
     public function show(Poll $poll)
     {
+        $poll->load([
+            'user',
+            'options',
+        ])->loadCount([
+            'ups as ups_count',
+            'downs as downs_count',
+        ]);
+
         return ApiService::success(new PollResource($poll));
     }
+
 
     /**
      * Remove the specified resource from storage.
