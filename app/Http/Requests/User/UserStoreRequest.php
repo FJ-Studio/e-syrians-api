@@ -63,7 +63,6 @@ class UserStoreRequest extends FormRequest
             'other_nationalities.*' => ['string', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\CountryEnum::cases()))],
             'languages' => ['nullable', 'array'],
             'languages.*' => ['string', 'in:' . implode(',', array_map(fn($case) => $case->value, \App\Enums\LanguageEnum::cases()))],
-            'verification_reason' => ['nullable', 'string'],
             'marked_as_fake_at' => ['nullable', 'date'],
             'marked_as_fake_reason' => ['nullable', 'string'],
             'record_place' => ['nullable', 'string'],

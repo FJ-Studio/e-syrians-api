@@ -22,6 +22,7 @@ use App\Services\ApiService;
 use App\Services\StrService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -33,6 +34,21 @@ class UserController extends Controller
     public function index()
     {
         //
+    }
+
+    /**
+     * Get the first registrants people
+     */
+
+    public function first()
+    {
+        $users = Cache::remember('verified_first_registrants', now()->addHours(3), function () {
+            return User::whereNotNull('verified_at')
+                ->where('verification_reason', 'first_registrant')
+                ->get();
+        });
+
+        return ApiService::success(UserResource::collection($users));
     }
 
     /**
