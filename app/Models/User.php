@@ -8,6 +8,7 @@ namespace App\Models;
 
 use App\Enums\ProfileChangeTypeEnum;
 use App\Services\StrService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -320,10 +321,11 @@ class User extends Authenticatable
             }
         }
         // age check
-        if ($audience['age_range']['min'] && $this->birth_date->diffInYears(now()) < $audience['age_range']['min']) {
+        if ($audience['age_range']['min'] && Carbon::parse($this->birth_date)->diffInYears(now()) < $audience['age_range']['min']) {
             return [false, 'age_min'];
         }
-        if ($audience['age_range']['max'] && $this->birth_date->diffInYears(now()) > $audience['age_range']['max']) {
+
+        if ($audience['age_range']['max'] && Carbon::parse($this->birth_date)->diffInYears(now()) > $audience['age_range']['max']) {
             return [false, 'age_max'];
         }
         // country check
