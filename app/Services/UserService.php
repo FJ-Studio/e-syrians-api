@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Poll;
 use App\Models\User;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -69,5 +70,24 @@ class UserService
             return [false, 'you_have_already_verified_this_user'];
         }
         return [true, ''];
+    }
+
+    /**
+     * @return array{0: bool, 1: string}
+     */
+    public static function canAnswerPoll(int $pollId, User $user): array
+    {
+        if (!$user) {
+            return [false, 'user_not_found'];
+        }
+        $poll = Poll::find($pollId);
+        if (!$poll) {
+            return [false, 'poll_not_found'];
+        }
+        if ($user->hasAnsweredPoll($pollId)) {
+            return [false, 'you_have_already_answered_this_poll'];
+        }
+        // check elligibility
+        return $user->isInAudience($poll->audience);
     }
 }

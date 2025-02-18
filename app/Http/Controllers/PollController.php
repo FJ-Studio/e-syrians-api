@@ -132,4 +132,24 @@ class PollController extends Controller
             return ApiService::error(500, $e->getMessage());
         }
     }
+    public function vote()
+    {
+        // user is not banned
+        // user is verified
+        // poll is not deleted
+        // poll is not expired
+        // user has not voted before
+        // user is in the poll's audience
+        // user has not reached the max selections
+        // options are valid and belong to the poll
+    }
+    public function react()
+    {
+        // user is not banned
+        // user is verified
+        // poll is not deleted
+        // poll is not expired
+        // user has not reacted before
+        // user is in the poll's audience
+    }
 }

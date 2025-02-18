@@ -306,4 +306,50 @@ class User extends Authenticatable
         }
         return [true, ''];
     }
+
+    public function hasAnsweredPoll(int $pollId): bool
+    {
+        return $this->votes()->where('poll_id', $pollId)->exists();
+    }
+    public function isInAudience(array $audience): array
+    {
+        // gender check
+        if (count($audience['gender'])) {
+            if (!$this->gender || !in_array($this->gender, $audience['gender'])) {
+                return [false, 'gender'];
+            }
+        }
+        // age check
+        if ($audience['age_range']['min'] && $this->birth_date->diffInYears(now()) < $audience['age_range']['min']) {
+            return [false, 'age_min'];
+        }
+        if ($audience['age_range']['max'] && $this->birth_date->diffInYears(now()) > $audience['age_range']['max']) {
+            return [false, 'age_max'];
+        }
+        // country check
+        if (count($audience['country'])) {
+            if (!$this->country || !in_array($this->country, $audience['country'])) {
+                return [false, 'country'];
+            }
+        }
+        // religious affiliation check
+        if (count($audience['religious_affiliation'])) {
+            if (!$this->religious_affiliation || !in_array($this->religious_affiliation, $audience['religious_affiliation'])) {
+                return [false, 'religious_affiliation'];
+            }
+        }
+        // hometown check
+        if (count($audience['hometown'])) {
+            if (!$this->hometown || !in_array($this->hometown, $audience['hometown'])) {
+                return [false, 'hometown'];
+            }
+        }
+        // ethnicity check
+        if (count($audience['ethnicity'])) {
+            if (!$this->ethnicity || !in_array($this->ethnicity, $audience['ethnicity'])) {
+                return [false, 'ethnicity'];
+            }
+        }
+        return [true, ''];
+    }
 }

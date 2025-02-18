@@ -40,9 +40,11 @@ Route::prefix('polls')->group(function () {
     Route::get('/{poll}', [PollController::class, 'show']);
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/', [PollController::class, 'store']);
-        Route::put('/{poll}', [PollController::class, 'update']);
-        Route::delete('/{poll}', [PollController::class, 'destroy']);
+        // Route::put('/{poll}', [PollController::class, 'update']);
+        // Route::delete('/{poll}', [PollController::class, 'destroy']);
         Route::post('/status/{poll}', [PollController::class, 'status']);
+        Route::post('/vote', [PollController::class, 'vote']);
+        Route::post('/react', [PollController::class, 'react']);
     });
 });
 
