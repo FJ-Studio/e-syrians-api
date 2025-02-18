@@ -95,7 +95,7 @@ class PollController extends Controller
      */
     public function show(Poll $poll)
     {
-        //
+        return ApiService::success(new PollResource($poll));
     }
 
     /**
