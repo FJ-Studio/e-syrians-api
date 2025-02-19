@@ -24,7 +24,7 @@ class PollController extends Controller
     {
 
 
-        $userId = auth()->id(); // Get the authenticated user ID (or null for guests)
+        $userId = request()->user()?->id; // Get the authenticated user ID (or null for guests)
 
         $polls = Poll::with(['user', 'options'])
             ->withCount([
