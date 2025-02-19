@@ -314,8 +314,6 @@ class UserController extends Controller
         $reactions = $request->user()->reactions()
             ->with(['poll:id,title']) // Load only the 'id' and 'title' of the related poll
             ->paginate(25);
-
-
         return ApiService::success(
             [
                 'reactions' => $reactions->items(),
