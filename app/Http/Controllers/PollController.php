@@ -55,7 +55,7 @@ class PollController extends Controller
             ->orderByRaw('(ups_count - downs_count) DESC')
             ->paginate(20);
 
-        return ApiService::success($polls);
+        return ApiService::success(PollResource::collection($polls));
 
         // $polls = Poll::whereYear('start_date', 2025)
         //     ->whereMonth('start_date', 2)
