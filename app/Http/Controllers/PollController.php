@@ -33,9 +33,6 @@ class PollController extends Controller
                     'votes as has_voted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
                     },
-                    'reactions as has_reacted' => function ($q) use ($userId) {
-                        $q->where('user_id', $userId);
-                    },
                     'ups as has_upvoted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
                     },
