@@ -22,7 +22,7 @@ class PollController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = request()->user()?->id; // Get the authenticated user ID (or null for guests)
+        dd(request()->user(), $request->user(), auth()->user());
         $polls = Poll::with(['user', 'options'])
             ->withCount([
                 'ups as ups_count',
