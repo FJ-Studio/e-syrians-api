@@ -344,7 +344,7 @@ class UserController extends Controller
                 return [
                     'poll_id' => $poll->id,
                     'question' => $poll->question,
-                    'selected_options' => $votes->pluck('pollOption.option_text'),
+                    'selected_options' => $votes->pluck('option.option_text'),
                     'voted_at' => $votes->first()->created_at,
                 ];
             })->values();
