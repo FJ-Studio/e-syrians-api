@@ -317,7 +317,6 @@ class UserController extends Controller
 
         return ApiService::success(
             [
-                $reactions->items(),
                 'reactions' => $reactions->items(),
                 'total' => $reactions->total(),
                 'per_page' => $reactions->perPage(),
