@@ -312,8 +312,12 @@ class UserController extends Controller
     public function my_reactions(Request $request)
     {
         $reactions = $request->user()->reactions()
-            ->with(['poll:id,question']) // Load only the 'id' and 'title' of the related poll
+            ->whereHas('poll', function ($query) {
+                $query->whereNull('deleted_at'); // Exclude soft-deleted polls
+            })
+            ->with(['poll:id,question']) // Load only 'id' and 'question' of the related poll
             ->paginate(25);
+
         return ApiService::success(
             [
                 'reactions' => $reactions->items(),
