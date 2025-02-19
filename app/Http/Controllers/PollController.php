@@ -44,7 +44,7 @@ class PollController extends Controller
                 // Load only the selected options if the user has voted
                 $query->with([
                     'votes' => function ($q) use ($userId) {
-                        $q->where('user_id', $userId)->with('option');
+                        $q->where('user_id', $userId);
                     }
                 ]);
             })
