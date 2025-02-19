@@ -23,13 +23,15 @@ class PollController extends Controller
     public function index(Request $request)
     {
 
-        $polls = Poll::with(['user', 'options', 'votes'])
+
+        $userId = auth()->id(); // Get the authenticated user ID (or null for guests)
+
+        $polls = Poll::with(['user', 'options'])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count'
             ])
-            ->when(auth()->check(), function ($query) {
-                $userId = auth()->id();
+            ->when($userId, function ($query) use ($userId) { // Check if a user is authenticated
                 $query->withExists([
                     'votes as has_voted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
@@ -42,7 +44,7 @@ class PollController extends Controller
                     },
                     'downs as has_downvoted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
-                    } // ❌ Removed extra semicolon here
+                    }
                 ]);
 
                 // Load only the selected options if the user has voted
@@ -54,6 +56,7 @@ class PollController extends Controller
             })
             ->orderByRaw('(ups_count - downs_count) DESC')
             ->paginate(20);
+
 
         return ApiService::success(PollResource::collection($polls->items()));
 
