@@ -8,7 +8,7 @@ use App\Models\User;
 
 class PollService
 {
-    public static function revealResults(Poll $poll, User $user): bool
+    public static function revealResults(Poll $poll, ?User $user): bool
     {
         if (!$poll || !$user) {
             return false;
