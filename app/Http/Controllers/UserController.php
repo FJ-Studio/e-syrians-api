@@ -347,7 +347,7 @@ class UserController extends Controller
                     'poll_id' => $poll->id,
                     'question' => $poll->question,
                     'selected_options' => $votes->pluck('option.option_text'),
-                    'voted_at' => $firstVote->created_at,
+                    'created_at' => $firstVote->created_at,
                 ];
             })->filter() // Remove null values if option was missing
             ->values();
