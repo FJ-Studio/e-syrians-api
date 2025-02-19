@@ -14,7 +14,7 @@ class PollResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $userId = request()->user()?->id;
+        $userId = auth()->user()?->id;
         dd($userId);
         return [
             'id' => $this->id,
