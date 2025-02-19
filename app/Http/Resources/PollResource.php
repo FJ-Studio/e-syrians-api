@@ -63,7 +63,7 @@ class PollResource extends JsonResource
             'has_downvoted' => $userId ? ($this->has_downvoted ?? false) : false,
 
             'selected_options' => $this->relationLoaded('votes')
-                ? PollOptionResource::collection($this->votes->where('user_id', $userId)->pluck('poll_option_id'))
+                ? $this->votes->where('user_id', $userId)->pluck('poll_option_id')
                 : [],
         ];
     }
