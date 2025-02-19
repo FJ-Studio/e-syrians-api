@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\PollService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,7 @@ class PollResource extends JsonResource
     {
         $user = auth('sanctum')->user();
         $userId = $user?->id;
+        $revealResults = PollService::revealResults($this->resource, $user);
 
         return [
             'id' => $this->id,
@@ -39,13 +41,15 @@ class PollResource extends JsonResource
 
             'options' => $this->relationLoaded('options')
                 ? PollOptionResource::collection(
-                    $this->options->map(function ($option) {
+                    $this->options->map(function ($option) use ($revealResults) {
+                        if (!$revealResults) {
+                            $option->percentage = null;
+                            return new PollOptionResource($option);
+                        }
                         $totalVotes = $this->total_votes ?? 0; // Get total votes from the poll
                         $optionVotes = $option->votes()->count(); // Get votes for this option
                         $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0; // Calculate %
-
-                        // ✅ Instead of returning an array, return a PollOptionResource instance
-                        $option->percentage = $this->reveal_results ? $percentage : null;
+                        $option->percentage = $percentage;
                         return new PollOptionResource($option);
                     })
                 )
