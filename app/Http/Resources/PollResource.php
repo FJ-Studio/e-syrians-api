@@ -38,15 +38,17 @@ class PollResource extends JsonResource
                 : null,
 
             'options' => $this->relationLoaded('options')
-                ? PollOptionResource::collection($this->options->map(function ($option) {
-                    $totalVotes = $this->total_votes ?? 0; // Get total votes from the poll
-                    $optionVotes = $option->votes_count ?? 0; // Get votes for this option
-                    $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0; // Calculate %
+                ? PollOptionResource::collection(
+                    $this->options->map(function ($option) {
+                        $totalVotes = $this->total_votes ?? 0; // Get total votes from the poll
+                        $optionVotes = $option->votes()->count(); // Get votes for this option
+                        $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0; // Calculate %
 
-                    return array_merge($option->toArray(), [
-                        'percentage' => $this->reveal_results ? $percentage : null // Show % only if results are revealed
-                    ]);
-                }))
+                        // ✅ Instead of returning an array, return a PollOptionResource instance
+                        $option->percentage = $this->reveal_results ? $percentage : null;
+                        return new PollOptionResource($option);
+                    })
+                )
                 : [],
 
             'votes' => $this->relationLoaded('votes')
