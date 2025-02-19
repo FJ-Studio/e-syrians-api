@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->enum('reaction', ['up', 'down']);
             $table->timestampsTz();
+            $table->softDeletesTz();
         });
     }
 

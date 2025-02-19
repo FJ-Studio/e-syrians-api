@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Polls\StorePollReaction;
 use App\Http\Requests\Polls\StorePollRequest;
 use App\Http\Requests\Polls\StorePollVoteRequest;
 use App\Http\Resources\PollResource;
@@ -21,17 +22,52 @@ class PollController extends Controller
      */
     public function index(Request $request)
     {
-        $polls = Poll::whereYear('start_date', 2025)
-            ->whereMonth('start_date', 2)
-            ->with('user')
-            ->with('options')
+
+        $polls = Poll::with(['user', 'options'])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count'
             ])
+            ->when(auth()->check(), function ($query) {
+                $userId = auth()->id();
+                $query->withExists([
+                    'votes as has_voted' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    },
+                    'reactions as has_reacted' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    },
+                    'ups as has_upvoted' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    },
+                    'downs as has_downvoted' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    } // ❌ Removed extra semicolon here
+                ]);
+
+                // Load only the selected options if the user has voted
+                $query->with([
+                    'votes' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId)->with('option');
+                    }
+                ]);
+            })
             ->orderByRaw('(ups_count - downs_count) DESC')
-            ->get();
-        return (PollResource::collection($polls));
+            ->paginate(20);
+
+        return ApiService::success($polls);
+
+        // $polls = Poll::whereYear('start_date', 2025)
+        //     ->whereMonth('start_date', 2)
+        //     ->with('user')
+        //     ->with('options')
+        //     ->withCount([
+        //         'ups as ups_count',
+        //         'downs as downs_count'
+        //     ])
+        //     ->orderByRaw('(ups_count - downs_count) DESC')
+        //     ->get();
+        // return (PollResource::collection($polls));
     }
 
     /**
@@ -175,19 +211,25 @@ class PollController extends Controller
         );
         return ApiService::success([]);
     }
-    public function react(Request $request)
+    public function react(StorePollReaction $request)
     {
-
-        // user is verified
-        // middleware
         // poll is not deleted
         $poll = Poll::findOrFail($request->poll_id);
+        // poll did not start yet
+        if ($poll->start_date->isFuture()) {
+            return ApiService::error(400, 'poll_has_not_started_yet');
+        }
         // poll is not expired
         if ($poll->end_date->isPast()) {
-            return ApiService::error(400, 'Poll has expired');
+            return ApiService::error(400, 'poll_has_expired');
         }
-        // user has not reacted before
-
-        // user is in the poll's audience
+        // if any previous reaction exists, delete it
+        $poll->reactions()->where('user_id', Auth::id())->delete();
+        // save the reaction
+        $poll->reactions()->create([
+            'user_id' => Auth::id(),
+            'reaction' => $request->reaction,
+        ]);
+        return ApiService::success([]);
     }
 }

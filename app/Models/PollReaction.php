@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Cache;
 
 class PollReaction extends Model
 {
-    
+
     protected static function booted()
     {
         static::saved(function ($reaction) {
@@ -24,6 +24,7 @@ class PollReaction extends Model
     protected $fillable = [
         'poll_id',
         'user_id',
+        'reaction',
     ];
     /**
      * Get the poll that the reaction belongs to.

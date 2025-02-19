@@ -45,7 +45,7 @@ Route::prefix('polls')->group(function () {
         // Route::delete('/{poll}', [PollController::class, 'destroy']);
         Route::post('/status/{poll}', [PollController::class, 'status']);
         Route::post('/vote', [PollController::class, 'vote'])->middleware(UserIsVerified::class);
-        Route::post('/react', [PollController::class, 'react']);
+        Route::post('/react', [PollController::class, 'react'])->middleware(UserIsVerified::class);
     });
 });
 
