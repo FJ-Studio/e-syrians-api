@@ -45,6 +45,12 @@ class PollResource extends JsonResource
             'reactions' => $this->relationLoaded('reactions')
                 ? PollReactionResource::collection($this->reactions)
                 : [],
+
+            'has_voted' => $this->when(auth()->check(), $this->has_voted ?? false),
+            'has_reacted' => $this->when(auth()->check(), $this->has_reacted ?? false),
+            'has_upvoted' => $this->when(auth()->check(), $this->has_upvoted ?? false),
+            'has_downvoted' => $this->when(auth()->check(), $this->has_downvoted ?? false),
+            'selected_options' => PollOptionResource::collection($this->whenLoaded('votes')->pluck('option')),
         ];
     }
 }
