@@ -8,9 +8,9 @@ use App\Enums\ProfileChangeTypeEnum;
 use App\Http\Requests\User\CredentialsLoginRequest;
 use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UpdateSocialLinksRequest;
+use App\Http\Requests\User\UpdateUserAddressRequest;
 use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
-use App\Http\Requests\User\UpdateUserAddressRequest;
 use App\Http\Requests\User\UpdateUserCensusDataRequest;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\VerifyUserRequest;
@@ -39,7 +39,6 @@ class UserController extends Controller
     /**
      * Get the first registrants people
      */
-
     public function first()
     {
         $users = Cache::remember('verified_first_registrants', now()->addHours(3), function () {
@@ -70,6 +69,7 @@ class UserController extends Controller
         }
         $user = User::create($data);
         $user->assignRole('citizen');
+
         return ApiService::success(new UserResource($user), '', 201);
     }
 
@@ -97,14 +97,15 @@ class UserController extends Controller
     public function social_login(SocialLoginRequest $request)
     {
         $userData = UserService::getUserDataFromSocialProvider($request->provider, $request->token);
-        if (!$userData) {
+        if (! $userData) {
             return ApiService::error(401);
         }
 
         $user = User::where('email', $userData['email'])->first();
-        if (!$user) {
+        if (! $user) {
             return ApiService::error(401);
         }
+
         return ApiService::success([
             'user' => new UserResource($user),
             'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
@@ -124,19 +125,20 @@ class UserController extends Controller
             })
             ->first();
 
-
         if ($user && Hash::check($password, $user->password)) {
             return ApiService::success([
                 'user' => new UserResource($user),
                 'token' => explode('|', $user->createToken(date('YYYY-mm-dd-H:i:s'))->plainTextToken)[1],
             ]);
         }
+
         return ApiService::error(401);
     }
 
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
+
         return response()->json([
             'message' => 'logged_out',
         ]);
@@ -166,6 +168,7 @@ class UserController extends Controller
                 ]);
 
             $user->markAsUnverified();
+
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
@@ -178,11 +181,13 @@ class UserController extends Controller
             $user = $request->user();
             $data = $request->validated();
             $user->update($data);
+
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }
     }
+
     public function update_avatar(UpdateUserAvatarRequest $request)
     {
         try {
@@ -193,7 +198,7 @@ class UserController extends Controller
             $fileName = $user->uuid . '.' . $ext;
 
             // Delete old avatar if it exists
-            if (!empty($user->avatar) && Storage::disk('s3')->exists($user->avatar)) {
+            if (! empty($user->avatar) && Storage::disk('s3')->exists($user->avatar)) {
                 Storage::disk('s3')->delete($user->avatar);
             }
 
@@ -225,11 +230,13 @@ class UserController extends Controller
             $user = $request->user();
             $data = $request->validated();
             $user->update($data);
+
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }
     }
+
     public function update_census(UpdateUserCensusDataRequest $request)
     {
         try {
@@ -239,6 +246,7 @@ class UserController extends Controller
             $data['languages'] = implode(',', $data['languages'] ?? []);
             $data['other_nationalities'] = implode(',', $data['other_nationalities'] ?? []);
             $user->update($data);
+
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
@@ -256,6 +264,7 @@ class UserController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
+
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
@@ -269,6 +278,7 @@ class UserController extends Controller
             ->withTrashed()
             ->withCount('votes')
             ->paginate(25);
+
         return ApiService::success([
             'polls' => $polls->items(),
             'total' => $polls->total(),
@@ -277,20 +287,61 @@ class UserController extends Controller
             'last_page' => $polls->lastPage(),
         ]);
     }
+
     public function my_verifications(Request $request)
     {
         $user = $request->user();
+
         return ApiService::success($user->verifications()
             ->with('user')
             ->get());
     }
+
     public function my_verifiers(Request $request)
     {
         $user = $request->user();
+
         return ApiService::success(
             UserVerificationResource::collection(
                 $user->verifiers()->with('verifier')->get()
             )
         );
+    }
+
+    public function my_reactions(Request $request)
+    {
+        $reactions = $request->user()->reactions()
+            ->with('poll')
+            ->paginate(25);
+
+        return ApiService::success(
+            [
+                $reactions->items(),
+                'reactions' => $reactions->items(),
+                'total' => $reactions->total(),
+                'per_page' => $reactions->perPage(),
+                'current_page' => $reactions->currentPage(),
+                'last_page' => $reactions->lastPage(),
+            ]
+        );
+    }
+
+    public function my_votes(Request $request)
+    {
+        $userVotes = $request->user()->votes()
+            ->with('pollOption.poll') // Ensure poll and option are loaded
+            ->get()
+            ->groupBy('pollOption.poll_id') // Group by poll ID
+            ->map(function ($votes) {
+                $poll = $votes->first()->pollOption->poll; // Get the poll
+                return [
+                    'poll_id' => $poll->id,
+                    'question' => $poll->question,
+                    'selected_options' => $votes->pluck('pollOption.option_text'), // Collect selected options
+                    'voted_at' => $votes->first()->created_at, // Take the first vote's timestamp
+                ];
+            })->values();
+
+        return ApiService::success($userVotes);
     }
 }
