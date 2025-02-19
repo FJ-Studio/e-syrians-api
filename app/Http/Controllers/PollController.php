@@ -119,7 +119,7 @@ class PollController extends Controller
      */
     public function show(Poll $poll)
     {
-        $userId = auth('sanctum')?->id();
+        $userId = auth('sanctum')->user()?->id;
 
         $poll->load(['user', 'options'])
             ->loadCount([
