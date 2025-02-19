@@ -117,12 +117,11 @@ class PollController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Poll $poll)
+    public function show($id)
     {
         $userId = auth('sanctum')->user()?->id;
-
-        $poll->load(['user', 'options'])
-            ->loadCount([
+        $poll = Poll::with(['user', 'options'])
+            ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',
                 'votes as total_votes' // Get total votes for percentage calculation
@@ -146,7 +145,8 @@ class PollController extends Controller
                         $q->where('user_id', $userId);
                     }
                 ]);
-            });
+            })
+            ->findOrFail($id);
 
         return ApiService::success(new PollResource($poll));
     }
