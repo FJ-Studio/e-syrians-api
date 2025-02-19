@@ -14,6 +14,7 @@ class PollResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $userId = $request->user()?->id;
         return [
             'id' => $this->id,
             'question' => $this->question,
@@ -46,10 +47,10 @@ class PollResource extends JsonResource
                 ? PollReactionResource::collection($this->reactions)
                 : [],
 
-            'has_voted' => $this->when(auth()->check(), $this->has_voted ?? false),
-            'has_reacted' => $this->when(auth()->check(), $this->has_reacted ?? false),
-            'has_upvoted' => $this->when(auth()->check(), $this->has_upvoted ?? false),
-            'has_downvoted' => $this->when(auth()->check(), $this->has_downvoted ?? false),
+            'has_voted' => $this->when($userId, $this->has_voted ?? false),
+            'has_reacted' => $this->when($userId, $this->has_reacted ?? false),
+            'has_upvoted' => $this->when($userId, $this->has_upvoted ?? false),
+            'has_downvoted' => $this->when($userId, $this->has_downvoted ?? false),
             'selected_options' => PollOptionResource::collection($this->whenLoaded('votes')->pluck('option')),
         ];
     }
