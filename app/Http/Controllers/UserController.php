@@ -334,10 +334,11 @@ class UserController extends Controller
     {
         $perPage = $request->query('per_page', 25);
         $page = $request->query('page', 1);
+
         $userVotes = $request->user()->votes()
-            ->with('pollOption.poll')
+            ->with('option.poll')
             ->get()
-            ->groupBy('pollOption.poll_id')
+            ->groupBy('option.poll_id')
             ->map(function ($votes) {
                 $poll = $votes->first()->pollOption->poll;
                 return [
