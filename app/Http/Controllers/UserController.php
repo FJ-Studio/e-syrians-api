@@ -25,6 +25,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 class UserController extends Controller
 {
@@ -326,22 +328,35 @@ class UserController extends Controller
         );
     }
 
+
+
     public function my_votes(Request $request)
     {
+        $perPage = $request->query('per_page', 25);
+        $page = $request->query('page', 1);
         $userVotes = $request->user()->votes()
-            ->with('pollOption.poll') // Ensure poll and option are loaded
+            ->with('pollOption.poll')
             ->get()
-            ->groupBy('pollOption.poll_id') // Group by poll ID
+            ->groupBy('pollOption.poll_id')
             ->map(function ($votes) {
-                $poll = $votes->first()->pollOption->poll; // Get the poll
+                $poll = $votes->first()->pollOption->poll;
                 return [
                     'poll_id' => $poll->id,
                     'question' => $poll->question,
-                    'selected_options' => $votes->pluck('pollOption.option_text'), // Collect selected options
-                    'voted_at' => $votes->first()->created_at, // Take the first vote's timestamp
+                    'selected_options' => $votes->pluck('pollOption.option_text'),
+                    'voted_at' => $votes->first()->created_at,
                 ];
             })->values();
 
-        return ApiService::success($userVotes);
+        // Paginate manually
+        $paginatedVotes = new LengthAwarePaginator(
+            $userVotes->forPage($page, $perPage), // Slice the collection for pagination
+            $userVotes->count(), // Total count
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return ApiService::success($paginatedVotes);
     }
 }
