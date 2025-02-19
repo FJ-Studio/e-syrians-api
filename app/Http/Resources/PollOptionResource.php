@@ -29,6 +29,7 @@ class PollOptionResource extends JsonResource
                     'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(60)) : null,
                 ];
             }),
+            'votes_count' => $this->votes()->count()
         ];
     }
 }

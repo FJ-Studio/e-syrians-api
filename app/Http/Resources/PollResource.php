@@ -14,7 +14,9 @@ class PollResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $userId = auth('sanctum')->user()->id;
+        $user = auth('sanctum')->user();
+        $userId = $user?->id;
+
         return [
             'id' => $this->id,
             'question' => $this->question,
@@ -36,7 +38,15 @@ class PollResource extends JsonResource
                 : null,
 
             'options' => $this->relationLoaded('options')
-                ? PollOptionResource::collection($this->options)
+                ? PollOptionResource::collection($this->options->map(function ($option) {
+                    $totalVotes = $this->total_votes ?? 0; // Get total votes from the poll
+                    $optionVotes = $option->votes_count ?? 0; // Get votes for this option
+                    $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0; // Calculate %
+
+                    return array_merge($option->toArray(), [
+                        'percentage' => $this->reveal_results ? $percentage : null // Show % only if results are revealed
+                    ]);
+                }))
                 : [],
 
             'votes' => $this->relationLoaded('votes')
@@ -47,13 +57,14 @@ class PollResource extends JsonResource
                 ? PollReactionResource::collection($this->reactions)
                 : [],
 
-            'has_voted' => $this->when($userId, $this->has_voted ?? false),
-            'has_upvoted' => $this->when($userId, $this->has_upvoted ?? false),
-            'has_downvoted' => $this->when($userId, $this->has_downvoted ?? false),
-            'selected_options' => $this->relationLoaded('votes')
-                ? $this->votes->where('user_id', $userId)->pluck('poll_option_id')
-                : [],
+            'has_voted' => $userId ? ($this->has_voted ?? false) : false,
+            'has_reacted' => $userId ? ($this->has_reacted ?? false) : false,
+            'has_upvoted' => $userId ? ($this->has_upvoted ?? false) : false,
+            'has_downvoted' => $userId ? ($this->has_downvoted ?? false) : false,
 
+            'selected_options' => $this->relationLoaded('votes')
+                ? PollOptionResource::collection($this->votes->where('user_id', $userId)->pluck('option'))
+                : [],
         ];
     }
 }

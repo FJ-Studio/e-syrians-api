@@ -22,13 +22,15 @@ class PollController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = auth('sanctum')->user()->id;
+        $userId = auth('sanctum')->user()?->id; // Use null-safe operator in case user is not logged in
+
         $polls = Poll::with(['user', 'options'])
             ->withCount([
                 'ups as ups_count',
-                'downs as downs_count'
+                'downs as downs_count',
+                'votes as total_votes' // Get total votes for percentage calculation
             ])
-            ->when((bool)($userId), function ($query) use ($userId) { // Check if a user is authenticated
+            ->when((bool)($userId), function ($query) use ($userId) {
                 $query->withExists([
                     'votes as has_voted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
@@ -50,6 +52,7 @@ class PollController extends Controller
             })
             ->orderByRaw('(ups_count - downs_count) DESC')
             ->paginate(20);
+
 
 
         return ApiService::success(PollResource::collection($polls->items()));
