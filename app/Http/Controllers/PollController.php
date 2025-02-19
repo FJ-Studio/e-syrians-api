@@ -50,7 +50,7 @@ class PollController extends Controller
                     }
                 ]);
             })
-            ->orderByRaw('(ups_count - downs_count) DESC')
+            ->orderByRaw('(ups_count - downs_count) DESC, creadted_at DESC')
             ->paginate(20);
 
         return ApiService::success(PollResource::collection($polls->items()));
