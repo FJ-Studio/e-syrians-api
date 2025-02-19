@@ -26,7 +26,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 
 class UserController extends Controller
 {
@@ -328,31 +327,37 @@ class UserController extends Controller
         );
     }
 
-
-
     public function my_votes(Request $request)
     {
         $perPage = $request->query('per_page', 25);
         $page = $request->query('page', 1);
 
         $userVotes = $request->user()->votes()
-            ->with('option.poll')
+            ->with('option.poll') // Ensure 'option' and 'poll' are loaded
             ->get()
-            ->groupBy('option.poll_id')
+            ->groupBy('option.poll_id') // Group by poll ID
             ->map(function ($votes) {
-                $poll = $votes->first()->pollOption->poll;
+                $firstVote = $votes->first(); // Get the first vote in the group
+                $option = $firstVote->option ?? null; // Get the option, or null if not set
+
+                if (!$option) {
+                    return null; // Skip if option is null
+                }
+
+                $poll = $option->poll; // Get the associated poll
                 return [
                     'poll_id' => $poll->id,
                     'question' => $poll->question,
                     'selected_options' => $votes->pluck('option.option_text'),
-                    'voted_at' => $votes->first()->created_at,
+                    'voted_at' => $firstVote->created_at,
                 ];
-            })->values();
+            })->filter() // Remove null values if option was missing
+            ->values();
 
-        // Paginate manually
+        // Paginate the results manually
         $paginatedVotes = new LengthAwarePaginator(
-            $userVotes->forPage($page, $perPage), // Slice the collection for pagination
-            $userVotes->count(), // Total count
+            $userVotes->forPage($page, $perPage),
+            $userVotes->count(),
             $perPage,
             $page,
             ['path' => $request->url(), 'query' => $request->query()]
