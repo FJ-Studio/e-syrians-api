@@ -337,11 +337,9 @@ class UserController extends Controller
             ->map(function ($votes) {
                 $firstVote = $votes->first(); // Get the first vote in the group
                 $option = $firstVote->option ?? null; // Get the option, or null if not set
-
-                if (!$option) {
+                if (!$option || !$option->poll) {
                     return null; // Skip if option is null
                 }
-
                 $poll = $option->poll; // Get the associated poll
                 return [
                     'poll_id' => $poll->id,
