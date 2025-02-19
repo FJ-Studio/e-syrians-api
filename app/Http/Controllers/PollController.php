@@ -23,7 +23,7 @@ class PollController extends Controller
     public function index(Request $request)
     {
 
-        $polls = Poll::with(['user', 'options'])
+        $polls = Poll::with(['user', 'options', 'votes'])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count'
