@@ -53,21 +53,7 @@ class PollController extends Controller
             ->orderByRaw('(ups_count - downs_count) DESC')
             ->paginate(20);
 
-
-
         return ApiService::success(PollResource::collection($polls->items()));
-
-        // $polls = Poll::whereYear('start_date', 2025)
-        //     ->whereMonth('start_date', 2)
-        //     ->with('user')
-        //     ->with('options')
-        //     ->withCount([
-        //         'ups as ups_count',
-        //         'downs as downs_count'
-        //     ])
-        //     ->orderByRaw('(ups_count - downs_count) DESC')
-        //     ->get();
-        // return (PollResource::collection($polls));
     }
 
     /**
@@ -133,16 +119,38 @@ class PollController extends Controller
      */
     public function show(Poll $poll)
     {
-        $poll->load([
-            'user',
-            'options',
-        ])->loadCount([
-            'ups as ups_count',
-            'downs as downs_count',
-        ]);
+        $userId = auth('sanctum')->id();
+
+        $poll->load(['user', 'options'])
+            ->loadCount([
+                'ups as ups_count',
+                'downs as downs_count',
+                'votes as total_votes' // Get total votes for percentage calculation
+            ])
+            ->when((bool)($userId), function ($query) use ($userId) {
+                $query->withExists([
+                    'votes as has_voted' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    },
+                    'ups as has_upvoted' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    },
+                    'downs as has_downvoted' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ]);
+
+                // Load only the selected options if the user has voted
+                $query->with([
+                    'votes' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ]);
+            });
 
         return ApiService::success(new PollResource($poll));
     }
+
 
 
     /**
