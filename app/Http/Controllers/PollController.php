@@ -138,6 +138,10 @@ class PollController extends Controller
     {
         // poll is not deleted
         $poll = Poll::findOrFail($request->poll_id);
+        // poll did not start yet
+        if ($poll->start_date->isFuture()) {
+            return ApiService::error(400, 'poll_has_not_started_yet');
+        }
         // poll is not expired
         if ($poll->end_date->isPast()) {
             return ApiService::error(400, 'poll_has_expired');
