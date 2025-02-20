@@ -116,9 +116,8 @@ class StatsService
         $ethnicityStats = (new self())->groupUsersByField('ethnicity', true);
         Cache::forever($ethnicityKey, $ethnicityStats);
         return $ethnicityStats;
-
     }
-    public static function calculateReligionStats():
+    public static function calculateReligionStats()
     {
         // Get the cache key
         $religionKey = config('e-syrians.cache.religion');
