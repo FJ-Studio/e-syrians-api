@@ -419,12 +419,12 @@ class UserController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'new_password' => 'required|confirmed|min:8|max:255',
+            'password' => 'required|confirmed|min:8|max:255',
         ]);
 
         // Reset the password
         $status = Password::reset(
-            $request->only('email', 'new_password', 'new_password_confirmation', 'token'),
+            $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
                     'password' => Hash::make($password)
