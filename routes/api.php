@@ -55,3 +55,7 @@ Route::prefix('polls')->group(function () {
 });
 
 Route::get('/stats', [StatsController::class, 'index'])->middleware((['throttle:10,1']));
+
+Route::middleware(['guest', 'throttle:6,1'])
+    ->get('/users/verify-email', [UserController::class, 'verifyEmail'])
+    ->name('verification.verify');
