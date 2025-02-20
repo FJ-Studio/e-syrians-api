@@ -108,26 +108,26 @@ class StatsService
     {
         $ethnicityKey = config('e-syrians.cache.ethnicity');
         $ethnicityStats = new self();
-        Cache::forever($ethnicityKey, $ethnicityStats->groupUsersByField('ethnicity'));
+        Cache::forever($ethnicityKey, $ethnicityStats->groupUsersByField('ethnicity', true));
     }
     public static function calculateReligionStats(): void
     {
         // Get the cache key
         $religionKey = config('e-syrians.cache.religion');
         $religionStatistics = new self();
-        Cache::forever($religionKey, $religionStatistics->groupUsersByField('religious_affiliation'));
+        Cache::forever($religionKey, $religionStatistics->groupUsersByField('religious_affiliation', true));
     }
     public static function calculateCountryStats(): void
     {
         $countryKey = config('e-syrians.cache.country');
         $countryStatistics = new self();
-        Cache::forever($countryKey, $countryStatistics->groupUsersByField('country'));
+        Cache::forever($countryKey, $countryStatistics->groupUsersByField('country', true));
     }
     public static function calculateHometownStats(): void
     {
         $hometownKey = config('e-syrians.cache.hometown');
         $hometownStatistics = new self();
-        Cache::forever($hometownKey, $hometownStatistics->groupUsersByField('hometown'));
+        Cache::forever($hometownKey, $hometownStatistics->groupUsersByField('hometown', true));
     }
     public function groupUsersByField(string $field, bool $sort = false): array
     {
