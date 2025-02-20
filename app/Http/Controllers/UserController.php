@@ -13,6 +13,7 @@ use App\Http\Requests\User\UpdateUserAddressRequest;
 use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
 use App\Http\Requests\User\UpdateUserCensusDataRequest;
+use App\Http\Requests\User\UserEmailVerification;
 use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\VerifyUserRequest;
 use App\Http\Resources\UserResource;
@@ -146,6 +147,17 @@ class UserController extends Controller
         return response()->json([
             'message' => 'logged_out',
         ]);
+    }
+
+    public function verifyEmail(UserEmailVerification $request)
+    {
+        $data = $request->validated();
+        $user = User::findOrFail($data['id']);
+        if (!hash_equals($data['hash'], sha1($user->email))) {
+            return ApiService::error(403, 'invalid_verification_link');
+        }
+        $user->markEmailAsVerified();
+        return ApiService::success([], 'email_verified');
     }
 
     public function update_basic_info(UpdateUserBasicInfoRequest $request)
