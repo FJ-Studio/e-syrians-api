@@ -424,7 +424,7 @@ class UserController extends Controller
 
         // Reset the password
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
+            $request->only('email', 'new_password', 'new_password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
                     'password' => Hash::make($password)
