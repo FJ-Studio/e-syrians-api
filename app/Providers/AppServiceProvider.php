@@ -35,7 +35,7 @@ class AppServiceProvider extends ServiceProvider
             return env('FRONTEND_URL') . '/auth/reset-password?token=' . $token;
         });
         VerifyEmail::createUrlUsing(function ($notifiable) {
-            $frontendUrl = env('FRONTEND_URL') . '/account';
+            $frontendUrl = env('FRONTEND_URL') . '/auth';
 
             $verifyUrl = URL::temporarySignedRoute(
                 'verification.verify',
