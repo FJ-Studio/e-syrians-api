@@ -389,6 +389,7 @@ class UserController extends Controller
 
         return ApiService::success([], 'Password updated successfully.');
     }
+
     public function forgot_password(Request $request)
     {
         // Validate the request
@@ -410,5 +411,29 @@ class UserController extends Controller
             return ApiService::error(500, 'Failed to send password reset email.');
         }
         return ApiService::success([], 'Password reset email sent successfully.');
+    }
+
+    public function reset_password(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'new_password' => 'required|confirmed|min:8|max:255',
+        ]);
+
+        // Reset the password
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password)
+                ])->save();
+            }
+        );
+        if (Password::PASSWORD_RESET !== $status) {
+            return ApiService::error(500, 'Failed to reset password.');
+        }
+        return ApiService::success([], 'Password reset successfully.');
     }
 }
