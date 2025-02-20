@@ -366,7 +366,7 @@ class UserController extends Controller
         return ApiService::success($paginatedVotes);
     }
 
-    public function changePassword(Request $request)
+    public function change_password(Request $request)
     {
         // Validate the request
         $request->validate([
