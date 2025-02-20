@@ -268,6 +268,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->count();
     }
 
+    public function isVerified(): bool
+    {
+        return (bool) $this->verified_at;
+    }
+
     /**
      * Reset the user's profile verification
      */
@@ -288,7 +293,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return [false, 'you_are_not_verified'];
         }
         // 3. check the user verifications status
-        $receivedVerifications = $this->verifiers()->count();
+        $receivedVerifications = $this->activeVerifiers()->count();
         $givenVerifications = $this->verifications()->count();
         $threshold = config('e-syrians.verification');
         // A. If the user exceeded the maximum number of verifications allowed

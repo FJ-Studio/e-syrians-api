@@ -129,7 +129,7 @@ class StatsService
         $hometownStatistics = new self();
         Cache::forever($hometownKey, $hometownStatistics->groupUsersByField('hometown'));
     }
-    public function groupUsersByField(string $field): array
+    public function groupUsersByField(string $field, bool $sort = false): array
     {
         $data = User::select(
             $field,
@@ -156,6 +156,12 @@ class StatsService
 
                 $stats[$key][$status] = $entry->count;
             }
+        }
+
+        if ($sort) {
+            uasort($stats, function ($a, $b) {
+                return ($b['verified'] + $b['unverified']) <=> ($a['verified'] + $a['unverified']);
+            });
         }
 
         return $stats;
