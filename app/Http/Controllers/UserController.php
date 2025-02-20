@@ -408,7 +408,7 @@ class UserController extends Controller
         );
 
         if (Password::RESET_LINK_SENT !== $status) {
-            return ApiService::error(500, 'Failed to send password reset email.');
+            return ApiService::error(500, 'failed_to_send_password_reset_email');
         }
         return ApiService::success([], 'Password reset email sent successfully.');
     }
@@ -432,7 +432,7 @@ class UserController extends Controller
             }
         );
         if (Password::PASSWORD_RESET !== $status) {
-            return ApiService::error(500, 'Failed to reset password.');
+            return ApiService::error(500, 'failed_to_reset_password');
         }
         return ApiService::success([], 'Password reset successfully.');
     }
