@@ -13,35 +13,36 @@ class StatsService
 {
     public static function getDailyUsersStats(): array
     {
-        return Cache::get(config('e-syrians.cache.daily_registrants'), []);
+
+        return Cache::get(config('e-syrians.cache.daily_registrants'), (new self)->calculateDailyUsersStats());
     }
     public static function getGenderStats(): array
     {
-        return Cache::get(config('e-syrians.cache.gender'), []);
+        return Cache::get(config('e-syrians.cache.gender'), (new self)->calculateDailyUsersStats());
     }
     public static function getAgeStats(): array
     {
-        return Cache::get(config('e-syrians.cache.age'), []);
+        return Cache::get(config('e-syrians.cache.age'), (new self)->calculateAgeStats());
     }
     public static function getEthnicityStats(): array
     {
-        return Cache::get(config('e-syrians.cache.ethnicity'), []);
+        return Cache::get(config('e-syrians.cache.ethnicity'), (new self)->calculateEthnicityStats());
     }
 
     public static function getCountryStats(): array
     {
-        return Cache::get(config('e-syrians.cache.country'), []);
+        return Cache::get(config('e-syrians.cache.country'), (new self)->calculateCountryStats());
     }
     public static function getHometownStats(): array
     {
-        return Cache::get(config('e-syrians.cache.hometown'), []);
+        return Cache::get(config('e-syrians.cache.hometown'), (new self)->calculateHometownStats());
     }
     public static function getReligionStats(): array
     {
-        return Cache::get(config('e-syrians.cache.religion'), []);
+        return Cache::get(config('e-syrians.cache.religion'), (new self)->calculateReligionStats());
     }
 
-    public static function calculateDailyUsersStats(): void
+    public static function calculateDailyUsersStats()
     {
         // Get the current date
         $dateKey = Carbon::now()->toDateString();
@@ -58,27 +59,31 @@ class StatsService
             // Store the updated statistics permanently
             Cache::forever($usersKey, $statistics);
         }
+        return $statistics;
     }
-    public static function calculateGenderStats(): void
+    public static function calculateGenderStats()
     {
         // Get the cache key
         $genderKey = config('e-syrians.cache.gender');
+        $genderStats = [
+            'f' => [
+                'verified' => User::where('gender', 'f')->whereNotNull('verified_at')->count(),
+                'unverified' => User::where('gender', 'f')->whereNull('verified_at')->count()
+            ],
+            'm' => [
+                'verified' => User::where('gender', 'm')->whereNotNull('verified_at')->count(),
+                'unverified' =>
+                User::where('gender', 'm')->whereNull('verified_at')->count(),
+            ],
+        ];
+        // Store the statistics in the cache
         Cache::forever(
             $genderKey,
-            [
-                'f' => [
-                    'verified' => User::where('gender', 'f')->whereNotNull('verified_at')->count(),
-                    'unverified' => User::where('gender', 'f')->whereNull('verified_at')->count()
-                ],
-                'm' => [
-                    'verified' => User::where('gender', 'm')->whereNotNull('verified_at')->count(),
-                    'unverified' =>
-                    User::where('gender', 'm')->whereNull('verified_at')->count(),
-                ],
-            ]
+            $genderStats
         );
+        return $genderStats;
     }
-    public static function calculateAgeStats(): void
+    public static function calculateAgeStats()
     {
         $ageGroups = [
             '1-15' => [1, 15],
@@ -103,31 +108,37 @@ class StatsService
         }
 
         Cache::forever(config('e-syrians.cache.age'), $ageStatistics);
+        return $ageStatistics;
     }
-    public static function calculateEthnicityStats(): void
+    public static function calculateEthnicityStats()
     {
         $ethnicityKey = config('e-syrians.cache.ethnicity');
-        $ethnicityStats = new self();
-        Cache::forever($ethnicityKey, $ethnicityStats->groupUsersByField('ethnicity', true));
+        $ethnicityStats = (new self())->groupUsersByField('ethnicity', true);
+        Cache::forever($ethnicityKey, $ethnicityStats);
+        return $ethnicityStats;
+
     }
-    public static function calculateReligionStats(): void
+    public static function calculateReligionStats():
     {
         // Get the cache key
         $religionKey = config('e-syrians.cache.religion');
-        $religionStatistics = new self();
-        Cache::forever($religionKey, $religionStatistics->groupUsersByField('religious_affiliation', true));
+        $religionStatistics = (new self())->groupUsersByField('religious_affiliation', true);
+        Cache::forever($religionKey, $religionStatistics);
+        return $religionStatistics;
     }
-    public static function calculateCountryStats(): void
+    public static function calculateCountryStats()
     {
         $countryKey = config('e-syrians.cache.country');
-        $countryStatistics = new self();
-        Cache::forever($countryKey, $countryStatistics->groupUsersByField('country', true));
+        $countryStatistics = (new self())->groupUsersByField('country', true);
+        Cache::forever($countryKey, $countryStatistics);
+        return $countryStatistics;
     }
-    public static function calculateHometownStats(): void
+    public static function calculateHometownStats()
     {
         $hometownKey = config('e-syrians.cache.hometown');
-        $hometownStatistics = new self();
-        Cache::forever($hometownKey, $hometownStatistics->groupUsersByField('hometown', true));
+        $hometownStatistics = (new self())->groupUsersByField('hometown', true);
+        Cache::forever($hometownKey, $hometownStatistics);
+        return $hometownStatistics;
     }
     public function groupUsersByField(string $field, bool $sort = false): array
     {
