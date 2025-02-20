@@ -19,7 +19,7 @@ class StatsController extends Controller
             'gender' => StatsService::getGenderStats(),
             'age' => StatsService::getAgeStats(),
             'ethnicity' => StatsService::getEthnicityStats(),
-            'country' => StatsService::getCountryStats(),
+            'country' => array_slice(StatsService::getCountryStats(), 0, 10, true),
             'hometown' => StatsService::getHometownStats(),
             'religion' => StatsService::getReligionStats(),
         ]);
