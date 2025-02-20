@@ -24,7 +24,9 @@ class PollController extends Controller
     {
         $userId = auth('sanctum')->user()?->id; // Use null-safe operator in case user is not logged in
 
-        $polls = Poll::with(['user', 'options'])
+        $polls = Poll::whereYear('created_at', $request->input('year', now()->year))
+            ->whereMonth('created_at', $request->input('month', now()->month))
+            ->with(['user', 'options'])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',
