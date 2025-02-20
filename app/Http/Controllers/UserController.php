@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\ProfileChangeTypeEnum;
+use App\Events\VerificationReceived;
 use App\Http\Requests\User\CredentialsLoginRequest;
 use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UpdateSocialLinksRequest;
@@ -21,6 +22,7 @@ use App\Models\WeaponDelivery;
 use App\Services\ApiService;
 use App\Services\StrService;
 use App\Services\UserService;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -71,7 +73,7 @@ class UserController extends Controller
         }
         $user = User::create($data);
         $user->assignRole('citizen');
-
+        event(new Registered($user));
         return ApiService::success(new UserResource($user), '', 201);
     }
 
@@ -266,7 +268,7 @@ class UserController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
-
+            VerificationReceived::dispatch($user, $targetUser);
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
