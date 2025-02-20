@@ -24,7 +24,7 @@ class UpdateStatistics
     {
         $cache_keys = config('e-syrians.cache', []);
         foreach ($cache_keys as $key => $value) {
-            Cache::forget($key);
+            Cache::forget($value);
         }
     }
 }
