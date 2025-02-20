@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Password;
 
 class UserController extends Controller
 {
@@ -387,5 +388,27 @@ class UserController extends Controller
         ]);
 
         return ApiService::success([], 'Password updated successfully.');
+    }
+    public function forgot_password(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $email = StrService::hash($request->input('email'));
+        $user = User::where('email_hashed', $email)->first();
+        if (!$user) {
+            return ApiService::error(404, 'email_not_found');
+        }
+        // send the password reset email
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        if (Password::RESET_LINK_SENT !== $status) {
+            return ApiService::error(500, 'Failed to send password reset email.');
+        }
+        return ApiService::success([], 'Password reset email sent successfully.');
     }
 }
