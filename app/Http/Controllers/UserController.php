@@ -365,4 +365,27 @@ class UserController extends Controller
 
         return ApiService::success($paginatedVotes);
     }
+
+    public function changePassword(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|confirmed|min:8|max:255|different:current_password',
+        ]);
+
+        $user = $request->user();
+
+        // Check if the current password is correct
+        if (!Hash::check($request->input('current_password'), $user->password)) {
+            return ApiService::error(401, 'current_password_incorrect');
+        }
+
+        // Update and save the new password
+        $user->update([
+            'password' => Hash::make($request->input('new_password'))
+        ]);
+
+        return ApiService::success([], 'Password updated successfully.');
+    }
 }
