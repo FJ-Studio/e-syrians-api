@@ -28,7 +28,7 @@ class UserVerificationResource extends JsonResource
                     'uuid' => $this->user->uuid,
                     'name' => $this->user->name,
                     'surname' => $this->user->surname,
-                    'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(60)) : null,
+                    'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(config('e-syrians.files.avatar.ttl', 60))) : null,
                 ];
             }),
             'verifier' => $this->whenLoaded('verifier', function () {
@@ -36,7 +36,7 @@ class UserVerificationResource extends JsonResource
                     'uuid' => $this->verifier->uuid,
                     'name' => $this->verifier->name,
                     'surname' => $this->verifier->surname,
-                    'avatar' => $this->verifier->avatar ? Storage::disk('s3')->temporaryUrl($this->verifier->avatar, now()->addMinutes(60)) : null,
+                    'avatar' => $this->verifier->avatar ? Storage::disk('s3')->temporaryUrl($this->verifier->avatar, now()->addMinutes(config('e-syrians.files.avatar.ttl', 60))) : null,
                 ];
             }),
         ];

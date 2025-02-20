@@ -25,7 +25,7 @@ class PollOptionResource extends JsonResource
                     'uuid' => $this->user->uuid,
                     'name' => $this->user->name,
                     'surname' => $this->user->surname,
-                    'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(60)) : null,
+                    'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(config('e-syrians.files.avatar.ttl', 60))) : null,
                 ];
             }),
             'votes_count' => $this->votes()->count(),

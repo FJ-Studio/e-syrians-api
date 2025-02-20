@@ -28,5 +28,9 @@ return [
         'ethnicity' => 'ethnicity',
         'religion' => 'religion',
     ],
-    ''
+    'files' => [
+        'avatar' => [
+            'ttl' => 1440, // 24 hours 
+        ]
+    ]
 ];
