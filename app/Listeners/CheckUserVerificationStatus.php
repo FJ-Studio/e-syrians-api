@@ -3,9 +3,8 @@
 namespace App\Listeners;
 
 use App\Events\VerificationReceived;
+use App\Mail\UserAccountVerified;
 use App\Mail\UserReceivedVerification;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
 class CheckUserVerificationStatus
@@ -23,14 +22,16 @@ class CheckUserVerificationStatus
      */
     public function handle(VerificationReceived $event): void
     {
-        if (!$event->recipient->isVerified()) {
+        if (! $event->recipient->isVerified()) {
             $threshold = config('e-syrians.verification.min', 3);
             if ($event->recipient->activeVerifiers()->count() === $threshold) {
                 $event->recipient->verified_at = now();
                 $event->recipient->save();
                 if ($event->recipient->account_verified_email) {
                     // send email notification to tell the user he has been verified
+                    Mail::to($event->recipient)->send(new UserAccountVerified($event->recipient));
                 }
+
                 return;
             }
         }

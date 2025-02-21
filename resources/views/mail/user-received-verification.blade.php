@@ -4,7 +4,7 @@
 Your profile data has been verified by {{ $sender->name }} {{ $sender->surname }}.
 
 <x-mail::button :url="$url">
-    Review Profile Status
+Review Profile Status
 </x-mail::button>
 
 Thanks,<br>
