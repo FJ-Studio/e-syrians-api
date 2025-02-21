@@ -35,8 +35,7 @@ class AppServiceProvider extends ServiceProvider
             return env('FRONTEND_URL') . '/auth/reset-password?token=' . $token;
         });
         VerifyEmail::createUrlUsing(function ($notifiable) {
-            $frontendUrl = env('FRONTEND_URL') . '/auth';
-
+            $frontendUrl = env('FRONTEND_URL');
             $verifyUrl = URL::temporarySignedRoute(
                 'verification.verify',
                 Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
