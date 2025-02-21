@@ -451,7 +451,7 @@ class UserController extends Controller
         return ApiService::success([], 'Password reset successfully.');
     }
 
-    public function send_verification()
+    public function get_email_verification_link()
     {
         $user = request()->user();
         if ($user->hasVerifiedEmail()) {
@@ -459,5 +459,19 @@ class UserController extends Controller
         }
         $user->sendEmailVerificationNotification();
         return ApiService::success([], 'verification_email_sent');
+    }
+
+    public function change_email(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:users,email',
+        ]);
+
+        $user = $request->user();
+        $user->email = $request->input('email');
+        $user->email_verified_at = null;
+        $user->save();
+
+        return ApiService::success([], 'email_changed');
     }
 }
