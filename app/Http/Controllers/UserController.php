@@ -287,7 +287,7 @@ class UserController extends Controller
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
-            VerificationReceived::dispatch($user, $targetUser);
+            event(new VerificationReceived($user, $targetUser));
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
