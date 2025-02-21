@@ -450,4 +450,14 @@ class UserController extends Controller
         }
         return ApiService::success([], 'Password reset successfully.');
     }
+
+    public function send_verification()
+    {
+        $user = request()->user();
+        if ($user->hasVerifiedEmail()) {
+            return ApiService::error(403, 'user_already_verified');
+        }
+        $user->sendEmailVerificationNotification();
+        return ApiService::success([], 'verification_email_sent');
+    }
 }

@@ -22,6 +22,7 @@ Route::prefix('users')->group(function () {
     Route::middleware(['guest', 'throttle:6,1'])->post('/forgot-password', [UserController::class, 'forgot_password']);
     Route::middleware(['guest', 'throttle:6,1'])->post('/reset-password', [UserController::class, 'reset_password']);
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/send-verification', [UserController::class, 'send_verification']);
         Route::post('/change-password', [UserController::class, 'change_password']);
         Route::get('/me', [UserController::class, 'me']);
         Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class);
