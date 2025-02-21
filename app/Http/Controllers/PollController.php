@@ -22,7 +22,9 @@ class PollController extends Controller
      */
     public function index(Request $request)
     {
-        $userId = auth('sanctum')->user()?->id; // Use null-safe operator in case user is not logged in
+        $user = auth('sanctum')->check() ? auth('sanctum')->user() : null;
+
+        $userId = $user?->id; // Use null-safe operator in case user is not logged in
 
         $polls = Poll::whereYear('created_at', $request->input('year', now()->year))
             ->whereMonth('created_at', $request->input('month', now()->month))

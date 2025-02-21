@@ -16,7 +16,6 @@ class PollResource extends JsonResource
     public function toArray(Request $request): array
     {
         $user = auth('sanctum')->check() ? auth('sanctum')->user() : null;
-
         $userId = $user?->id;
         $revealResults = PollService::revealResults($this->resource, $user);
 
