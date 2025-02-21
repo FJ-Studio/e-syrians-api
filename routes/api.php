@@ -19,12 +19,12 @@ Route::prefix('users')->group(function () {
     Route::middleware(['guest', 'throttle:6,1'])->post('/register', [UserController::class, 'store']);
     Route::middleware(['guest', 'throttle:6,1'])->post('/login', [UserController::class, 'login']);
     Route::middleware(['guest', 'throttle:6,1'])->post('/login/social', [UserController::class, 'social_login']);
-    Route::middleware(['guest', 'throttle:6,1'])->post('/forgot-password', [UserController::class, 'forgot_password']);
-    Route::middleware(['guest', 'throttle:6,1'])->post('/reset-password', [UserController::class, 'reset_password']);
+    Route::middleware(['guest', 'throttle:2,1'])->post('/forgot-password', [UserController::class, 'forgot_password']);
+    Route::middleware(['guest', 'throttle:2,1'])->post('/reset-password', [UserController::class, 'reset_password']);
     Route::middleware(['auth:sanctum'])->group(function () {
-        Route::post('/change-password', [UserController::class, 'change_password']);
-        Route::post('/change-email', [UserController::class, 'change_email']);
-        Route::post('/get-email-verification-link', [UserController::class, 'get_email_verification_link']);
+        Route::middleware(['throttle:1,10'])->post('/change-password', [UserController::class, 'change_password']);
+        Route::middleware(['throttle:1,10'])->post('/change-email', [UserController::class, 'change_email']);
+        Route::middleware(['throttle:1,10'])->post('/get-email-verification-link', [UserController::class, 'get_email_verification_link']);
         Route::get('/me', [UserController::class, 'me']);
         Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class);
 
