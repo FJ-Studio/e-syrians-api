@@ -19,7 +19,6 @@ class UserResource extends JsonResource
     public function toArray($request)
     {
         $isOwner = ($request->user() && $request->user()->uuid === $this->uuid) || (isset($this->additional['isOwner']) && $this->additional['isOwner'] === true);
-        $request_for = $request->get('request_for', false);
 
         return [
             // 'id' => $this->id,
@@ -79,6 +78,8 @@ class UserResource extends JsonResource
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
                 'basic_info_updates' => (int)(config('e-syrians.verification.basic_data_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
+                'received_verification_notification' => $this->received_verification_notification,
+                'account_verified_email' => $this->account_verified_email,
             ]),
 
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),

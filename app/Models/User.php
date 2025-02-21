@@ -110,6 +110,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'twitch_link',
         'snapchat_link',
         'website',
+        'received_verification_notification',
+        'account_verified_email',
     ];
 
     public function getRouteKeyName()
