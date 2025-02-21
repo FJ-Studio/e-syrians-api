@@ -14,16 +14,16 @@ use Illuminate\Queue\SerializesModels;
 class VerificationReceived
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-    public User $from;
-    public User $to;
+    public User $sender;
+    public User $recipient;
 
     /**
      * Create a new event instance.
      */
-    public function __construct(User $from, User $to)
+    public function __construct(User $sender, User $recipient)
     {
-        $this->from = $from;
-        $this->to = $to;
+        $this->sender = $sender;
+        $this->recipient = $recipient;
     }
 
     /**
