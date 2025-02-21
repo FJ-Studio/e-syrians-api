@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Markdown;
 use Illuminate\Queue\SerializesModels;
 
 class UserReceivedVerification extends Mailable
@@ -36,14 +37,15 @@ class UserReceivedVerification extends Mailable
     /**
      * Get the message content definition.
      */
+
     public function content(): Content
     {
         return new Content(
-            view: 'mail.user-received-verification',
+            markdown: 'mail.user-received-verification',
             with: [
                 'sender' => $this->sender,
                 'recipient' => $this->recipient,
-            ],
+            ]
         );
     }
 

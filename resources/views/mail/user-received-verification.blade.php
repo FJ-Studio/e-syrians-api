@@ -1,17 +1,12 @@
-<div>
-    <h1>Hi, {{ $recipient->name }}</h1>
-    <p>
-        Your data has been verified by {{ $sender->name}} {{ $sender->surname}}
-    </p>
+<x-mail::message>
+    # Verification Received
 
-    <p>
-        In order to follow your account status, please click on the link below:
-    </p>
-    <p>
-        <a href="{{ env('FRONTEND_URL') }}/account">Check my account</a>
-    </p>
-    <p>
-        Regards, <br>
-        {{ config('app.name') }}
-    </p>
-</div>
+    Your profile data has been verified by {{ $sender->name }} {{ $sender->surname }}.
+
+    <x-mail::button :url="$url">
+        Review Profile Status
+    </x-mail::button>
+
+    Thanks,<br>
+    {{ config('app.name') }}
+</x-mail::message>
