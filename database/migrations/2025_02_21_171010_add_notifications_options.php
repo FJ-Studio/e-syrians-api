@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('received_verification_notification')->default(false)->after('website');
-            $table->boolean('account_verified_email')->default(true)->after('received_verification_notification');
+            $table->boolean('received_verification_email')->default(false)->after('website');
+            $table->boolean('account_verified_email')->default(true)->after('received_verification_email');
         });
     }
 
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('received_verification_notification');
+            $table->dropColumn('received_verification_email');
             $table->dropColumn('account_verified_email');
         });
     }

@@ -78,7 +78,7 @@ class UserResource extends JsonResource
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
                 'basic_info_updates' => (int)(config('e-syrians.verification.basic_data_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
-                'received_verification_notification' => $this->received_verification_notification,
+                'received_verification_email' => $this->received_verification_email,
                 'account_verified_email' => $this->account_verified_email,
             ]),
 

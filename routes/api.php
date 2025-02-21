@@ -25,6 +25,7 @@ Route::prefix('users')->group(function () {
         Route::middleware(['throttle:1,1,change-password'])->post('/change-password', [UserController::class, 'change_password']);
         Route::middleware(['throttle:1,1,change-email'])->post('/change-email', [UserController::class, 'change_email']);
         Route::middleware(['throttle:1,1,get_verification_email'])->post('/get-email-verification-link', [UserController::class, 'get_email_verification_link']);
+        Route::middleware(['throttle:1,1,change-notifications'])->post('/change-notifications', [UserController::class, 'change_notifications']);
         Route::get('/me', [UserController::class, 'me']);
         Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class);
 

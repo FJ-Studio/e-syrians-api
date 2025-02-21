@@ -110,7 +110,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'twitch_link',
         'snapchat_link',
         'website',
-        'received_verification_notification',
+        'received_verification_email',
         'account_verified_email',
     ];
 

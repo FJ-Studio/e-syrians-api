@@ -482,4 +482,17 @@ class UserController extends Controller
         $user->sendEmailVerificationNotification();
         return ApiService::success([], 'email_changed');
     }
+
+    public function change_notifications(Request $request)
+    {
+        $request->validate([
+            'received_verification_email' => 'required|boolean',
+            'account_verified_email' => 'required|boolean',
+        ]);
+        $user = $request->user();
+        $user->received_verification_email = $request->input('received_verification_email');
+        $user->account_verified_email = $request->input('account_verified_email');
+        $user->save();
+        return ApiService::success([], 'notifications_changed');
+    }
 }
