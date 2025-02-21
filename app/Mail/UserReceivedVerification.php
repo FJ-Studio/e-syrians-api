@@ -45,6 +45,7 @@ class UserReceivedVerification extends Mailable
             with: [
                 'sender' => $this->sender,
                 'recipient' => $this->recipient,
+                'url' => env('FRONTEND_URL') . '/account/verifications/',
             ]
         );
     }
