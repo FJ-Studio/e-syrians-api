@@ -12,6 +12,6 @@ Route::get('/', function () {
 Route::get('/test', function () {
     $user  = User::find(1);
     $targetUser = User::find(18);
-    $sent = Mail::to('test@example.com')->send(new UserReceivedVerification($user, $targetUser));
+    $sent = Mail::to($targetUser)->send(new UserReceivedVerification($user, $targetUser));
     dd($user, $targetUser, $sent);
 });
