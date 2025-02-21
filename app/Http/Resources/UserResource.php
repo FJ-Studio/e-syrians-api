@@ -18,7 +18,7 @@ class UserResource extends JsonResource
      */
     public function toArray($request)
     {
-        $isOwner = $request->user() && $request->user()->id === $this->id;
+        $isOwner = $request->user() && $request->user()->uuid === $this->uuid;
         $request_for = $request->get('request_for', false);
 
         return [
