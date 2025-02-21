@@ -153,9 +153,16 @@ class UserController extends Controller
     {
         $data = $request->validated();
         $user = User::findOrFail($data['id']);
+        if ($user->hasVerifiedEmail()) {
+            return ApiService::error(403, 'user_already_verified');
+        }
         if (!hash_equals($data['hash'], sha1($user->email))) {
             return ApiService::error(403, 'invalid_verification_link');
         }
+        if (!$request->hasValidSignature(false)) {
+            return ApiService::error(400, 'invalid_verification_link');
+        }
+
         $user->markEmailAsVerified();
         return ApiService::success([], 'email_verified');
     }
