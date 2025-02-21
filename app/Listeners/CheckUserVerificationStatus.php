@@ -38,7 +38,7 @@ class CheckUserVerificationStatus
         }
         if ($event->to->received_verification_email) {
             // send email notification telling that the user data has been verified by another user.
-            Mail::to($event->to)->send(new UserReceivedVerification($event->from, $event->to));
+            Mail::to($event->to->email)->send(new UserReceivedVerification($event->from, $event->to));
         }
     }
 }
