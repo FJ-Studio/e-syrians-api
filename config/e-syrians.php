@@ -30,7 +30,7 @@ return [
     ],
     'files' => [
         'avatar' => [
-            'ttl' => 1440, // 24 hours 
+            'ttl' => 10080, // 7 days
         ]
     ]
 ];
