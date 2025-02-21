@@ -112,7 +112,7 @@ class UserController extends Controller
         }
 
         return ApiService::success([
-            'user' => new UserResource($user),
+            'user' => (new UserResource($user))->additional(['isOwner' => true]),
             'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
         ]);
     }
@@ -132,7 +132,7 @@ class UserController extends Controller
 
         if ($user && Hash::check($password, $user->password)) {
             return ApiService::success([
-                'user' => new UserResource($user),
+                'user' => (new UserResource($user))->additional(['isOwner' => true]),
                 'token' => explode('|', $user->createToken(date('YYYY-mm-dd-H:i:s'))->plainTextToken)[1],
             ]);
         }
