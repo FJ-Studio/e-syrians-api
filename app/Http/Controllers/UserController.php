@@ -414,7 +414,8 @@ class UserController extends Controller
         $email = StrService::hash($request->input('email'));
         $user = User::where('email_hashed', $email)->first();
         if (!$user) {
-            return ApiService::error(404, 'email_not_found');
+            // even if the email is not found, we will not tell the user for privacy reasons
+            return ApiService::success(200,);
         }
         // send the password reset email
         $status = Password::sendResetLink(
