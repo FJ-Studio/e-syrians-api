@@ -17,10 +17,10 @@ class UserReceivedVerification extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public User $from, public User $to)
+    public function __construct(public User $sender, public User $recipient)
     {
-        $this->from = $from;
-        $this->to = $to;
+        $this->sender = $sender;
+        $this->recipient = $recipient;
     }
 
     /**
@@ -41,8 +41,8 @@ class UserReceivedVerification extends Mailable
         return new Content(
             view: 'mail.user-received-verification',
             with: [
-                'from' => $this->from,
-                'to' => $this->to,
+                'from' => $this->sender,
+                'to' => $this->recipient,
             ],
         );
     }
