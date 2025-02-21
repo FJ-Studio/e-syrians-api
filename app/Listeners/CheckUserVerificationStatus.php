@@ -23,8 +23,6 @@ class CheckUserVerificationStatus
      */
     public function handle(VerificationReceived $event): void
     {
-        $event->to;
-
         if (!$event->to->isVerified()) {
             $threshold = config('e-syrians.verification.min', 3);
             if ($event->to->activeVerifiers()->count() === $threshold) {
