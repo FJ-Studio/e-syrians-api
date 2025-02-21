@@ -1,7 +1,7 @@
 <div>
-    <h1>Hi, {{ $to->name }}</h1>
+    <h1>Hi, {{ $recipient->name }}</h1>
     <p>
-        Your data has been verified by {{ $from->?name}} {{ $from->?surname}}
+        Your data has been verified by {{ $sender->name}} {{ $sender->surname}}
     </p>
 
     <p>

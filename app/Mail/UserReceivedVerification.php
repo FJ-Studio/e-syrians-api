@@ -41,8 +41,8 @@ class UserReceivedVerification extends Mailable
         return new Content(
             view: 'mail.user-received-verification',
             with: [
-                'from' => $this->sender,
-                'to' => $this->recipient,
+                'sender' => $this->sender,
+                'recipient' => $this->recipient,
             ],
         );
     }
