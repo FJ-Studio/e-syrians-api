@@ -81,6 +81,11 @@ class Poll extends Model
         return $this->hasManyThrough(User::class, PollVote::class, 'poll_id', 'id', 'id', 'user_id');
     }
 
+    public function uniqueVotersCount()
+    {
+        return $this->votes()->distinct('user_id')->count('user_id');
+    }
+
     /**
      * Get the reactions for the poll.
      */
