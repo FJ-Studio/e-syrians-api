@@ -28,6 +28,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 
@@ -153,6 +154,7 @@ class UserController extends Controller
     public function verifyEmail(UserEmailVerification $request)
     {
         $data = $request->validated();
+        Log::info($data);
         $user = User::findOrFail($data['id']);
         if ($user->hasVerifiedEmail()) {
             return ApiService::error(403, 'user_already_verified');
