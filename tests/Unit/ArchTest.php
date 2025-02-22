@@ -14,7 +14,7 @@ arch()
     ->expect('App\Models')
     ->toBeClasses()
     ->toExtend('Illuminate\Database\Eloquent\Model')
-    ->toOnlyBeUsedIn('App\Http')
+    ->toOnlyBeUsedIn('App')
     ->ignoring('App\Models\User');
 
 arch()->preset()->php();

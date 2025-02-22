@@ -11,8 +11,9 @@
 |
 */
 
+use Illuminate\Support\Facades\Artisan;
+
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
 /*
@@ -41,7 +42,7 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
-{
-    // ..
-}
+beforeEach(function () {
+    // Run the migrations
+    Artisan::call('migrate', ['--env' => 'testing']);
+});

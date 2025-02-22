@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreWeaponDeliveryRequest;
-use App\Http\Requests\UpdateWeaponDeliveryRequest;
+use App\Http\Requests\WeaponDeliveries\StoreWeaponDeliveryRequest;
+use App\Http\Requests\WeaponDeliveries\UpdateWeaponDeliveryRequest;
 use App\Models\User;
 use App\Models\WeaponDelivery;
 
@@ -47,7 +47,7 @@ class WeaponDeliveryController extends Controller
         $u = User::where('id', $data['citizen_id'])->first();
         $u->update([
             'national_id' => $data['national_id'],
-            'national_id_hash' => $data['national_id'],
+            'national_id_hashed' => $data['national_id'],
             'phone' => $data['phone'],
         ]);
         $u->setTranslation('name', 'ar', $data['name'])->save();
