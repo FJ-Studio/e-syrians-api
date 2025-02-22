@@ -49,8 +49,7 @@ class Poll extends Model
         });
     }
 
-
-    /** 
+    /**
      * Get the user that created the poll.
      */
     public function user()
@@ -58,14 +57,15 @@ class Poll extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** 
+    /**
      * Get the options for the poll.
      */
     public function options()
     {
         return $this->hasMany(PollOption::class);
     }
-    /** 
+
+    /**
      * Get the votes for the poll.
      */
     public function votes()
@@ -73,14 +73,23 @@ class Poll extends Model
         return $this->hasMany(PollVote::class);
     }
 
-    /** 
+    /**
+     * Get the voters for the poll.
+     */
+    public function voters()
+    {
+        return $this->hasManyThrough(User::class, PollVote::class, 'poll_id', 'id', 'id', 'user_id');
+    }
+
+    /**
      * Get the reactions for the poll.
      */
     public function reactions()
     {
         return $this->hasMany(PollReaction::class);
     }
-    /** 
+
+    /**
      * Get the upvote reactions for the poll.
      */
     public function ups()
@@ -88,7 +97,7 @@ class Poll extends Model
         return $this->reactions()->where('reaction', 'up');
     }
 
-    /** 
+    /**
      * Get the downvote reactions for the poll.
      */
     public function downs()

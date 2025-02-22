@@ -29,11 +29,12 @@ class PollResource extends JsonResource
             'audience' => $this->audience,
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
-            'deleted_at' => $this->when($this->deleted_at, fn() => $this->deleted_at->toISOString()),
+            'deleted_at' => $this->when($this->deleted_at, fn () => $this->deleted_at->toISOString()),
             'reveal_results' => $this->reveal_results,
             'ups_count' => $this->ups_count,
             'downs_count' => $this->downs_count,
             'voters_are_visible' => $this->voters_are_visible,
+            'total_voters' => $this->total_voters ?? 0,
 
             'user' => $this->relationLoaded('user')
                 ? new UserResource($this->user)
@@ -42,14 +43,16 @@ class PollResource extends JsonResource
             'options' => $this->relationLoaded('options')
                 ? PollOptionResource::collection(
                     $this->options->map(function ($option) use ($revealResults) {
-                        if (!$revealResults) {
+                        if (! $revealResults) {
                             $option->percentage = null;
+
                             return new PollOptionResource($option);
                         }
                         $totalVotes = $this->total_votes ?? 0; // Get total votes from the poll
                         $optionVotes = $option->votes()->count(); // Get votes for this option
                         $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0; // Calculate %
                         $option->percentage = $percentage;
+
                         return new PollOptionResource($option);
                     })
                 )

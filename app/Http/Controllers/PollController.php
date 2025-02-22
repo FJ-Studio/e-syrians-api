@@ -32,9 +32,10 @@ class PollController extends Controller
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',
-                'votes as total_votes' // Get total votes for percentage calculation
+                'votes as total_votes',
+                'voters as total_voters',
             ])
-            ->when((bool)($userId), function ($query) use ($userId) {
+            ->when((bool) ($userId), function ($query) use ($userId) {
                 $query->withExists([
                     'votes as has_voted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
@@ -44,14 +45,14 @@ class PollController extends Controller
                     },
                     'downs as has_downvoted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
-                    }
+                    },
                 ]);
 
                 // Load only the selected options if the user has voted
                 $query->with([
                     'votes' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
-                    }
+                    },
                 ]);
             })
             ->orderByRaw('(ups_count - downs_count) DESC')
@@ -90,7 +91,7 @@ class PollController extends Controller
                 $poll = Poll::create([
                     'question' => $request->question,
                     'start_date' => $request->start_date,
-                    'end_date' => now()->addDays((int)($request->duration)),
+                    'end_date' => now()->addDays((int) ($request->duration)),
                     'max_selections' => $request->max_selections,
                     'audience_can_add_options' => $request->audience_can_add_options,
                     'created_by' => Auth::id(),
@@ -101,7 +102,7 @@ class PollController extends Controller
                 ]);
 
                 // Insert Poll Options (Bulk Insert)
-                $options = collect($request->input('options'))->map(fn($option) => [
+                $options = collect($request->input('options'))->map(fn ($option) => [
                     'poll_id' => $poll->id,
                     'option_text' => $option,
                     'created_by' => Auth::id(),
@@ -134,9 +135,10 @@ class PollController extends Controller
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',
-                'votes as total_votes' // Get total votes for percentage calculation
+                'votes as total_votes',
+                'voters as total_voters',
             ])
-            ->when((bool)($userId), function ($query) use ($userId) {
+            ->when((bool) ($userId), function ($query) use ($userId) {
                 $query->withExists([
                     'votes as has_voted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
@@ -146,22 +148,20 @@ class PollController extends Controller
                     },
                     'downs as has_downvoted' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
-                    }
+                    },
                 ]);
 
                 // Load only the selected options if the user has voted
                 $query->with([
                     'votes' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);
-                    }
+                    },
                 ]);
             })
             ->findOrFail($id);
 
         return ApiService::success(new PollResource($poll));
     }
-
-
 
     /**
      * Remove the specified resource from storage.
@@ -178,16 +178,19 @@ class PollController extends Controller
             if ($poll->trashed()) {
                 // Restore the poll if it is already soft deleted
                 $poll->restore();
+
                 return ApiService::success([]);
             } else {
                 // Soft delete the poll
                 $poll->delete();
+
                 return ApiService::success([]);
             }
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }
     }
+
     public function vote(StorePollVoteRequest $request)
     {
         // poll is not deleted
@@ -206,7 +209,7 @@ class PollController extends Controller
         }
         // user is in the poll's audience
         $in_audience = UserService::canAnswerPoll($poll->id, request()->user());
-        if (!$in_audience[0]) {
+        if (! $in_audience[0]) {
             return ApiService::error(400, 'user_is_not_in_poll_audience');
         }
         // user has not reached the max selections
@@ -220,15 +223,17 @@ class PollController extends Controller
         }
         // save the vote
         $poll->votes()->createMany(
-            collect($request->poll_option_id)->map(fn($optionId) => [
+            collect($request->poll_option_id)->map(fn ($optionId) => [
                 'user_id' => request()->user()->id,
                 'poll_option_id' => $optionId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ])->toArray()
         );
+
         return ApiService::success([]);
     }
+
     public function react(StorePollReaction $request)
     {
         // poll is not deleted
@@ -248,6 +253,7 @@ class PollController extends Controller
             'user_id' => Auth::id(),
             'reaction' => $request->reaction,
         ]);
+
         return ApiService::success([]);
     }
 }
