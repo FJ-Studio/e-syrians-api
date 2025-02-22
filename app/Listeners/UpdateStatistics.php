@@ -3,8 +3,6 @@
 namespace App\Listeners;
 
 use App\Events\Registered;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Cache;
 
 class UpdateStatistics
@@ -24,7 +22,11 @@ class UpdateStatistics
     {
         $cache_keys = config('e-syrians.cache', []);
         foreach ($cache_keys as $key => $value) {
-            Cache::forget($value);
+            if ($value !== 'daily_registrants') {
+                Cache::forget($value);
+
+                continue;
+            }
         }
     }
 }
