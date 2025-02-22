@@ -34,7 +34,7 @@ class PollResource extends JsonResource
             'ups_count' => $this->ups_count,
             'downs_count' => $this->downs_count,
             'voters_are_visible' => $this->voters_are_visible,
-            'total_voters' => $this->total_voters ?? 0,
+            'unique_voters_count' => $this->unique_voters_count ?? 0,
 
             'user' => $this->relationLoaded('user')
                 ? new UserResource($this->user)

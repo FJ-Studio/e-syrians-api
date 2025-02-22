@@ -33,7 +33,9 @@ class PollController extends Controller
                 'ups as ups_count',
                 'downs as downs_count',
                 'votes as total_votes',
-                'voters as total_voters',
+                'votes as unique_voters_count' => function ($query) {
+                    $query->selectRaw('COUNT(DISTINCT user_id)');
+                },
             ])
             ->when((bool) ($userId), function ($query) use ($userId) {
                 $query->withExists([
@@ -136,7 +138,9 @@ class PollController extends Controller
                 'ups as ups_count',
                 'downs as downs_count',
                 'votes as total_votes',
-                'voters as total_voters',
+                'votes as unique_voters_count' => function ($query) {
+                    $query->selectRaw('COUNT(DISTINCT user_id)');
+                },
             ])
             ->when((bool) ($userId), function ($query) use ($userId) {
                 $query->withExists([
