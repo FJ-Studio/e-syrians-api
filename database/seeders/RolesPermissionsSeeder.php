@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -16,13 +15,6 @@ class RolesPermissionsSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $identity_verification_manager_permissions = [
-            'security_personnel:index',
-            'security_personnel:show',
-            'security_personnel:store',
-            'security_personnel:update',
-            'security_personnel:delete',
-        ];
         $weapon_delivery_manager_permissions = [
             'weapon_delivery_point:index',
             'weapon_delivery_point:show',
@@ -45,19 +37,15 @@ class RolesPermissionsSeeder extends Seeder
 
         $permissionsByRole = [
             'admin' => [
-                ...$identity_verification_manager_permissions,
                 'personnel:force-delete',
                 ...$weapon_delivery_manager_permissions,
                 'weapon_delivery:force-delete',
             ],
-            'identity_verification_manager' => [
-                ...$identity_verification_manager_permissions
-            ],
             'weapon_delivery_manager' => [
-                ...$weapon_delivery_manager_permissions
+                ...$weapon_delivery_manager_permissions,
             ],
             'security_personnel' => [
-                ...$security_personnel_permissions
+                ...$security_personnel_permissions,
             ],
             'local_census_manager' => [],
             'citizen' => [
