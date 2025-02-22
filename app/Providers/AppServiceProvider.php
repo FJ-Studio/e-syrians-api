@@ -32,7 +32,7 @@ class AppServiceProvider extends ServiceProvider
             $event->extendSocialite('google', \SocialiteProviders\Google\Provider::class);
         });
         ResetPassword::createUrlUsing(function (User $user, string $token) {
-            return env('FRONTEND_URL') . '/auth/reset-password?token=' . $token;
+            return env('FRONTEND_URL').'/auth/reset-password?token='.$token;
         });
         VerifyEmail::createUrlUsing(function ($notifiable) {
             $frontendUrl = env('FRONTEND_URL');
@@ -42,11 +42,12 @@ class AppServiceProvider extends ServiceProvider
                 [
                     'id' => $notifiable->getKey(),
                     'hash' => sha1($notifiable->getEmailForVerification()),
-                    'lang' => $notifiable->language ?? 'en'
+                    'lang' => $notifiable->language ?? '',
                 ],
-                false
+                true
             );
-            return $frontendUrl . $verifyUrl;
+
+            return $frontendUrl.$verifyUrl;
         });
     }
 }
