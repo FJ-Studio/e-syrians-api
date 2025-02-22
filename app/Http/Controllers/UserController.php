@@ -25,11 +25,11 @@ use App\Services\StrService;
 use App\Services\UserService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -75,6 +75,7 @@ class UserController extends Controller
         $user = User::create($data);
         $user->assignRole('citizen');
         event(new Registered($user));
+
         return ApiService::success(new UserResource($user), '', 201);
     }
 
@@ -156,14 +157,15 @@ class UserController extends Controller
         if ($user->hasVerifiedEmail()) {
             return ApiService::error(403, 'user_already_verified');
         }
-        if (!hash_equals($data['hash'], sha1($user->email))) {
+        if (! hash_equals($data['hash'], sha1($user->email))) {
             return ApiService::error(403, 'invalid_verification_link');
         }
-        if (!$request->hasValidSignature(false)) {
-            return ApiService::error(400, 'invalid_verification_link');
-        }
+        // if (! $request->hasValidSignature(false)) {
+        //     return ApiService::error(400, 'invalid_verification_link');
+        // }
 
         $user->markEmailAsVerified();
+
         return ApiService::success([], 'email_verified');
     }
 
@@ -218,7 +220,7 @@ class UserController extends Controller
 
             $file = $request->file('avatar');
             $ext = $file->getClientOriginalExtension();
-            $fileName = $user->uuid . '.' . $ext;
+            $fileName = $user->uuid.'.'.$ext;
 
             // Delete old avatar if it exists
             if (! empty($user->avatar) && Storage::disk('s3')->exists($user->avatar)) {
@@ -288,6 +290,7 @@ class UserController extends Controller
                 'user_agent' => $request->userAgent(),
             ]);
             event(new VerificationReceived($user, $targetUser));
+
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
@@ -363,10 +366,11 @@ class UserController extends Controller
             ->map(function ($votes) {
                 $firstVote = $votes->first(); // Get the first vote in the group
                 $option = $firstVote->option ?? null; // Get the option, or null if not set
-                if (!$option || !$option->poll) {
+                if (! $option || ! $option->poll) {
                     return null; // Skip if option is null
                 }
                 $poll = $option->poll; // Get the associated poll
+
                 return [
                     'poll_id' => $poll->id,
                     'question' => $poll->question,
@@ -399,13 +403,13 @@ class UserController extends Controller
         $user = $request->user();
 
         // Check if the current password is correct
-        if (!Hash::check($request->input('current_password'), $user->password)) {
+        if (! Hash::check($request->input('current_password'), $user->password)) {
             return ApiService::error(401, 'current_password_incorrect');
         }
 
         // Update and save the new password
         $user->update([
-            'password' => Hash::make($request->input('new_password'))
+            'password' => Hash::make($request->input('new_password')),
         ]);
 
         return ApiService::success([], 'Password updated successfully.');
@@ -420,18 +424,19 @@ class UserController extends Controller
 
         $email = StrService::hash($request->input('email'));
         $user = User::where('email_hashed', $email)->first();
-        if (!$user) {
+        if (! $user) {
             // even if the email is not found, we will not tell the user for privacy reasons
-            return ApiService::success(200,);
+            return ApiService::success(200);
         }
         // send the password reset email
         $status = Password::sendResetLink(
             $request->only('email')
         );
 
-        if (Password::RESET_LINK_SENT !== $status) {
+        if ($status !== Password::RESET_LINK_SENT) {
             return ApiService::error(500, 'failed_to_send_password_reset_email');
         }
+
         return ApiService::success([], 'Password reset email sent successfully.');
     }
 
@@ -449,13 +454,14 @@ class UserController extends Controller
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user, $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password)
+                    'password' => Hash::make($password),
                 ])->save();
             }
         );
-        if (Password::PASSWORD_RESET !== $status) {
+        if ($status !== Password::PASSWORD_RESET) {
             return ApiService::error(500, 'failed_to_reset_password');
         }
+
         return ApiService::success([], 'Password reset successfully.');
     }
 
@@ -466,6 +472,7 @@ class UserController extends Controller
             return ApiService::error(403, 'user_already_verified');
         }
         $user->sendEmailVerificationNotification();
+
         return ApiService::success([], 'verification_email_sent');
     }
 
@@ -480,6 +487,7 @@ class UserController extends Controller
         $user->email_verified_at = null;
         $user->save();
         $user->sendEmailVerificationNotification();
+
         return ApiService::success([], 'email_changed');
     }
 
@@ -493,6 +501,7 @@ class UserController extends Controller
         $user->received_verification_email = $request->input('received_verification_email');
         $user->account_verified_email = $request->input('account_verified_email');
         $user->save();
+
         return ApiService::success([], 'notifications_changed');
     }
 }

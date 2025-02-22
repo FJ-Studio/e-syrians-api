@@ -5,7 +5,6 @@ use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WeaponDeliveryController;
 use App\Http\Middleware\CanVerify;
-use App\Http\Middleware\SetAppLocalization;
 use App\Http\Middleware\UserIsVerified;
 use Illuminate\Support\Facades\Route;
 
@@ -57,6 +56,6 @@ Route::prefix('polls')->group(function () {
 
 Route::get('/stats', [StatsController::class, 'index'])->middleware((['throttle:10,1']));
 
-Route::middleware(['guest', 'throttle:6,1'])
+Route::middleware(['guest', 'throttle:6,1,verify_email'])
     ->get('/verify-email', [UserController::class, 'verifyEmail'])
     ->name('verification.verify');
