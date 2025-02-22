@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
                 [
                     'id' => $notifiable->getKey(),
                     'hash' => sha1($notifiable->getEmailForVerification()),
-                    'lang' => $notifiable->language ?? '',
+                    'lang' => $notifiable->language ?? 'en',
                 ],
                 false
             );
