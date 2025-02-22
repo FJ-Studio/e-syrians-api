@@ -8,6 +8,7 @@ use App\Http\Requests\Polls\StorePollVoteRequest;
 use App\Http\Resources\PollResource;
 use App\Models\Poll;
 use App\Models\PollOption;
+use App\Models\PollVote;
 use App\Services\ApiService;
 use App\Services\UserService;
 use Illuminate\Http\Request;
@@ -33,10 +34,15 @@ class PollController extends Controller
                 'ups as ups_count',
                 'downs as downs_count',
                 'votes as total_votes',
-                'votes as unique_voters_count' => function ($query) {
-                    $query->selectRaw('COUNT(DISTINCT user_id)');
-                },
+                // 'votes as unique_voters_count' => function ($query) {
+                //     $query->selectRaw('COUNT(DISTINCT user_id)');
+                // },
             ])
+            ->selectSub(
+                PollVote::selectRaw('COUNT(DISTINCT user_id)')
+                    ->whereColumn('poll_id', 'polls.id'),
+                'unique_voters_count'
+            )
             ->when((bool) ($userId), function ($query) use ($userId) {
                 $query->withExists([
                     'votes as has_voted' => function ($q) use ($userId) {
