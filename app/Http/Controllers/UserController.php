@@ -162,7 +162,7 @@ class UserController extends Controller
         if (! hash_equals($data['hash'], sha1($user->email))) {
             return ApiService::error(403, 'invalid_verification_link');
         }
-        if (! $request->hasValidSignature(true)) {
+        if (! $request->hasValidSignature(false)) {
             return ApiService::error(400, 'invalid_verification_link');
         }
 

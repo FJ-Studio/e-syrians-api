@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
                     'hash' => sha1($notifiable->getEmailForVerification()),
                     'lang' => $notifiable->language ?? '',
                 ],
-                true
+                false
             );
 
             return $frontendUrl.$verifyUrl;
