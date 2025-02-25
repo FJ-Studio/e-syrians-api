@@ -10,8 +10,8 @@ return [
         // The number of registrants required to verify a profile
         'min' => 1,
         // The difference between verifiers and number of verifications.
-        // Ex: A user has 3 verifiers can verify 2 profile(s).
-        'diff' => 3,
+        // Ex: A user has 3 verifiers can verify 13 profile(s).
+        'diff' => -10,
         // The number of verifications can be made by a user
         'max' => 25,
         // Number of allowed data updates before losing verifications

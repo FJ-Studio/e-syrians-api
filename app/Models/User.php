@@ -24,6 +24,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
+
     use HasRoles;
     use Notifiable;
     use SoftDeletes;
@@ -250,10 +251,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Get the profile update that this user has made
-     * @param string $change_Type
+     *
      * @return int
      */
-
     public function getTotalUpdatesCount(string $change_Type)
     {
         return $this->profileUpdates()->where(
@@ -291,7 +291,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return [false, 'your_account_is_banned'];
         }
         // 2. check if user is verified
-        if (!$this->verified_at) {
+        if (! $this->verified_at) {
             return [false, 'you_are_not_verified'];
         }
         // 3. check the user verifications status
@@ -310,9 +310,10 @@ class User extends Authenticatable implements MustVerifyEmail
             }
             // C. If the difference between verifiers and number of verifications is less than the threshold
             if ($receivedVerifications - $givenVerifications < $threshold['diff']) {
-                return [false, 'you_do_not_have_enough_verifications'];
+                return [false, 'you_have_made_a_lot_of_verifications'];
             }
         }
+
         return [true, ''];
     }
 
@@ -320,11 +321,12 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->votes()->where('poll_id', $pollId)->exists();
     }
+
     public function isInAudience(array $audience): array
     {
         // gender check
         if (count($audience['gender'])) {
-            if (!$this->gender || !in_array($this->gender, $audience['gender'])) {
+            if (! $this->gender || ! in_array($this->gender, $audience['gender'])) {
                 return [false, 'gender'];
             }
         }
@@ -338,28 +340,29 @@ class User extends Authenticatable implements MustVerifyEmail
         }
         // country check
         if (count($audience['country'])) {
-            if (!$this->country || !in_array($this->country, $audience['country'])) {
+            if (! $this->country || ! in_array($this->country, $audience['country'])) {
                 return [false, 'country'];
             }
         }
         // religious affiliation check
         if (count($audience['religious_affiliation'])) {
-            if (!$this->religious_affiliation || !in_array($this->religious_affiliation, $audience['religious_affiliation'])) {
+            if (! $this->religious_affiliation || ! in_array($this->religious_affiliation, $audience['religious_affiliation'])) {
                 return [false, 'religious_affiliation'];
             }
         }
         // hometown check
         if (count($audience['hometown'])) {
-            if (!$this->hometown || !in_array($this->hometown, $audience['hometown'])) {
+            if (! $this->hometown || ! in_array($this->hometown, $audience['hometown'])) {
                 return [false, 'hometown'];
             }
         }
         // ethnicity check
         if (count($audience['ethnicity'])) {
-            if (!$this->ethnicity || !in_array($this->ethnicity, $audience['ethnicity'])) {
+            if (! $this->ethnicity || ! in_array($this->ethnicity, $audience['ethnicity'])) {
                 return [false, 'ethnicity'];
             }
         }
+
         return [true, ''];
     }
 }
