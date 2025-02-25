@@ -217,10 +217,10 @@ class PollController extends Controller
             return ApiService::error(400, 'you_have_already_voted');
         }
         // user is in the poll's audience
-        $in_audience = UserService::canAnswerPoll($poll->id, request()->user());
-        if (! $in_audience[0]) {
-            return ApiService::error(400, 'user_is_not_in_poll_audience');
-        }
+        // $in_audience = UserService::canAnswerPoll($poll->id, request()->user());
+        // if (! $in_audience[0]) {
+        //     return ApiService::error(400, 'user_is_not_in_poll_audience');
+        // }
         // user has not reached the max selections
         if (count($request->poll_option_id) > $poll->max_selections) {
             return ApiService::error(400, 'user_has_reached_the_max_selections');
