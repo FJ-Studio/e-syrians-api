@@ -8,10 +8,10 @@ return [
     ],
     'verification' => [
         // The number of registrants required to verify a profile
-        'min' => 3,
+        'min' => 1,
         // The difference between verifiers and number of verifications.
         // Ex: A user has 3 verifiers can verify 2 profile(s).
-        'diff' => 1,
+        'diff' => 3,
         // The number of verifications can be made by a user
         'max' => 25,
         // Number of allowed data updates before losing verifications
@@ -31,6 +31,6 @@ return [
     'files' => [
         'avatar' => [
             'ttl' => 10080, // 7 days
-        ]
-    ]
+        ],
+    ],
 ];
