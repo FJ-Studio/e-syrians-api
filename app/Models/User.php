@@ -113,6 +113,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'website',
         'received_verification_email',
         'account_verified_email',
+        'city_inside_syria',
+        'language',
     ];
 
     public function getRouteKeyName()
