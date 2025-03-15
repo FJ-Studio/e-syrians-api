@@ -14,9 +14,12 @@ class UserService
     {
         $user = (Socialite::driver($provider))->userFromToken($token);
         if ($user) {
+            $name = explode(' ', $user->getName());
+
             return [
                 $provider.'_id' => $user->getId(),
-                'name' => $user->getName(),
+                'name' => $name[0],
+                'surname' => $name[1] ?? '',
                 'email' => $user->getEmail(),
             ];
         }
