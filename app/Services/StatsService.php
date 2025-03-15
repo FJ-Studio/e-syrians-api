@@ -19,7 +19,7 @@ class StatsService
 
     public static function getGenderStats(): array
     {
-        return Cache::get(config('e-syrians.cache.gender'), (new self)->calculateDailyUsersStats());
+        return Cache::get(config('e-syrians.cache.gender'), (new self)->calculateGenderStats());
     }
 
     public static function getAgeStats(): array
@@ -78,6 +78,10 @@ class StatsService
             'm' => [
                 'verified' => User::where('gender', 'm')->whereNotNull('verified_at')->count(),
                 'unverified' => User::where('gender', 'm')->whereNull('verified_at')->count(),
+            ],
+            'unknown' => [
+                'verified' => User::whereNull('gender')->whereNotNull('verified_at')->count(),
+                'unverified' => User::whereNull('gender')->whereNull('verified_at')->count(),
             ],
         ];
         // Store the statistics in the cache
