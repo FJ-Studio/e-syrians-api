@@ -519,7 +519,7 @@ class UserController extends Controller
     public function update_language(Request $request)
     {
         $request->validate([
-            'language' => 'required|in:'.implode(',', SysLanguageEnum::cases()),
+            'language' => 'required|in:'.implode(',', array_map(fn ($lang) => $lang->value, SysLanguageEnum::cases())),
         ]);
 
         $user = $request->user();
