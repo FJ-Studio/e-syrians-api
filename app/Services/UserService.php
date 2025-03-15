@@ -18,7 +18,6 @@ class UserService
                 $provider.'_id' => $user->getId(),
                 'name' => $user->getName(),
                 'email' => $user->getEmail(),
-                'avatar' => $user->getAvatar(),
             ];
         }
 
