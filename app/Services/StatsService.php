@@ -79,6 +79,10 @@ class StatsService
                 'verified' => User::where('gender', 'm')->whereNotNull('verified_at')->count(),
                 'unverified' => User::where('gender', 'm')->whereNull('verified_at')->count(),
             ],
+            'unknown' => [
+                'verified' => User::whereNull('gender')->whereNotNull('verified_at')->count(),
+                'unverified' => User::whereNull('gender')->whereNull('verified_at')->count(),
+            ],
         ];
         // Store the statistics in the cache
         Cache::forever(
