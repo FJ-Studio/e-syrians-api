@@ -116,6 +116,10 @@ class UserController extends Controller
             $user->markEmailAsVerified();
         }
 
+        if (! $user) {
+            return ApiService::error(401);
+        }
+
         return ApiService::success([
             'user' => (new UserResource($user))->additional(['isOwner' => true]),
             'token' => explode('|', $user->createToken($request->provider)->plainTextToken)[1],
