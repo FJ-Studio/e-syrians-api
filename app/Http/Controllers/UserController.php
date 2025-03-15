@@ -111,7 +111,9 @@ class UserController extends Controller
 
         $user = User::where('email', $userData['email'])->first();
         if (! $user) {
-            return ApiService::error(401);
+            $user = User::create($userData);
+            $user->assignRole('citizen');
+            $user->markEmailAsVerified();
         }
 
         return ApiService::success([
