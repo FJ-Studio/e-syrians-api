@@ -153,23 +153,27 @@ class UserController extends Controller
 
     public function verifyEmail(UserEmailVerification $request)
     {
+        // Retrieve the user ID from the validated request data
         $data = $request->validated();
         $user = User::findOrFail($data['id']);
 
-        if (! $user) {
-            return ApiService::error(404, 'user_not_found');
-        }
-
+        // Check if the user has already verified their email
         if ($user->hasVerifiedEmail()) {
             return ApiService::error(403, 'user_already_verified');
         }
+
+        // Check if the email hash matches the hash in the request
         if (! hash_equals($data['hash'], sha1($user->email))) {
             return ApiService::error(403, 'invalid_verification_link');
         }
+
+        // Verify the signature using the full URL
+        // Here we assume that the URL signature is part of the request query
         if (! URL::hasValidSignature($request, false)) {
             return ApiService::error(400, 'invalid_verification_signature');
         }
 
+        // Mark the user's email as verified
         $user->markEmailAsVerified();
 
         return ApiService::success([], 'email_verified');
