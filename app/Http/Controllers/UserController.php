@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\ProfileChangeTypeEnum;
+use App\Enums\SysLanguageEnum;
 use App\Events\VerificationReceived;
 use App\Http\Requests\User\CredentialsLoginRequest;
 use App\Http\Requests\User\SocialLoginRequest;
@@ -513,5 +514,18 @@ class UserController extends Controller
         $user->save();
 
         return ApiService::success([], 'notifications_changed');
+    }
+
+    public function update_language(Request $request)
+    {
+        $request->validate([
+            'language' => 'required|in:'.implode(',', SysLanguageEnum::cases()),
+        ]);
+
+        $user = $request->user();
+        $user->language = $request->input('language');
+        $user->save();
+
+        return ApiService::success([], 'language_updated');
     }
 }
