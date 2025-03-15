@@ -252,6 +252,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the violations reported by this user
+     */
+    public function violations()
+    {
+        return $this->hasMany(Violation::class, 'user_id', 'id');
+    }
+
+    /**
      * Get the profile update that this user has made
      *
      * @return int
