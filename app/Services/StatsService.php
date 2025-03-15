@@ -19,7 +19,7 @@ class StatsService
 
     public static function getGenderStats(): array
     {
-        return Cache::get(config('e-syrians.cache.gender'), (new self)->calculateDailyUsersStats());
+        return Cache::get(config('e-syrians.cache.gender'), (new self)->calculateGenderStats());
     }
 
     public static function getAgeStats(): array
