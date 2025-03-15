@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class UserController extends Controller
 {
@@ -160,7 +161,7 @@ class UserController extends Controller
         if (! hash_equals($data['hash'], sha1($user->email))) {
             return ApiService::error(403, 'invalid_verification_link');
         }
-        if (! $request->hasValidSignature($request)) {
+        if (! URL::hasValidSignature($request)) {
             return ApiService::error(400, 'invalid_verification_signature');
         }
 
