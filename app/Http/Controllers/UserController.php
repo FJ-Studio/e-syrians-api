@@ -301,6 +301,17 @@ class UserController extends Controller
             $user = $request->user();
             $targetUuid = $request->input('uuid');
             $targetUser = User::where('uuid', $targetUuid)->firstOrFail();
+            // check if th target user data is filled
+            if (
+                empty($targetUser->name) ||
+                empty($targetUser->surname) ||
+                empty($targetUser->birth_date) ||
+                empty($targetUser->gender) ||
+                empty($targetUser->hometown) ||
+                empty($targetUser->country)
+            ) {
+                return ApiService::error(403, 'target_user_data_not_filled');
+            }
             $targetUser->verifiers()->create([
                 'verifier_id' => $user->id,
                 'ip_address' => $request->ip(),
