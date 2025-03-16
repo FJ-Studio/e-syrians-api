@@ -2,8 +2,6 @@
 
 namespace App\Http\Requests\User;
 
-use App\Enums\CountryEnum;
-use App\Enums\HometownEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateUserAddressRequest extends FormRequest
@@ -24,15 +22,8 @@ class UpdateUserAddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'country' => [
-                'required',
-                'in:'.implode(',', array_map(fn ($case) => $case->value, CountryEnum::cases())),
-            ],
-            'city_inside_syria' => [
-                'nullable', // still allows null when not required
-                'required_if:country,SY',
-                'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases())),
-            ],
+            'national_id' => ['required', 'string', 'max:255'],
+            'record_id' => ['required', 'string', 'max:255'],
         ];
     }
 }

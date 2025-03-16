@@ -77,11 +77,9 @@ class UserResource extends JsonResource
                 'other_nationalities' => $this->other_nationalities,
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
-                'basic_info_updates' => (int) (config('e-syrians.verification.basic_data_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
+                'basic_info_updates' => (int)(config('e-syrians.verification.basic_data_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
                 'received_verification_email' => $this->received_verification_email,
                 'account_verified_email' => $this->account_verified_email,
-                'city_inside_syria' => $this->city_inside_syria,
-                'language' => $this->language,
             ]),
 
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
