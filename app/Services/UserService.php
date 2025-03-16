@@ -14,16 +14,19 @@ class UserService
     {
         $user = (Socialite::driver($provider))->userFromToken($token);
         if ($user) {
+            $name = explode(' ', $user->getName());
+
             return [
-                'id' => $user->getId(),
-                'nickname' => $user->getNickname(),
-                'name' => $user->getName(),
+                $provider.'_id' => $user->getId(),
+                'name' => $name[0],
+                'surname' => $name[1] ?? '',
                 'email' => $user->getEmail(),
-                'avatar' => $user->getAvatar(),
             ];
         }
+
         return false;
     }
+
     /**
      * @return array{0: bool, 1: string}
      */
@@ -34,13 +37,13 @@ class UserService
         } elseif (is_string($userA)) {
             $userA = User::where('uuid', $userA)->first();
         }
-        if (!$userA instanceof User) {
+        if (! $userA instanceof User) {
             return [false, 'user_not_found'];
         }
 
         // 1. Check user A verfications limit
         $userACanVerify = $userA->canVerify();
-        if (!$userACanVerify[0]) {
+        if (! $userACanVerify[0]) {
             return $userACanVerify;
         }
         // 2. find user B
@@ -49,7 +52,7 @@ class UserService
         } elseif (is_string($userB)) {
             $userB = User::where('uuid', $userB)->first();
         }
-        if (!$userB instanceof User) {
+        if (! $userB instanceof User) {
             return [false, 'target_user_not_found'];
         }
 
@@ -69,6 +72,7 @@ class UserService
         if ($userA->verifications()->where('user_id', $userB->id)->whereNull('cancelled_at')->exists()) {
             return [false, 'you_have_already_verified_this_user'];
         }
+
         return [true, ''];
     }
 
@@ -77,16 +81,17 @@ class UserService
      */
     public static function canAnswerPoll(int $pollId, User $user): array
     {
-        if (!$user) {
+        if (! $user) {
             return [false, 'user_not_found'];
         }
         $poll = Poll::find($pollId);
-        if (!$poll) {
+        if (! $poll) {
             return [false, 'poll_not_found'];
         }
         if ($user->hasAnsweredPoll($pollId)) {
             return [false, 'you_have_already_answered_this_poll'];
         }
+
         // check elligibility
         return $user->isInAudience($poll->audience);
     }

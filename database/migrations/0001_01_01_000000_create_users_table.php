@@ -1,5 +1,15 @@
 <?php
 
+use App\Enums\CountryEnum;
+use App\Enums\EducationLevelEnum;
+use App\Enums\EthnicityEnum;
+use App\Enums\GenderEnum;
+use App\Enums\HealthStatusEnum;
+use App\Enums\HometownEnum;
+use App\Enums\IncomeSourceEnum;
+use App\Enums\MaritalStatusEnum;
+use App\Enums\ReligiousAffiliationEnum;
+use App\Enums\VerificationReasonEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -20,9 +30,9 @@ return new class extends Migration
             $table->string('surname');
             $table->string('national_id')->nullable();
             $table->string('national_id_hashed')->nullable();
-            $table->enum('gender', array_map(fn($case) => $case->value, \App\Enums\GenderEnum::cases()));
+            $table->enum('gender', array_map(fn ($case) => $case->value, GenderEnum::cases()));
             $table->date('birth_date');
-            $table->enum('hometown', array_map(fn($case) => $case->value, \App\Enums\HometownEnum::cases()));
+            $table->enum('hometown', array_map(fn ($case) => $case->value, HometownEnum::cases()));
             // e-data
             $table->string('email')->unique()->nullable();
             $table->string('email_hashed')->unique()->nullable();
@@ -34,33 +44,33 @@ return new class extends Migration
             $table->string('google_id')->nullable();
             $table->string('password')->nullable();
             // location
-            $table->enum('country', array_map(fn($case) => $case->value, \App\Enums\CountryEnum::cases()));
+            $table->enum('country', array_map(fn ($case) => $case->value, CountryEnum::cases()));
             $table->string('city')->nullable();
             $table->boolean('shelter')->nullable();
             $table->text('address')->nullable();
             // education and work
-            $table->enum('education_level', array_map(fn($case) => $case->value, \App\Enums\EducationLevelEnum::cases()))->nullable();
+            $table->enum('education_level', array_map(fn ($case) => $case->value, EducationLevelEnum::cases()))->nullable();
             $table->text('skills')->nullable();
-            $table->enum('marital_status', array_map(fn($case) => $case->value, \App\Enums\MaritalStatusEnum::cases()))->nullable();
-            $table->enum('source_of_income', array_map(fn($case) => $case->value, \App\Enums\IncomeSourceEnum::cases()))->nullable();
+            $table->enum('marital_status', array_map(fn ($case) => $case->value, MaritalStatusEnum::cases()))->nullable();
+            $table->enum('source_of_income', array_map(fn ($case) => $case->value, IncomeSourceEnum::cases()))->nullable();
             $table->decimal('estimated_monthly_income')->nullable();
             $table->integer('number_of_dependents')->nullable();
             // health
-            $table->enum('health_status', array_map(fn($case) => $case->value, \App\Enums\HealthStatusEnum::cases()))->nullable();
+            $table->enum('health_status', array_map(fn ($case) => $case->value, HealthStatusEnum::cases()))->nullable();
             $table->boolean('health_insurance')->nullable();
             $table->boolean('easy_access_to_healthcare_services')->nullable();
             // other
             $table->enum(
                 'ethnicity',
-                array_map(fn($case) => $case->value, \App\Enums\EthnicityEnum::cases())
+                array_map(fn ($case) => $case->value, EthnicityEnum::cases())
             )->nullable();
-            $table->enum('religious_affiliation', array_map(fn($case) => $case->value, \App\Enums\ReligiousAffiliationEnum::cases()))->nullable();
+            $table->enum('religious_affiliation', array_map(fn ($case) => $case->value, ReligiousAffiliationEnum::cases()))->nullable();
             $table->text('communication')->nullable();
             $table->text('more_info')->nullable();
             $table->text('other_nationalities')->nullable();
             $table->text('languages')->nullable();
             $table->timestampTz('verified_at')->nullable();
-            $table->enum('verification_reason', array_map(fn($case) => $case->value, \App\Enums\VerificationReasonEnum::cases()))->nullable();
+            $table->enum('verification_reason', array_map(fn ($case) => $case->value, VerificationReasonEnum::cases()))->nullable();
             $table->timestampTz('marked_as_fake_at')->nullable();
             $table->text('marked_as_fake_reason')->nullable();
             $table->string('record_place')->nullable();
