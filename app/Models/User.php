@@ -113,6 +113,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'website',
         'received_verification_email',
         'account_verified_email',
+        'city_inside_syria',
+        'language',
     ];
 
     public function getRouteKeyName()
@@ -247,6 +249,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function profileUpdates()
     {
         return $this->hasMany(ProfileUpdate::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get the violations reported by this user
+     */
+    public function violations()
+    {
+        return $this->hasMany(Violation::class, 'user_id', 'id');
     }
 
     /**

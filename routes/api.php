@@ -3,6 +3,7 @@
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\WeaponDeliveryController;
 use App\Http\Middleware\CanVerify;
 use App\Http\Middleware\UserIsVerified;
@@ -38,6 +39,7 @@ Route::prefix('users')->group(function () {
         Route::post('/update/social', [UserController::class, 'update_social_links']);
         Route::post('/update/avatar', [UserController::class, 'update_avatar']);
         Route::post('/update/address', [UserController::class, 'update_address']);
+        Route::post('/update/language', [UserController::class, 'update_language'])->middleware(['throttle:4,1,change-language']);
         Route::post('/update/census', [UserController::class, 'update_census']);
         Route::post('/logout', [UserController::class, 'logout']);
     });
@@ -51,6 +53,16 @@ Route::prefix('polls')->group(function () {
         Route::post('/status/{poll}', [PollController::class, 'status']);
         Route::post('/vote', [PollController::class, 'vote'])->middleware(UserIsVerified::class);
         Route::post('/react', [PollController::class, 'react'])->middleware(UserIsVerified::class);
+    });
+});
+
+Route::prefix('violations')->group(function () {
+    Route::get('/', [ViolationController::class, 'index']);
+    Route::get('/{violation}', [ViolationController::class, 'show']);
+    Route::middleware(['auth:sanctum'])->group(function () {
+        Route::post('/', [ViolationController::class, 'store']);
+        Route::post('/react', [ViolationController::class, 'react'])->middleware(UserIsVerified::class);
+        Route::post('/attachments', [ViolationController::class, 'attachments']);
     });
 });
 
