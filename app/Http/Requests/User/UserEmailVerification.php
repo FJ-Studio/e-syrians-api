@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\User;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -26,7 +28,7 @@ class UserEmailVerification extends FormRequest
         return [
             'id' => ['required', 'exists:users,id'],
             'hash' => ['required'],
-            'signature' => ['required']
+            'signature' => ['required'],
         ];
     }
 }

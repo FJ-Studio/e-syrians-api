@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +19,7 @@ class PollOption extends Model
 
     /**
      * Get the poll that the poll option belongs to.
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function poll()
@@ -27,7 +29,7 @@ class PollOption extends Model
 
     /**
      * Get the votes for the poll option.
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function votes()
@@ -37,7 +39,7 @@ class PollOption extends Model
 
     /**
      * Get the user that created the poll option.
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user()

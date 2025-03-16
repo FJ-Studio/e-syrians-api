@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use Closure;
@@ -19,10 +21,11 @@ class SetAppLocalization
         // get supported languages from config
         $supportedLanguages = config('e-syrians.locales');
         // check if the requested language is supported
-        if (!in_array($locale, $supportedLanguages)) {
+        if (! in_array($locale, $supportedLanguages)) {
             $locale = config('app.fallback_locale');
         }
         app()->setLocale($locale);
+
         return $next($request);
     }
 }

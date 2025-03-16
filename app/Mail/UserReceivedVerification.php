@@ -1,14 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Mail\Markdown;
 use Illuminate\Queue\SerializesModels;
 
 class UserReceivedVerification extends Mailable
@@ -37,7 +37,6 @@ class UserReceivedVerification extends Mailable
     /**
      * Get the message content definition.
      */
-
     public function content(): Content
     {
         return new Content(
@@ -45,7 +44,7 @@ class UserReceivedVerification extends Mailable
             with: [
                 'sender' => $this->sender,
                 'recipient' => $this->recipient,
-                'url' => env('FRONTEND_URL') . '/account/verifications/',
+                'url' => env('FRONTEND_URL').'/account/verifications/',
             ]
         );
     }

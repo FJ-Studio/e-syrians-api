@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreLogRequest;
 use App\Http\Requests\UpdateLogRequest;
 use App\Models\Log;
 
@@ -29,10 +28,10 @@ class LogController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreLogRequest $request)
-    {
-        //
-    }
+    // public function store(App\Http\Controllers\StoreLogRequest $request)
+    // {
+    //     //
+    // }
 
     /**
      * Display the specified resource.
@@ -53,10 +52,10 @@ class LogController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateLogRequest $request, Log $log)
-    {
-        //
-    }
+    // public function update(UpdateLogRequest $request, Log $log)
+    // {
+    //     //
+    // }
 
     /**
      * Remove the specified resource from storage.

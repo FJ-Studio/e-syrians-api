@@ -1,17 +1,21 @@
 <?php
 
+// beforeEach(function () {
+//     $this->user = \App\Models\User::factory()->create();
+// });
+
 it('Guests registration with minimal info', function () {
     $response = $this->postJson('/users/register', [
         'name' => 'John',
         'surname' => 'Doe',
-        'email' => '',
-        'gender' => 'f',
+        'email' => rand(1000, 999999).'@gmail.com',
+        'gender' => 'm',
         'password' => 'password',
         'password_confirmation' => 'password',
-        'national_id' => '123456789' . rand(1, 999),
+        'national_id' => '123456789'.rand(1, 999),
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
-        'country' => 'SY',
+        'country' => 'TR',
         'ethnicity' => 'arab',
     ]);
     // Assert the response status is 201
@@ -23,13 +27,13 @@ it('Guests registration with full info', function () {
         'name' => 'Feras',
         'middle_name' => 'Mahmoud',
         'surname' => 'Jobeir',
-        'email' => rand(1, 9999) . 'info@gmail.com',
+        'email' => rand(1, 9999).'info@gmail.com',
         'gender' => 'm',
         'birth_date' => '1992-01-23',
-        'phone' => '123456789' . rand(1, 999),
+        'phone' => '123456789'.rand(1, 999),
         'password' => 'password',
         'password_confirmation' => 'password',
-        'national_id' => '123456789' . rand(1, 999),
+        'national_id' => '123456789'.rand(1, 999),
         'hometown' => 'damascus',
         'country' => 'US',
         'city' => 'New York',

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreWeaponDeliveryPointRequest;
-use App\Http\Requests\UpdateWeaponDeliveryPointRequest;
+use App\Http\Requests\WeaponDeliveries\StoreWeaponDeliveryPointRequest;
+use App\Http\Requests\WeaponDeliveries\UpdateWeaponDeliveryPointRequest;
 use App\Models\WeaponDeliveryPoint;
 
 class WeaponDeliveryPointController extends Controller

@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run tests
+php artisan test
+if [ $? -ne 0 ]; then
+  echo "Tests failed, commit aborted."
+  exit 1
+fi
+
+# Run security audit
+composer audit --locked
+if [ $? -ne 0 ]; then
+  echo "Security vulnerabilities found, commit aborted."
+  exit 1
+fi
+
+composer lint
+if [ $? -ne 0 ]; then
+  echo "Linting failed, commit aborted. check your code or try with PSR code beautifier `composer lint:fix`"
+  exit 1
+fi
+
+# Stage any changed files after auto-fix
+git add .

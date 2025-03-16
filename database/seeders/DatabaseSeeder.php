@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,11 +12,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::firstOrCreate([
-            'email' => env('ADMIN_EMAIL'),
-        ], [
-            'name' => 'Feras Jobeir',
-            'password' => bcrypt(env('ADMIN_PASSWORD')),
-        ]);
+        $this->call(RolesPermissionsSeeder::class);
     }
 }

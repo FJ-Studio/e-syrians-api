@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StorePollOptionRequest;
-use App\Http\Requests\UpdatePollOptionRequest;
+use App\Http\Requests\Polls\StorePollOptionRequest;
+use App\Http\Requests\Polls\UpdatePollOptionRequest;
 use App\Models\PollOption;
 
 class PollOptionController extends Controller

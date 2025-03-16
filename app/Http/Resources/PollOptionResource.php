@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
@@ -29,7 +31,7 @@ class PollOptionResource extends JsonResource
                 ];
             }),
             'votes_count' => $this->votes()->count(),
-            'percentage' => $this->when(isset($this->percentage), $this->percentage) // Ensure percentage is included if set
+            'percentage' => $this->when(isset($this->percentage), $this->percentage), // Ensure percentage is included if set
 
         ];
     }
