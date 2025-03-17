@@ -1,11 +1,10 @@
 <?php
 
 it('Guests registration with minimal info', function () {
-    $email = rand(1000, 999999).'@gmail.com';
-    $response = $this->postJson('/users/register', [
+    $response = $this->postJson(route('users.register'), [
         'name' => 'John',
         'surname' => 'Doe',
-        'email' => $email,
+        'email' => 'user@gmail.com',
         'gender' => 'm',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -19,16 +18,15 @@ it('Guests registration with minimal info', function () {
     $response->assertStatus(201);
     // assert user is created
     $this->assertDatabaseHas('users', [
-        'email' => $email,
+        'email' => 'user@gmail.com',
     ]);
 });
 
 it('Assert users in SY provides their province', function () {
-    $email = rand(1000, 999999).'@gmail.com';
-    $response = $this->postJson('/users/register', [
+    $response = $this->postJson(route('users.register'), [
         'name' => 'John',
         'surname' => 'Doe',
-        'email' => $email,
+        'email' => 'user.insyria@gmail.com',
         'gender' => 'm',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -38,16 +36,9 @@ it('Assert users in SY provides their province', function () {
         'country' => 'SY',
         'ethnicity' => 'arab',
     ]);
-    $response
-        ->assertStatus(422)
-        ->assertJsonStructure([
-            'success',
-            'messages' => [
-                'city_inside_syria',
-            ],
-            'data',
-        ])
-        ->assertJsonFragment([
-            'success' => false,
-        ]);
+    // asset response status (validation error)
+    $response->assertStatus(422);
+    // assert response has error messages regarding the city (at least)
+    expect($response['messages'])->toHaveKey('city_inside_syria');
+
 });

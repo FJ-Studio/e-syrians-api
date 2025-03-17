@@ -24,5 +24,7 @@ class PollService
         if ($poll->reveal_results === RevealResultsEnum::AfterVoting->value) {
             return $poll->votes()->where('user_id', $user->id)->exists();
         }
+
+        return false;
     }
 }
