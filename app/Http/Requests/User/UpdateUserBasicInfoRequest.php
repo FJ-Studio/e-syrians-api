@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\User;
 
 use App\Enums\EthnicityEnum;
@@ -28,9 +30,9 @@ class UpdateUserBasicInfoRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', 'min:2'],
             'surname' => ['required', 'string', 'max:255', 'min:2'],
             'birth_date' => ['required', 'date'],
-            'gender' => ['required', 'in:' . implode(',', array_map(fn($case) => $case->value, GenderEnum::cases()))],
-            'ethnicity' => ['required', 'in:' . implode(',', array_map(fn($case) => $case->value, EthnicityEnum::cases()))],
-            'hometown' => ['required', 'in:' . implode(',', array_map(fn($case) => $case->value, HometownEnum::cases()))],
+            'gender' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, GenderEnum::cases()))],
+            'ethnicity' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, EthnicityEnum::cases()))],
+            'hometown' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
         ];
     }
 }

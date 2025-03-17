@@ -10,6 +10,7 @@ class StrService
     {
         return hash('sha256', $string);
     }
+
     public static function mapArabicNumbers(string $string): string
     {
         $arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];

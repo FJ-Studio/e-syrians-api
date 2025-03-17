@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -7,7 +9,6 @@ use Illuminate\Support\Facades\Cache;
 
 class PollReaction extends Model
 {
-
     protected static function booted()
     {
         static::saved(function ($reaction) {
@@ -26,9 +27,10 @@ class PollReaction extends Model
         'user_id',
         'reaction',
     ];
+
     /**
      * Get the poll that the reaction belongs to.
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function poll()
@@ -38,7 +40,7 @@ class PollReaction extends Model
 
     /**
      * Get the user that made this reaction.
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
     public function user()

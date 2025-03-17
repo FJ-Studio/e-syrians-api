@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StorePollReactionRequest;
-use App\Http\Requests\UpdatePollReactionRequest;
+use App\Http\Requests\Polls\StorePollReactionRequest;
+use App\Http\Requests\Polls\UpdatePollReactionRequest;
 use App\Models\PollReaction;
 
 class PollReactionController extends Controller
@@ -27,10 +29,7 @@ class PollReactionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StorePollReactionRequest $request)
-    {
-        //
-    }
+    public function store(StorePollReactionRequest $request) {}
 
     /**
      * Display the specified resource.
@@ -43,10 +42,7 @@ class PollReactionController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(PollReaction $pollReaction)
-    {
-        //
-    }
+    public function edit(PollReaction $pollReaction) {}
 
     /**
      * Update the specified resource in storage.

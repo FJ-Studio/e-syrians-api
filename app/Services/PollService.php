@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\RevealResultsEnum;
@@ -16,7 +18,7 @@ class PollService
         if ($poll->reveal_results === RevealResultsEnum::AfterExpiration->value) {
             return now()->isAfter($poll->end_date);
         }
-        if (!$user) {
+        if (! $user) {
             return false;
         }
         if ($poll->reveal_results === RevealResultsEnum::AfterVoting->value) {

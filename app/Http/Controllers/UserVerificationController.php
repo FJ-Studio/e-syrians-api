@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreUserVerificationRequest;
-use App\Http\Requests\UpdateUserVerificationRequest;
+use App\Http\Requests\User\StoreUserVerificationRequest;
+use App\Http\Requests\User\UpdateUserVerificationRequest;
 use App\Models\UserVerification;
 
 class UserVerificationController extends Controller

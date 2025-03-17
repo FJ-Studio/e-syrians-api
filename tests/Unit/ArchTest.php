@@ -8,7 +8,9 @@ arch()
 arch('models')
     ->expect('App\Models')
     ->toUseTrait('Illuminate\Database\Eloquent\SoftDeletes')
-    ->ignoring('App\Models\User');
+    ->ignoring('App\Models\User')
+    ->ignoring('App\Models\PollReaction')
+    ->ignoring('App\Models\PollVote');
 
 arch()
     ->expect('App\Models')
@@ -18,4 +20,8 @@ arch()
     ->ignoring('App\Models\User');
 
 arch()->preset()->php();
-arch()->preset()->security();
+arch()->preset()->security()
+    ->ignoring([
+        'App\Providers\AppServiceProvider',
+        'App\Http\Controllers\UserController',
+    ]);

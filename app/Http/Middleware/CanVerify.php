@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
-use App\Models\User;
 use App\Services\ApiService;
 use App\Services\UserService;
 use Closure;
@@ -23,6 +24,7 @@ class CanVerify
         if ($canAverifyB[0] === false) {
             return ApiService::error(403, $canAverifyB[1]);
         }
+
         return $next($request);
     }
 }

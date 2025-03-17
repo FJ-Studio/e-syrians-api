@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Middleware;
 
 use App\Services\ApiService;
@@ -17,9 +19,10 @@ class UserIsVerified
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (!$user->verified_at) {
+        if (! $user->verified_at) {
             return ApiService::error(403);
         }
+
         return $next($request);
     }
 }

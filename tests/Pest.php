@@ -27,10 +27,6 @@ pest()->extend(Tests\TestCase::class)
 |
 */
 
-expect()->extend('toBeOne', function () {
-    return $this->toBe(1);
-});
-
 /*
 |--------------------------------------------------------------------------
 | Functions
@@ -42,7 +38,8 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-beforeEach(function () {
-    // Run the migrations
-    Artisan::call('migrate', ['--env' => 'testing']);
+beforeAll(function () {
+    // Optionally seed the DB once
+    Artisan::call('migrate:fresh');
+    Artisan::call('db:seed --class=RolesPermissionsSeeder');
 });
