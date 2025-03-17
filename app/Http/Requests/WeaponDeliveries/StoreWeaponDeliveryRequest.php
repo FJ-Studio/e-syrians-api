@@ -11,20 +11,14 @@ use Illuminate\Validation\Rule;
 
 class StoreWeaponDeliveryRequest extends FormRequest
 {
-    private function convertArabicToWesternDigits($input)
-    {
-        if (!is_string($input)) {
-            return $input;
-        }
-        return StrService::mapArabicNumbers($input);
-    }
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'national_id' => $this->convertArabicToWesternDigits($this->input('national_id')),
-            'phone' => $this->convertArabicToWesternDigits($this->input('phone')),
+            'national_id' => StrService::mapArabicNumbers($this->input('national_id')),
+            'phone' => StrService::mapArabicNumbers($this->input('phone')),
         ]);
     }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -47,7 +41,7 @@ class StoreWeaponDeliveryRequest extends FormRequest
             ],
             'weapons.*' => [
                 'string',
-                Rule::in(array_map(fn($case) => $case->value, WeaponCategoryEnum::cases())), // Validate each array element
+                Rule::in(array_map(fn ($case) => $case->value, WeaponCategoryEnum::cases())), // Validate each array element
             ],
             'notes' => [
                 'required',

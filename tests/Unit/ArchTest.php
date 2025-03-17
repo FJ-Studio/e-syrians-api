@@ -20,4 +20,8 @@ arch()
     ->ignoring('App\Models\User');
 
 arch()->preset()->php();
-// arch()->preset()->security();
+arch()->preset()->security()
+    ->ignoring([
+        'App\Providers\AppServiceProvider',
+        'App\Http\Controllers\UserController',
+    ]);

@@ -51,7 +51,7 @@ class UserStoreRequest extends FormRequest
             'city' => ['nullable', 'string', 'max:255'],
             'shelter' => ['nullable', 'boolean'],
             'address' => ['nullable', 'string'],
-            'city_in_syria' => [
+            'city_inside_syria' => [
                 'nullable', // still allows null when not required
                 'required_if:country,SY',
                 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases())),

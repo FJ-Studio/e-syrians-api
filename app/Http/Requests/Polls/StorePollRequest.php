@@ -10,10 +10,19 @@ use App\Enums\GenderEnum;
 use App\Enums\HometownEnum;
 use App\Enums\ReligiousAffiliationEnum;
 use App\Enums\RevealResultsEnum;
+use App\Services\StrService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePollRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'duration' => StrService::mapArabicNumbers($this->input('duration')),
+            'max_selections' => StrService::mapArabicNumbers($this->input('max_selections')),
+        ]);
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */

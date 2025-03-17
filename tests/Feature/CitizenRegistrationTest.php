@@ -1,14 +1,11 @@
 <?php
 
-// beforeEach(function () {
-//     $this->user = \App\Models\User::factory()->create();
-// });
-
 it('Guests registration with minimal info', function () {
+    $email = rand(1000, 999999).'@gmail.com';
     $response = $this->postJson('/users/register', [
         'name' => 'John',
         'surname' => 'Doe',
-        'email' => rand(1000, 999999).'@gmail.com',
+        'email' => $email,
         'gender' => 'm',
         'password' => 'password',
         'password_confirmation' => 'password',
@@ -18,46 +15,39 @@ it('Guests registration with minimal info', function () {
         'country' => 'TR',
         'ethnicity' => 'arab',
     ]);
-    // Assert the response status is 201
+    // asset response status
     $response->assertStatus(201);
+    // assert user is created
+    $this->assertDatabaseHas('users', [
+        'email' => $email,
+    ]);
 });
 
-it('Guests registration with full info', function () {
+it('Assert users in SY provides their province', function () {
+    $email = rand(1000, 999999).'@gmail.com';
     $response = $this->postJson('/users/register', [
-        'name' => 'Feras',
-        'middle_name' => 'Mahmoud',
-        'surname' => 'Jobeir',
-        'email' => rand(1, 9999).'info@gmail.com',
+        'name' => 'John',
+        'surname' => 'Doe',
+        'email' => $email,
         'gender' => 'm',
-        'birth_date' => '1992-01-23',
-        'phone' => '123456789'.rand(1, 999),
         'password' => 'password',
         'password_confirmation' => 'password',
         'national_id' => '123456789'.rand(1, 999),
+        'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
-        'country' => 'US',
-        'city' => 'New York',
-        'shelter' => false,
-        'address' => '123 Main St',
-        'education_level' => 'postgraduate',
-        'skills' => 'PHP, Laravel, Vue.js',
-        'marital_status' => 'single',
-        'source_of_income' => 'freelance',
-        'estimated_monthly_income' => 1000,
-        'number_of_dependents' => 0,
-        'health_status' => 'good',
-        'health_insurance' => true,
-        'easy_access_to_healthcare_services' => true,
-        'religious_affiliation' => 'non-religious',
-        'communication' => 'I speak Arabic and English',
-        'more_info' => 'I am a software engineer',
-        'other_nationalities[]' => 'US',
-        'languages[]' => 'arabic',
-        'languages[]' => 'english',
-        'verified_at' => '2025-01-01',
+        'country' => 'SY',
         'ethnicity' => 'arab',
-
     ]);
-    // Assert the response status is 201
-    $response->assertStatus(201);
+    $response
+        ->assertStatus(422)
+        ->assertJsonStructure([
+            'success',
+            'messages' => [
+                'city_inside_syria',
+            ],
+            'data',
+        ])
+        ->assertJsonFragment([
+            'success' => false,
+        ]);
 });
