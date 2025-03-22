@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\UserService;
+use Illuminate\Support\Facades\Log;
 
 // ───────────────────────────────────────────────
 // Helpers
@@ -106,7 +107,14 @@ it('allows a user to verify another user once only', function () {
         authHeader(test()->verifiedUser)
     );
 
+    $response1->dumpStatus();
+    $response1->dumpHeaders();
     $response1->dump();
+    Log::error('Verification failed', [
+        'request' => request()->all(),
+        'user' => auth()->user(),
+        'exception' => 'no exception',
+    ]);
 
     $response1->assertStatus(200);
 
