@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use App\Services\UserService;
-use Illuminate\Support\Facades\Log;
 
 // ───────────────────────────────────────────────
 // Helpers
@@ -107,16 +106,8 @@ it('allows a user to verify another user once only', function () {
         authHeader(test()->verifiedUser)
     );
 
-    $response1->dumpHeaders();
-    $response1->dump();
-    Log::error('Verification failed', [
-        'request' => request()->all(),
-        'user' => auth()->user(),
-        'exception' => 'no exception',
-    ]);
-
     $response1->assertStatus(200);
-
+    print_r($response1->json());
     // Confirm DB change
     $this->assertDatabaseHas('user_verifications', [
         'verifier_id' => test()->verifiedUser->id,
