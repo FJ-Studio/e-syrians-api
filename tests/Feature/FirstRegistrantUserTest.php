@@ -85,7 +85,14 @@ it('returns an error if target user has incomplete data', function () {
 });
 
 it('allows a user to verify another user once only', function () {
-    test()->unverifiedUser->update([
+    // Create a fresh unverified user with complete profile data
+    $unverifiedUser = User::factory()->create([
+        'name' => 'Unverified',
+        'surname' => 'User',
+        'email' => 'unverified_onceonly@example.com',
+        'uuid' => '26f19555-1111-4aab-a7d2-78ff7e78e890',
+        'verified_at' => null,
+        'verification_reason' => null,
         'country' => 'US',
         'hometown' => 'damascus',
         'gender' => 'm',
@@ -94,17 +101,23 @@ it('allows a user to verify another user once only', function () {
 
     // First verification
     $response1 = $this->postJson(
-        route('users.verify', ['user' => test()->unverifiedUser->uuid]),
-        ['uuid' => test()->unverifiedUser->uuid],
+        route('users.verify', ['user' => $unverifiedUser->uuid]),
+        ['uuid' => $unverifiedUser->uuid],
         authHeader(test()->verifiedUser)
     );
 
-    $response1->assertStatus(200); // Adjust if 201 or something else
+    $response1->assertStatus(200);
+
+    // Confirm DB change
+    $this->assertDatabaseHas('user_verifications', [
+        'verifier_id' => test()->verifiedUser->id,
+        'user_id' => $unverifiedUser->id,
+    ]);
 
     // Second attempt should fail
     $response2 = $this->postJson(
-        route('users.verify', ['user' => test()->unverifiedUser->uuid]),
-        ['uuid' => test()->unverifiedUser->uuid],
+        route('users.verify', ['user' => $unverifiedUser->uuid]),
+        ['uuid' => $unverifiedUser->uuid],
         authHeader(test()->verifiedUser)
     );
 
