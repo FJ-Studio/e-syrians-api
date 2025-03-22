@@ -107,7 +107,6 @@ it('allows a user to verify another user once only', function () {
         authHeader(test()->verifiedUser)
     );
 
-    $response1->dumpStatus();
     $response1->dumpHeaders();
     $response1->dump();
     Log::error('Verification failed', [
