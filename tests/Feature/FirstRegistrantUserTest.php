@@ -107,7 +107,7 @@ it('allows a user to verify another user once only', function () {
     );
 
     $response1->assertStatus(200);
-    print_r($response1->json());
+
     // Confirm DB change
     $this->assertDatabaseHas('user_verifications', [
         'verifier_id' => test()->verifiedUser->id,
