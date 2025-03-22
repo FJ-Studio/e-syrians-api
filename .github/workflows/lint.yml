@@ -1,6 +1,12 @@
-name: Fix Code Style
+name: Lint Code with Pint
 
-on: [push]
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
 
 jobs:
   lint:
@@ -28,4 +34,5 @@ jobs:
         run: pint
 
       - name: Commit linted files
+        if: github.event_name == 'push' && github.actor != 'dependabot[bot]'
         uses: stefanzweifel/git-auto-commit-action@v5
