@@ -1,5 +1,11 @@
 <?php
 
+use Illuminate\Support\Facades\Mail;
+
+beforeEach(function () {
+    Mail::fake();
+});
+
 it('Guests registration with minimal info', function () {
     $response = $this->postJson(route('users.register'), [
         'name' => 'John',
