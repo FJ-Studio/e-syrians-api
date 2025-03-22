@@ -87,7 +87,7 @@ it('returns an error if target user has incomplete data', function () {
 it('allows a user to verify another user once only', function () {
     test()->unverifiedUser->update([
         'country' => 'US',
-        'hometown' => 'Damascus',
+        'hometown' => 'damascus',
         'gender' => 'm',
         'birth_date' => '1990-01-01',
     ]);
