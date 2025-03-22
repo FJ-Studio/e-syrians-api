@@ -9,10 +9,7 @@ use Illuminate\Http\JsonResponse;
 class ApiService
 {
     /**
-     * @param mixed $data
-     * @param array|string $message
-     * @param int $status
-     * @return JsonResponse
+     * @param  mixed  $data
      */
     public static function success($data, array|string $message = '', int $status = 200): JsonResponse
     {
@@ -22,11 +19,9 @@ class ApiService
             'data' => $data,
         ], $status);
     }
+
     /**
-     * @param int $status
-     * @param array|string $message
-     * @param mixed $data
-     * @return JsonResponse
+     * @param  mixed  $data
      */
     public static function error(int $status = 500, array|string $message = '', $data = null): JsonResponse
     {

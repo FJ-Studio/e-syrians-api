@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('polls', function (Blueprint $table) {
-            $table->enum('reveal_results', array_map(fn($case) => $case->value, \App\Enums\RevealResultsEnum::cases()))
+            $table->enum('reveal_results', array_map(fn ($case) => $case->value, \App\Enums\RevealResultsEnum::cases()))
                 ->default('before-voting')
                 ->after('audience_can_add_options');
             $table->boolean('voters_are_visible')->default(false)->after('reveal_results');
