@@ -75,7 +75,7 @@ it('prevents users from verifying themselves', function () {
 
 it('returns an error if target user has incomplete data', function () {
     $response = $this->postJson(
-        route('users.verify', ['user' => test()->unverifiedUser->uuid]),
+        route('users.verify'),
         ['uuid' => test()->unverifiedUser->uuid],
         authHeader(test()->verifiedUser)
     );
@@ -101,7 +101,7 @@ it('allows a user to verify another user once only', function () {
 
     // First verification
     $response1 = $this->postJson(
-        route('users.verify', ['user' => $unverifiedUser->uuid]),
+        route('users.verify'),
         ['uuid' => $unverifiedUser->uuid],
         authHeader(test()->verifiedUser)
     );
@@ -116,7 +116,7 @@ it('allows a user to verify another user once only', function () {
 
     // Second attempt should fail
     $response2 = $this->postJson(
-        route('users.verify', ['user' => $unverifiedUser->uuid]),
+        route('users.verify'),
         ['uuid' => $unverifiedUser->uuid],
         authHeader(test()->verifiedUser)
     );
