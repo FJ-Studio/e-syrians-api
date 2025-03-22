@@ -106,6 +106,8 @@ it('allows a user to verify another user once only', function () {
         authHeader(test()->verifiedUser)
     );
 
+    $response1->dump();
+
     $response1->assertStatus(200);
 
     // Confirm DB change
