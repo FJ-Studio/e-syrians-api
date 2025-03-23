@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
@@ -24,6 +25,7 @@ class Poll extends Model
         'deleted_at',
         'reveal_results',
         'voters_are_visible',
+        'is_private',
     ];
 
     protected $casts = [
@@ -33,9 +35,17 @@ class Poll extends Model
         'max_selections' => 'integer',
         'audience_can_add_options' => 'boolean',
         'voters_are_visible' => 'boolean',
+        'is_private' => 'boolean',
     ];
 
     protected $appends = ['ups_count', 'downs_count'];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope('public_polls', function (Builder $builder) {
+            $builder->where('is_private', false);
+        });
+    }
 
     public function getUpsCountAttribute()
     {

@@ -137,7 +137,7 @@ class PollController extends Controller
     public function show($id)
     {
         $userId = auth('sanctum')->user()?->id;
-        $poll = Poll::with(['user', 'options'])
+        $poll = Poll::withoutGlobalScope('public_polls')->with(['user', 'options'])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',
