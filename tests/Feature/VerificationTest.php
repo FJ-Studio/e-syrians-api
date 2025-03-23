@@ -10,7 +10,7 @@ use App\Services\UserService;
 function authHeader(User $user): array
 {
     return [
-        'Authorization' => 'Bearer '.$user->createToken('test')->plainTextToken,
+        'Authorization' => 'Bearer '.explode('|', $user->createToken('test')->plainTextToken)[1],
     ];
 }
 
