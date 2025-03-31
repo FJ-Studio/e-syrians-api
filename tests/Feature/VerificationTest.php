@@ -5,17 +5,6 @@ use App\Services\UserService;
 use Illuminate\Support\Facades\Event;
 
 // ───────────────────────────────────────────────
-// Helpers
-// ───────────────────────────────────────────────
-
-function authHeader(User $user): array
-{
-    return [
-        'Authorization' => 'Bearer '.explode('|', $user->createToken('test')->plainTextToken)[1],
-    ];
-}
-
-// ───────────────────────────────────────────────
 // Setup
 // ───────────────────────────────────────────────
 
