@@ -22,6 +22,8 @@ class UserReceivedVerification extends Mailable
     {
         $this->sender = $sender;
         $this->recipient = $recipient;
+        // Set the application locale to the recipient's preferred locale
+        app()->setLocale($recipient?->language ?? config('app.locale'));
     }
 
     /**
@@ -30,7 +32,7 @@ class UserReceivedVerification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New verification received ',
+            subject: __('mail.verification_received_title'),
         );
     }
 
