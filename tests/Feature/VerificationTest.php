@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\UserService;
+use Illuminate\Support\Facades\Event;
 
 // ───────────────────────────────────────────────
 // Helpers
@@ -85,8 +86,8 @@ it('returns an error if target user has incomplete data', function () {
 });
 
 it('allows a user to verify another user once only', function () {
-    $this->withoutExceptionHandling();
-
+    // $this->withoutExceptionHandling();
+    Event::fake();
     // Create a fresh unverified user with complete profile data
     $unverifiedUser = User::factory()->create([
         'name' => 'Unverified',
