@@ -29,6 +29,11 @@ jobs:
       - name: Directory Permissions
         run: chmod -R 777 storage bootstrap/cache
 
+      - name: Create Laravel log file
+        run: |
+          mkdir -p storage/logs
+          touch storage/logs/laravel.log
+
       - name: Create SQLite Database
         run: |
           mkdir -p database

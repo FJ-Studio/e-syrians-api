@@ -85,6 +85,8 @@ it('returns an error if target user has incomplete data', function () {
 });
 
 it('allows a user to verify another user once only', function () {
+    $this->withoutExceptionHandling();
+
     // Create a fresh unverified user with complete profile data
     $unverifiedUser = User::factory()->create([
         'name' => 'Unverified',
