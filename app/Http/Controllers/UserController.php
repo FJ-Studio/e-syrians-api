@@ -191,7 +191,7 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            if ($user->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verification.basic_data_updates_limit')) {
+            if ($user->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verification.basic_info_updates_limit')) {
                 return ApiService::error(403, 'basic_info_updates_limit_reached');
             }
             $data = $request->validated();
@@ -273,6 +273,17 @@ class UserController extends Controller
             $user = $request->user();
             $data = $request->validated();
             $user->update($data);
+
+            // create a new profile update record
+            $user->profileUpdates()->create([
+                'change_type' => ProfileChangeTypeEnum::Address->value,
+                'meta_data' => [
+                    'country' => $data['country'],
+                    'city_inside_syria' => $data['city_inside_syria'],
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
 
             return ApiService::success([]);
         } catch (\Exception $e) {

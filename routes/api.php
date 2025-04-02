@@ -35,10 +35,10 @@ Route::prefix('users')->group(function () {
         Route::get('/my-verifications', [UserController::class, 'my_verifications']);
         Route::get('/my-verifiers', [UserController::class, 'my_verifiers']);
 
-        Route::post('/update/basic-info', [UserController::class, 'update_basic_info']);
-        Route::post('/update/social', [UserController::class, 'update_social_links']);
-        Route::post('/update/avatar', [UserController::class, 'update_avatar']);
-        Route::post('/update/address', [UserController::class, 'update_address']);
+        Route::post('/update/basic-info', [UserController::class, 'update_basic_info'])->name('users.update.basic-info');
+        Route::post('/update/social', [UserController::class, 'update_social_links'])->name('users.update.social');
+        Route::post('/update/avatar', [UserController::class, 'update_avatar'])->name('users.update.avatar');
+        Route::post('/update/address', [UserController::class, 'update_address'])->name('users.update.address');
         Route::post('/update/language', [UserController::class, 'update_language'])->middleware(['throttle:4,1,change-language']);
         Route::post('/update/census', [UserController::class, 'update_census']);
         Route::post('/logout', [UserController::class, 'logout']);
