@@ -365,3 +365,61 @@ it('fails with invalid country or city', function () {
     expect($response['messages'])->toHaveKey('country');
     expect($response['messages'])->toHaveKey('city_inside_syria');
 });
+
+// Census Data being updated correctly
+
+it('a user can update the rest of census data', function () {
+    $response = $this->postJson(
+        route('users.update.census'),
+        [
+            'middle_name' => 'Middle',
+            'city' => 'City',
+            'address' => 'Address',
+            'shelter' => '0',
+            'education_level' => 'postgraduate',
+            'skills' => 'coding, singing, writing',
+            'marital_status' => 'single',
+            'source_of_income' => 'stable-job',
+            'estimated_monthly_income' => 1000,
+            'number_of_dependents' => 2,
+            'health_status' => 'good',
+            'health_insurance' => true,
+            'easy_access_to_healthcare_services' => true,
+            'religious_affiliation' => 'sunni',
+            'other_nationalities' => ['TR', 'US'],
+            'communication' => 'Email or phone',
+            'more_info' => 'Thank you for your help!',
+            'languages' => ['english', 'arabic'],
+        ],
+        authHeader(test()->user)
+    );
+    $response->assertOk();
+    // assert those values in the database
+    $expected = [
+        'id' => test()->user->id,
+        'middle_name' => 'Middle',
+        'city' => 'City',
+        'shelter' => 0,
+        'education_level' => 'postgraduate',
+        'skills' => 'coding, singing, writing',
+        'marital_status' => 'single',
+        'source_of_income' => 'stable-job',
+        'estimated_monthly_income' => 1000,
+        'number_of_dependents' => 2,
+        'health_status' => 'good',
+        'health_insurance' => true,
+        'easy_access_to_healthcare_services' => true,
+        'religious_affiliation' => 'sunni',
+        'other_nationalities' => 'TR,US',
+        'communication' => 'Email or phone',
+        'more_info' => 'Thank you for your help!',
+        'languages' => 'english,arabic',
+    ];
+    foreach ($expected as $key => $value) {
+        $this->assertDatabaseHas('users', [
+            'id' => test()->user->id,
+            $key => $value,
+        ]);
+    }
+    // assert the response
+});

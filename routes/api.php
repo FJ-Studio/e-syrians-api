@@ -40,7 +40,7 @@ Route::prefix('users')->group(function () {
         Route::post('/update/avatar', [UserController::class, 'update_avatar'])->name('users.update.avatar');
         Route::post('/update/address', [UserController::class, 'update_address'])->name('users.update.address');
         Route::post('/update/language', [UserController::class, 'update_language'])->middleware(['throttle:4,1,change-language']);
-        Route::post('/update/census', [UserController::class, 'update_census']);
+        Route::post('/update/census', [UserController::class, 'update_census'])->name('users.update.census');
         Route::post('/logout', [UserController::class, 'logout']);
     });
 });
