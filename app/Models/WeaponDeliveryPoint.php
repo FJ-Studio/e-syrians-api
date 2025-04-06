@@ -10,8 +10,8 @@ use Spatie\Translatable\HasTranslations;
 
 class WeaponDeliveryPoint extends Model
 {
-    use SoftDeletes;
     use HasTranslations;
+    use SoftDeletes;
 
     public $translatable = ['name', 'description'];
 

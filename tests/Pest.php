@@ -11,6 +11,7 @@
 |
 */
 
+use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 
 pest()->extend(Tests\TestCase::class)
@@ -43,3 +44,10 @@ beforeAll(function () {
     Artisan::call('migrate:fresh');
     Artisan::call('db:seed --class=RolesPermissionsSeeder');
 });
+
+function authHeader(User $user): array
+{
+    return [
+        'Authorization' => 'Bearer '.explode('|', $user->createToken('test')->plainTextToken)[1],
+    ];
+}

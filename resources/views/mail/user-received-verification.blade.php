@@ -1,12 +1,12 @@
 <x-mail::message>
-# Verification Received
+# {{ __('mail.verification_received_title') }}
 
-Your profile data has been verified by {{ $sender->name }} {{ $sender->surname }}.
+{{ __('mail.verification_received_body', ['name' => $sender->name, 'surname' => $sender->surname]) }}
 
 <x-mail::button :url="$url">
-Review Profile Status
+    {{ __('mail.review_profile_status') }}
 </x-mail::button>
 
-Thanks,<br>
+{{ __('mail.thanks') }}<br>
 {{ config('app.name') }}
 </x-mail::message>

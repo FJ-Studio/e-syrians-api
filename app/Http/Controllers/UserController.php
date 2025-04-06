@@ -29,6 +29,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -190,7 +191,7 @@ class UserController extends Controller
     {
         try {
             $user = $request->user();
-            if ($user->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verification.basic_data_updates_limit')) {
+            if ($user->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= config('e-syrians.verification.basic_info_updates_limit')) {
                 return ApiService::error(403, 'basic_info_updates_limit_reached');
             }
             $data = $request->validated();
@@ -273,6 +274,17 @@ class UserController extends Controller
             $data = $request->validated();
             $user->update($data);
 
+            // create a new profile update record
+            $user->profileUpdates()->create([
+                'change_type' => ProfileChangeTypeEnum::Address->value,
+                'meta_data' => [
+                    'country' => $data['country'],
+                    'city_inside_syria' => $data['city_inside_syria'],
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
             return ApiService::success([]);
         } catch (\Exception $e) {
             return ApiService::error(500, $e->getMessage());
@@ -321,6 +333,12 @@ class UserController extends Controller
 
             return ApiService::success([]);
         } catch (\Exception $e) {
+            Log::error('Verification failed: '.$e->getMessage(), [
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return ApiService::error(500, $e->getMessage());
         }
     }

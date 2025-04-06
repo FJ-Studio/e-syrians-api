@@ -15,7 +15,7 @@ return [
         // The number of verifications can be made by a user
         'max' => 25,
         // Number of allowed data updates before losing verifications
-        'basic_data_updates_limit' => 2,
+        'basic_info_updates_limit' => 2,
         'social_links_updates_limit' => 5,
         'country_updates_limit' => 2,
     ],

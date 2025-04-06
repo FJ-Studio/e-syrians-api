@@ -26,7 +26,7 @@ Route::prefix('users')->group(function () {
         Route::middleware(['throttle:1,1,change-email'])->post('/change-email', [UserController::class, 'change_email']);
         Route::middleware(['throttle:1,1,get_verification_email'])->post('/get-email-verification-link', [UserController::class, 'get_email_verification_link']);
         Route::middleware(['throttle:1,1,change-notifications'])->post('/change-notifications', [UserController::class, 'change_notifications']);
-        Route::get('/me', [UserController::class, 'me']);
+        Route::get('/me', [UserController::class, 'me'])->name('users.me');
         Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class)->name('users.verify');
 
         Route::get('/my-polls', [UserController::class, 'my_polls']);
@@ -35,12 +35,12 @@ Route::prefix('users')->group(function () {
         Route::get('/my-verifications', [UserController::class, 'my_verifications']);
         Route::get('/my-verifiers', [UserController::class, 'my_verifiers']);
 
-        Route::post('/update/basic-info', [UserController::class, 'update_basic_info']);
-        Route::post('/update/social', [UserController::class, 'update_social_links']);
-        Route::post('/update/avatar', [UserController::class, 'update_avatar']);
-        Route::post('/update/address', [UserController::class, 'update_address']);
+        Route::post('/update/basic-info', [UserController::class, 'update_basic_info'])->name('users.update.basic-info');
+        Route::post('/update/social', [UserController::class, 'update_social_links'])->name('users.update.social');
+        Route::post('/update/avatar', [UserController::class, 'update_avatar'])->name('users.update.avatar');
+        Route::post('/update/address', [UserController::class, 'update_address'])->name('users.update.address');
         Route::post('/update/language', [UserController::class, 'update_language'])->middleware(['throttle:4,1,change-language']);
-        Route::post('/update/census', [UserController::class, 'update_census']);
+        Route::post('/update/census', [UserController::class, 'update_census'])->name('users.update.census');
         Route::post('/logout', [UserController::class, 'logout']);
     });
 });

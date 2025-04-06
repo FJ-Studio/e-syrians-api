@@ -12,15 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('polls', function (Blueprint $table) {
-            $table->enum('reveal_results', array_map(fn ($case) => $case->value, \App\Enums\RevealResultsEnum::cases()))
-                ->default('before-voting')
-                ->after('audience_can_add_options');
-            $table->boolean('voters_are_visible')->default(false)->after('reveal_results');
+            $table->boolean('is_private')->default(false);
         });
     }
 
     /**
      * Reverse the migrations.
      */
-    public function down(): void {}
+    public function down(): void
+    {
+        Schema::table('polls', function (Blueprint $table) {
+            $table->dropColumn('is_private');
+        });
+    }
 };

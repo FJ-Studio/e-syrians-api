@@ -248,7 +248,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function profileUpdates()
     {
-        return $this->hasMany(ProfileUpdate::class, 'user_id', 'id');
+        return $this->hasMany(ProfileUpdate::class);
     }
 
     /**
