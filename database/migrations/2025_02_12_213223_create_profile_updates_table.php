@@ -17,8 +17,6 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->enum('change_type', array_map(fn ($case) => $case->value, ProfileChangeTypeEnum::cases()));
             $table->json('meta_data')->nullable();
-            $table->string('ip_address')->nullable();
-            $table->text('user_agent')->nullable();
             $table->timestampTz('created_at')->useCurrent();
             $table->softDeletesTz();
         });
