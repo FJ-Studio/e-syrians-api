@@ -38,6 +38,16 @@ class PollOption extends Model
     }
 
     /**
+     * Get the latest 3 voters for the poll option.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function latestVoters()
+    {
+        return $this->hasMany(PollVote::class)->latest()->take(3)->with('user');
+    }
+
+    /**
      * Get the user that created the poll option.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

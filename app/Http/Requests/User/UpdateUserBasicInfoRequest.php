@@ -33,6 +33,7 @@ class UpdateUserBasicInfoRequest extends FormRequest
             'gender' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, GenderEnum::cases()))],
             'ethnicity' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, EthnicityEnum::cases()))],
             'hometown' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
+            'national_id' => ['nullable', 'string', 'max:20', 'min:5'],
         ];
     }
 }
