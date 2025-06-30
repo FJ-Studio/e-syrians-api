@@ -49,9 +49,23 @@ class UserController extends Controller
      */
     public function first()
     {
-        $users = Cache::remember('verified_first_registrants', now()->addHours(3), function () {
-            return User::whereNotNull('verified_at')
+        $socials = ['facebook', 'twitter', 'youtube', 'linkedin'];
+
+        $users = Cache::remember('verified_first_registrants', now()->addHours(3), function () use ($socials) {
+            return User::query()
+                ->whereNotNull('verified_at')
                 ->where('verification_reason', 'first_registrant')
+                ->whereNotNull('avatar')
+                ->where(function ($query) use ($socials) {
+                    // start the group by requiring the first field
+                    $first = array_shift($socials);
+                    $query->whereNotNull($first);
+
+                    // then OR the rest
+                    foreach ($socials as $column) {
+                        $query->orWhereNotNull($column);
+                    }
+                })
                 ->get();
         });
 
@@ -238,7 +252,7 @@ class UserController extends Controller
 
             $file = $request->file('avatar');
             $ext = $file->getClientOriginalExtension();
-            $fileName = $user->uuid.'.'.$ext;
+            $fileName = $user->uuid . '.' . $ext;
 
             // Delete old avatar if it exists
             if (! empty($user->avatar) && Storage::disk('s3')->exists($user->avatar)) {
@@ -333,7 +347,7 @@ class UserController extends Controller
 
             return ApiService::success([]);
         } catch (\Exception $e) {
-            Log::error('Verification failed: '.$e->getMessage(), [
+            Log::error('Verification failed: ' . $e->getMessage(), [
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
                 'trace' => $e->getTraceAsString(),
@@ -554,7 +568,7 @@ class UserController extends Controller
     public function update_language(Request $request)
     {
         $request->validate([
-            'language' => 'required|in:'.implode(',', array_map(fn ($lang) => $lang->value, SysLanguageEnum::cases())),
+            'language' => 'required|in:' . implode(',', array_map(fn($lang) => $lang->value, SysLanguageEnum::cases())),
         ]);
 
         $user = $request->user();
