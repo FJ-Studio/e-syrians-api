@@ -49,9 +49,34 @@ class UserController extends Controller
      */
     public function first()
     {
-        $users = Cache::remember('verified_first_registrants', now()->addHours(3), function () {
-            return User::whereNotNull('verified_at')
+        $socials = [
+            'facebook_link',
+            'github_link',
+            'twitter_link',
+            'linkedin_link',
+            'instagram_link',
+            'youtube_link',
+            'tiktok_link',
+            'pinterest_link',
+            'twitch_link',
+            'snapchat_link',
+            'website',
+        ];
+
+        $users = Cache::remember('verified_first_registrants', now()->addHours(3), function () use ($socials) {
+            return User::query()
+                ->whereNotNull('verified_at')
                 ->where('verification_reason', 'first_registrant')
+                ->whereNotNull('avatar')
+                ->where(function ($query) use ($socials) {
+                    // start the group by requiring the first field
+                    $first = array_shift($socials);
+                    $query->whereNotNull($first);
+                    // then OR the rest
+                    foreach ($socials as $column) {
+                        $query->orWhereNotNull($column);
+                    }
+                })
                 ->get();
         });
 
