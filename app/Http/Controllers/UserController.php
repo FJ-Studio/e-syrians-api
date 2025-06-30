@@ -252,7 +252,7 @@ class UserController extends Controller
 
             $file = $request->file('avatar');
             $ext = $file->getClientOriginalExtension();
-            $fileName = $user->uuid . '.' . $ext;
+            $fileName = $user->uuid.'.'.$ext;
 
             // Delete old avatar if it exists
             if (! empty($user->avatar) && Storage::disk('s3')->exists($user->avatar)) {
@@ -347,7 +347,7 @@ class UserController extends Controller
 
             return ApiService::success([]);
         } catch (\Exception $e) {
-            Log::error('Verification failed: ' . $e->getMessage(), [
+            Log::error('Verification failed: '.$e->getMessage(), [
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
                 'trace' => $e->getTraceAsString(),
@@ -568,7 +568,7 @@ class UserController extends Controller
     public function update_language(Request $request)
     {
         $request->validate([
-            'language' => 'required|in:' . implode(',', array_map(fn($lang) => $lang->value, SysLanguageEnum::cases())),
+            'language' => 'required|in:'.implode(',', array_map(fn ($lang) => $lang->value, SysLanguageEnum::cases())),
         ]);
 
         $user = $request->user();
