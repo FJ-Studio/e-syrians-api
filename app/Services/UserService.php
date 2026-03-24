@@ -4,79 +4,29 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\VerificationServiceContract;
 use App\Models\Poll;
 use App\Models\User;
-use Laravel\Socialite\Facades\Socialite;
 
+/**
+ * @deprecated Use AuthService, VerificationService, or PollService instead.
+ * This class is retained temporarily for backward compatibility.
+ */
 class UserService
 {
-    public static function getUserDataFromSocialProvider(string $provider, string $token): array|bool
-    {
-        $user = (Socialite::driver($provider))->userFromToken($token);
-        if ($user) {
-            $name = explode(' ', $user->getName());
-
-            return [
-                $provider.'_id' => $user->getId(),
-                'name' => $name[0],
-                'surname' => $name[1] ?? '',
-                'email' => $user->getEmail(),
-            ];
-        }
-
-        return false;
-    }
-
     /**
+     * @deprecated Use VerificationService::canUserVerify() instead.
+     *
      * @return array{0: bool, 1: string}
      */
     public static function canUserAVerifyUserB(int|string|User $userA, int|string|User $userB): array
     {
-        if (is_int($userA)) {
-            $userA = User::find($userA);
-        } elseif (is_string($userA)) {
-            $userA = User::where('uuid', $userA)->first();
-        }
-        if (! $userA instanceof User) {
-            return [false, 'user_not_found'];
-        }
-
-        // 1. Check user A verfications limit
-        $userACanVerify = $userA->canVerify();
-        if (! $userACanVerify[0]) {
-            return $userACanVerify;
-        }
-        // 2. find user B
-        if (is_int($userB)) {
-            $userB = User::find($userB);
-        } elseif (is_string($userB)) {
-            $userB = User::where('uuid', $userB)->first();
-        }
-        if (! $userB instanceof User) {
-            return [false, 'target_user_not_found'];
-        }
-
-        // 3. check if user B is banned
-        if ($userB->marked_as_fake_at) {
-            return [false, 'user_is_banned'];
-        }
-        // 4. user cannot verify himself
-        if ($userA->id === $userB->id) {
-            return [false, 'you_cannot_verify_yourself'];
-        }
-        // 5. circular verification is not allowed, a user cannot verify another user who verified him
-        if ($userA->verifiers()->where('verifier_id', $userB->id)->exists()) {
-            return [false, 'circular_verification_not_allowed'];
-        }
-        // 6. user cannot verify the same user more than once
-        if ($userA->verifications()->where('user_id', $userB->id)->whereNull('cancelled_at')->exists()) {
-            return [false, 'you_have_already_verified_this_user'];
-        }
-
-        return [true, ''];
+        return app(VerificationServiceContract::class)->canUserVerify($userA, $userB);
     }
 
     /**
+     * @deprecated Use PollService::vote() which includes audience validation.
+     *
      * @return array{0: bool, 1: string}
      */
     public static function canAnswerPoll(int $pollId, User $user): array
@@ -92,7 +42,6 @@ class UserService
             return [false, 'you_have_already_answered_this_poll'];
         }
 
-        // check elligibility
         return $user->isInAudience($poll->audience);
     }
 }

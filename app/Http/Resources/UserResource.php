@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Contracts\FileUploadServiceContract;
 use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class UserResource extends JsonResource
 {
@@ -18,18 +18,36 @@ class UserResource extends JsonResource
      */
     public function toArray($request)
     {
-        $isOwner = ($request->user() && $request->user()->uuid === $this->uuid) || (isset($this->additional['isOwner']) && $this->additional['isOwner'] === true);
+        $isOwner = ($request->user() && $request->user()->uuid === $this->uuid)
+            || (isset($this->additional['isOwner']) && $this->additional['isOwner'] === true);
+
+        $avatarUrl = null;
+        if ($this->avatar) {
+            try {
+                $fileService = app(FileUploadServiceContract::class);
+                $avatarUrl = $fileService->temporaryUrl(
+                    $this->avatar,
+                    (int) config('e-syrians.files.avatar.ttl', 60),
+                );
+            } catch (\Exception $e) {
+                $avatarUrl = null;
+            }
+        }
 
         return [
-            // 'id' => $this->id,
             'uuid' => $this->uuid,
             'name' => $this->name,
             'surname' => $this->surname,
-            'avatar' => $this->avatar,
+            'avatar' => $avatarUrl,
             'created_at' => $this->created_at,
             'birth_date' => $this->birth_date,
             'hometown' => $this->hometown,
             'country' => $this->country,
+            'gender' => $this->gender,
+            'ethnicity' => $this->ethnicity,
+            'verified_at' => $this->verified_at,
+
+            // Social links
             'facebook_link' => $this->facebook_link,
             'twitter_link' => $this->twitter_link,
             'linkedin_link' => $this->linkedin_link,
@@ -41,12 +59,8 @@ class UserResource extends JsonResource
             'twitch_link' => $this->twitch_link,
             'website' => $this->website,
             'github_link' => $this->github_link,
-            'avatar' => $this->avatar ? Storage::disk('s3')->temporaryUrl($this->avatar, now()->addMinutes(config('e-syrians.files.avatar.ttl', 60))) : null,
-            'country' => $this->country,
-            'gender' => $this->gender,
-            'ethnicity' => $this->ethnicity,
-            'verified_at' => $this->verified_at,
 
+            // Owner-only fields
             $this->mergeWhen($isOwner, [
                 'record_id' => $this->record_id,
                 'phone' => $this->phone,
@@ -74,7 +88,6 @@ class UserResource extends JsonResource
                 'verification_reason' => $this->verification_reason,
                 'marked_as_fake_at' => $this->marked_as_fake_at,
                 'languages' => $this->languages,
-                'other_nationalities' => $this->other_nationalities,
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
                 'basic_info_updates' => (int) (config('e-syrians.verification.basic_info_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
@@ -84,6 +97,7 @@ class UserResource extends JsonResource
                 'language' => $this->language,
             ]),
 
+            // Conditional relationships
             'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
             'received_items' => WeaponDeliveryResource::collection($this->whenLoaded('received_items')),
         ];

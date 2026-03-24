@@ -1,7 +1,7 @@
 <?php
 
+use App\Contracts\VerificationServiceContract;
 use App\Models\User;
-use App\Services\UserService;
 use Illuminate\Support\Facades\Event;
 
 // ───────────────────────────────────────────────
@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Event;
 // ───────────────────────────────────────────────
 
 beforeEach(function () {
+    test()->verificationService = app(VerificationServiceContract::class);
+
     $verifiedUser = User::factory()->create([
         'name' => 'Verified',
         'surname' => 'User',
@@ -32,11 +34,11 @@ beforeEach(function () {
 });
 
 // ───────────────────────────────────────────────
-// Service-level Tests
+// Service-level Tests (via contract)
 // ───────────────────────────────────────────────
 
 it('allows a first registrant user to verify a new user', function () {
-    $result = UserService::canUserAVerifyUserB(test()->verifiedUser, test()->unverifiedUser);
+    $result = test()->verificationService->canUserVerify(test()->verifiedUser, test()->unverifiedUser);
 
     expect($result)->toBeArray();
     expect($result[0])->toBeTrue();
@@ -44,7 +46,7 @@ it('allows a first registrant user to verify a new user', function () {
 });
 
 it('prevents unverified users from verifying others', function () {
-    $result = UserService::canUserAVerifyUserB(test()->unverifiedUser, test()->verifiedUser);
+    $result = test()->verificationService->canUserVerify(test()->unverifiedUser, test()->verifiedUser);
 
     expect($result)->toBeArray();
     expect($result[0])->toBeFalse();
@@ -52,7 +54,7 @@ it('prevents unverified users from verifying others', function () {
 });
 
 it('prevents users from verifying themselves', function () {
-    $result = UserService::canUserAVerifyUserB(test()->verifiedUser, test()->verifiedUser);
+    $result = test()->verificationService->canUserVerify(test()->verifiedUser, test()->verifiedUser);
 
     expect($result)->toBeArray();
     expect($result[0])->toBeFalse();
