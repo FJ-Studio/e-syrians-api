@@ -9,6 +9,16 @@ use App\Http\Middleware\CanVerify;
 use App\Http\Middleware\UserIsVerified;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/ping', function () {
+    return response()->json(['message' => 'pong']);
+})->name('ping');
+
 Route::prefix('weapons-delivery')->group(function () {
     Route::middleware(['auth:sanctum'])->post('/', [WeaponDeliveryController::class, 'store']);
 });
