@@ -63,14 +63,15 @@ class VerificationService implements VerificationServiceContract
             empty($targetUser->hometown) ||
             empty($targetUser->country)
         ) {
-            throw new \DomainException('target_user_data_not_filled');
+            throw new \DomainException(__('api.target_user_data_not_filled'));
         }
 
-        $targetUser->verifiers()->create([
+        $verification = $targetUser->verifiers()->make([
             'verifier_id' => $verifier->id,
-            'ip_address' => $ipAddress,
-            'user_agent' => $userAgent,
         ]);
+        $verification->ip_address = $ipAddress;
+        $verification->user_agent = $userAgent;
+        $verification->save();
 
         event(new VerificationReceived($verifier, $targetUser));
     }

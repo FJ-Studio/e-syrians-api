@@ -6,6 +6,7 @@ namespace App\Http\Resources;
 
 use App\Contracts\FileUploadServiceContract;
 use App\Enums\ProfileChangeTypeEnum;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserResource extends JsonResource
@@ -13,10 +14,9 @@ class UserResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
+     * @return array<string, mixed>
      */
-    public function toArray($request)
+    public function toArray(Request $request): array
     {
         $isOwner = ($request->user() && $request->user()->uuid === $this->uuid)
             || (isset($this->additional['isOwner']) && $this->additional['isOwner'] === true);
@@ -97,9 +97,6 @@ class UserResource extends JsonResource
                 'language' => $this->language,
             ]),
 
-            // Conditional relationships
-            'handovers' => WeaponDeliveryResource::collection($this->whenLoaded('handovers')),
-            'received_items' => WeaponDeliveryResource::collection($this->whenLoaded('received_items')),
         ];
     }
 }

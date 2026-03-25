@@ -54,7 +54,7 @@ class ViolationController extends Controller
     public function react(\Illuminate\Http\Request $request)
     {
         // TODO: Implement violation reactions
-        return ApiService::error(501, 'not_implemented');
+        return ApiService::error(501, __('api.not_implemented'));
     }
 
     /**

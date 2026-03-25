@@ -50,17 +50,18 @@ class PollService implements PollServiceContract
                 'ethnicity' => $data['ethnicity'] ?? [],
             ];
 
-            $poll = Poll::create([
+            $poll = new Poll([
                 'question' => $data['question'],
                 'start_date' => $data['start_date'],
                 'end_date' => now()->addDays((int) ($data['duration'])),
                 'max_selections' => $data['max_selections'],
                 'audience_can_add_options' => $data['audience_can_add_options'],
-                'created_by' => $userId,
                 'reveal_results' => $data['reveal_results'],
                 'voters_are_visible' => $data['voters_are_visible'],
                 'audience' => $audience,
             ]);
+            $poll->created_by = $userId;
+            $poll->save();
 
             $options = collect($data['options'])->map(fn ($option) => [
                 'poll_id' => $poll->id,
@@ -92,26 +93,26 @@ class PollService implements PollServiceContract
         $poll = Poll::findOrFail($pollId);
 
         if ($poll->start_date->isFuture()) {
-            throw new PollVotingException('poll_has_not_started_yet');
+            throw new PollVotingException(__('api.poll_has_not_started_yet'));
         }
 
         if ($poll->end_date->isPast()) {
-            throw new PollVotingException('poll_has_expired');
+            throw new PollVotingException(__('api.poll_has_expired'));
         }
 
         if ($poll->votes()->where('user_id', $userId)->exists()) {
-            throw new PollVotingException('you_have_already_voted');
+            throw new PollVotingException(__('api.you_have_already_voted'));
         }
 
         // Audience eligibility check
         $user = User::findOrFail($userId);
         $inAudience = $user->isInAudience($poll->audience);
         if (! $inAudience[0]) {
-            throw new PollVotingException('user_is_not_in_poll_audience');
+            throw new PollVotingException(__('api.user_is_not_in_poll_audience'));
         }
 
         if (count($optionIds) > $poll->max_selections) {
-            throw new PollVotingException('user_has_reached_the_max_selections');
+            throw new PollVotingException(__('api.user_has_reached_the_max_selections'));
         }
 
         // Validate options belong to the poll
@@ -120,7 +121,7 @@ class PollService implements PollServiceContract
             ->count();
 
         if ($validOptions !== count($optionIds)) {
-            throw new PollVotingException('invalid_options');
+            throw new PollVotingException(__('api.invalid_options'));
         }
 
         $poll->votes()->createMany(
@@ -138,11 +139,11 @@ class PollService implements PollServiceContract
         $poll = Poll::findOrFail($pollId);
 
         if ($poll->start_date->isFuture()) {
-            throw new PollReactionException('poll_has_not_started_yet');
+            throw new PollReactionException(__('api.poll_has_not_started_yet'));
         }
 
         if ($poll->end_date->isPast()) {
-            throw new PollReactionException('poll_has_expired');
+            throw new PollReactionException(__('api.poll_has_expired'));
         }
 
         // Remove previous reaction and add new one
@@ -181,7 +182,7 @@ class PollService implements PollServiceContract
      */
     private function buildPollQuery(?int $userId): \Illuminate\Database\Eloquent\Builder
     {
-        return Poll::with(['user', 'options'])
+        return Poll::with(['user', 'options' => fn ($q) => $q->withCount('votes')])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',

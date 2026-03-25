@@ -109,8 +109,10 @@ it('rejects non-image file types', function () {
     Storage::fake('s3');
 
     $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
-    test()->profileService->updateAvatar(test()->user, $file);
-})->throws(\InvalidArgumentException::class, 'invalid_file_type');
+
+    expect(fn () => test()->profileService->updateAvatar(test()->user, $file))
+        ->toThrow(\InvalidArgumentException::class, __('api.invalid_file_type'));
+});
 
 it('updates avatar path when uploading new avatar', function () {
     Storage::fake('s3');

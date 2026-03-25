@@ -10,6 +10,7 @@ use App\Contracts\PasswordServiceContract;
 use App\Contracts\PollServiceContract;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\StatsServiceContract;
+use App\Contracts\UserPollServiceContract;
 use App\Contracts\VerificationServiceContract;
 use App\Models\User;
 use App\Services\AuthService;
@@ -18,6 +19,7 @@ use App\Services\PasswordService;
 use App\Services\PollService;
 use App\Services\ProfileService;
 use App\Services\StatsService;
+use App\Services\UserPollService;
 use App\Services\VerificationService;
 use Carbon\Carbon;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -41,6 +43,7 @@ class AppServiceProvider extends ServiceProvider
         PollServiceContract::class => PollService::class,
         ProfileServiceContract::class => ProfileService::class,
         StatsServiceContract::class => StatsService::class,
+        UserPollServiceContract::class => UserPollService::class,
         VerificationServiceContract::class => VerificationService::class,
     ];
 

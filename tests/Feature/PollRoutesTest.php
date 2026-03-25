@@ -223,7 +223,7 @@ it('returns 401 when toggling status without authentication', function () {
 
 function createActivePollForFeature(User $user): Poll
 {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Feature test poll?',
         'start_date' => now()->subDays(1),
         'end_date' => now()->addDays(7),

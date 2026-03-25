@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Contracts\StatsServiceContract;
 use App\Services\ApiService;
+use Illuminate\Http\JsonResponse;
 
 class StatsController extends Controller
 {
@@ -16,7 +17,7 @@ class StatsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): JsonResponse
     {
         return ApiService::success([
             'daily_users' => array_slice($this->statsService->getDailyUsersStats(), -7, 7, true),

@@ -96,7 +96,7 @@ class ProfileController extends Controller
             $request->input('email'),
         );
 
-        return ApiService::success([], 'email_changed');
+        return ApiService::success([], __('api.email_changed'));
     }
 
     public function changeNotifications(Request $request): JsonResponse
@@ -111,7 +111,7 @@ class ProfileController extends Controller
             $request->only('received_verification_email', 'account_verified_email'),
         );
 
-        return ApiService::success([], 'notifications_changed');
+        return ApiService::success([], __('api.notifications_changed'));
     }
 
     public function updateLanguage(Request $request): JsonResponse
@@ -128,6 +128,6 @@ class ProfileController extends Controller
             $request->input('language'),
         );
 
-        return ApiService::success([], 'language_updated');
+        return ApiService::success([], __('api.language_updated'));
     }
 }

@@ -14,7 +14,6 @@ class PollOption extends Model
     protected $fillable = [
         'poll_id',
         'option_text',
-        'created_by', // by default, the user who created the poll option
     ];
 
     /**

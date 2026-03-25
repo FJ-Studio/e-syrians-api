@@ -98,13 +98,13 @@ it('returns error for non-existent target', function () {
 // ───────────────────────────────────────────────
 
 it('throws when target user has incomplete data', function () {
-    test()->verificationService->verifyUser(
+    expect(fn () => test()->verificationService->verifyUser(
         test()->verifiedUser,
         test()->unverifiedUser->uuid,
         '127.0.0.1',
         'TestAgent',
-    );
-})->throws(\DomainException::class, 'target_user_data_not_filled');
+    ))->toThrow(\DomainException::class, __('api.target_user_data_not_filled'));
+});
 
 it('creates a verification record for complete target user', function () {
     $target = User::factory()->create([

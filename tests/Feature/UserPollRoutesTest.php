@@ -24,7 +24,7 @@ beforeEach(function () {
 // ───────────────────────────────────────────────
 
 it('returns polls created by the authenticated user', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'My poll?',
         'start_date' => now()->subDays(1),
         'end_date' => now()->addDays(7),
@@ -50,7 +50,7 @@ it('returns 401 for my-polls without authentication', function () {
 });
 
 it('includes soft-deleted polls in my-polls', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Deleted poll?',
         'start_date' => now()->subDays(1),
         'end_date' => now()->addDays(7),
@@ -75,7 +75,7 @@ it('includes soft-deleted polls in my-polls', function () {
 // ───────────────────────────────────────────────
 
 it('returns reactions made by the authenticated user', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'React poll?',
         'start_date' => now()->subDays(1),
         'end_date' => now()->addDays(7),
@@ -110,7 +110,7 @@ it('returns 401 for my-reactions without authentication', function () {
 // ───────────────────────────────────────────────
 
 it('returns votes grouped by poll for authenticated user', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Vote poll?',
         'start_date' => now()->subDays(1),
         'end_date' => now()->addDays(7),
@@ -123,7 +123,7 @@ it('returns votes grouped by poll for authenticated user', function () {
         'is_private' => false,
     ]);
 
-    $option = PollOption::create([
+    $option = PollOption::forceCreate([
         'poll_id' => $poll->id,
         'option_text' => 'Option A',
         'created_by' => test()->user->id,

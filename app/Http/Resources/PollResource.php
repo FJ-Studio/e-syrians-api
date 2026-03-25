@@ -53,7 +53,7 @@ class PollResource extends JsonResource
                             return new PollOptionResource($option);
                         }
                         $totalVotes = $this->total_votes ?? 0;
-                        $optionVotes = $option->votes()->count();
+                        $optionVotes = $option->votes_count ?? 0;
                         $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0;
                         $option->percentage = $percentage;
 

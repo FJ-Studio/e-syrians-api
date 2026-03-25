@@ -9,19 +9,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ViolationController;
-use App\Http\Controllers\WeaponDeliveryController;
 use App\Http\Middleware\CanVerify;
 use App\Http\Middleware\UserIsVerified;
 use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| Weapons Delivery Routes
-|--------------------------------------------------------------------------
-*/
-Route::prefix('weapons-delivery')->group(function () {
-    Route::middleware(['auth:sanctum'])->post('/', [WeaponDeliveryController::class, 'store']);
-});
 
 /*
 |--------------------------------------------------------------------------

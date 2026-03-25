@@ -26,8 +26,7 @@ arch('models')
     ->ignoring('App\Models\User')
     ->ignoring('App\Models\PollReaction')
     ->ignoring('App\Models\PollVote')
-    ->ignoring('App\Models\ProfileUpdate')
-    ->ignoring('App\Models\WeaponDeliveryPoint');
+    ->ignoring('App\Models\ProfileUpdate');
 
 arch()
     ->expect('App\Models')
@@ -93,6 +92,7 @@ arch('controllers do not depend on concrete services directly')
         'App\Services\ApiService',
         'Illuminate\Http\JsonResponse',
         'Illuminate\Http\Request',
+        '__',
     ]);
 
 arch('controllers are classes')

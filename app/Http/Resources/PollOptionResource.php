@@ -30,7 +30,7 @@ class PollOptionResource extends JsonResource
                     'avatar' => $this->user->avatar ? Storage::disk('s3')->temporaryUrl($this->user->avatar, now()->addMinutes(config('e-syrians.files.avatar.ttl', 60))) : null,
                 ];
             }),
-            'votes_count' => $this->votes()->count(),
+            'votes_count' => $this->votes_count ?? 0,
             'percentage' => $this->when(isset($this->percentage), $this->percentage), // Ensure percentage is included if set
 
         ];

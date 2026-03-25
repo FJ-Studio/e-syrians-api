@@ -73,7 +73,7 @@ it('returns an error if target user has incomplete data', function () {
     );
 
     $response->assertStatus(403);
-    expect($response['messages'])->toContain('target_user_data_not_filled');
+    expect($response['messages'])->toContain(__('api.target_user_data_not_filled'));
 });
 
 it('allows a user to verify another user once only', function () {
@@ -116,5 +116,5 @@ it('allows a user to verify another user once only', function () {
     );
 
     $response2->assertStatus(403);
-    expect($response2['messages'])->toContain('you_have_already_verified_this_user');
+    expect($response2['messages'])->toContain(__('api.you_have_already_verified_this_user'));
 });

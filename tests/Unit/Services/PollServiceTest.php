@@ -87,7 +87,7 @@ it('allows voting on an active poll', function () {
 });
 
 it('prevents voting on a poll that has not started yet', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Future poll?',
         'start_date' => now()->addDays(5),
         'end_date' => now()->addDays(12),
@@ -99,17 +99,18 @@ it('prevents voting on a poll that has not started yet', function () {
         'audience' => [],
         'is_private' => false,
     ]);
-    $option = PollOption::create([
+    $option = PollOption::forceCreate([
         'poll_id' => $poll->id,
         'option_text' => 'Option',
         'created_by' => test()->user->id,
     ]);
 
-    test()->pollService->vote($poll->id, [$option->id], test()->user->id);
-})->throws(PollVotingException::class, 'poll_has_not_started_yet');
+    expect(fn () => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
+        ->toThrow(PollVotingException::class, __('api.poll_has_not_started_yet'));
+});
 
 it('prevents voting on an expired poll', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Expired poll?',
         'start_date' => now()->subDays(10),
         'end_date' => now()->subDays(1),
@@ -121,35 +122,40 @@ it('prevents voting on an expired poll', function () {
         'audience' => [],
         'is_private' => false,
     ]);
-    $option = PollOption::create([
+    $option = PollOption::forceCreate([
         'poll_id' => $poll->id,
         'option_text' => 'Option',
         'created_by' => test()->user->id,
     ]);
 
-    test()->pollService->vote($poll->id, [$option->id], test()->user->id);
-})->throws(PollVotingException::class, 'poll_has_expired');
+    expect(fn () => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
+        ->toThrow(PollVotingException::class, __('api.poll_has_expired'));
+});
 
 it('prevents double voting', function () {
     $poll = createActivePoll(test()->user);
     $optionId = $poll->options->first()->id;
 
     test()->pollService->vote($poll->id, [$optionId], test()->user->id);
-    test()->pollService->vote($poll->id, [$optionId], test()->user->id);
-})->throws(PollVotingException::class, 'you_have_already_voted');
+
+    expect(fn () => test()->pollService->vote($poll->id, [$optionId], test()->user->id))
+        ->toThrow(PollVotingException::class, __('api.you_have_already_voted'));
+});
 
 it('prevents selecting more options than max_selections', function () {
     $poll = createActivePoll(test()->user, maxSelections: 1);
     $optionIds = $poll->options->pluck('id')->toArray();
 
-    test()->pollService->vote($poll->id, $optionIds, test()->user->id);
-})->throws(PollVotingException::class, 'user_has_reached_the_max_selections');
+    expect(fn () => test()->pollService->vote($poll->id, $optionIds, test()->user->id))
+        ->toThrow(PollVotingException::class, __('api.user_has_reached_the_max_selections'));
+});
 
 it('rejects invalid option IDs', function () {
     $poll = createActivePoll(test()->user);
 
-    test()->pollService->vote($poll->id, [99999], test()->user->id);
-})->throws(PollVotingException::class, 'invalid_options');
+    expect(fn () => test()->pollService->vote($poll->id, [99999], test()->user->id))
+        ->toThrow(PollVotingException::class, __('api.invalid_options'));
+});
 
 // ───────────────────────────────────────────────
 // React
@@ -182,7 +188,7 @@ it('replaces previous reaction', function () {
 });
 
 it('prevents reacting to an expired poll', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Expired react poll?',
         'start_date' => now()->subDays(10),
         'end_date' => now()->subDays(1),
@@ -195,8 +201,9 @@ it('prevents reacting to an expired poll', function () {
         'is_private' => false,
     ]);
 
-    test()->pollService->react($poll->id, 'up', test()->user->id);
-})->throws(PollReactionException::class, 'poll_has_expired');
+    expect(fn () => test()->pollService->react($poll->id, 'up', test()->user->id))
+        ->toThrow(PollReactionException::class, __('api.poll_has_expired'));
+});
 
 // ───────────────────────────────────────────────
 // Toggle Status
@@ -230,7 +237,7 @@ it('reveals results before voting', function () {
 });
 
 it('reveals results after expiration', function () {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Expired reveal?',
         'start_date' => now()->subDays(10),
         'end_date' => now()->subDays(1),
@@ -272,7 +279,7 @@ it('hides results for after-voting polls when user has not voted', function () {
 
 function createActivePoll(User $user, int $maxSelections = 2, string $revealResults = 'before-voting'): Poll
 {
-    $poll = Poll::create([
+    $poll = Poll::forceCreate([
         'question' => 'Active test poll?',
         'start_date' => now()->subDays(1),
         'end_date' => now()->addDays(7),

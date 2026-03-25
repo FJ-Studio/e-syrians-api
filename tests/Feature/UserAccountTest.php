@@ -169,7 +169,7 @@ it('User updates his profile for limited times', function () {
         authHeader(test()->user));
     // Check the response status and messages
     $result->assertStatus(403);
-    expect($result['messages'])->toContain('basic_info_updates_limit_reached');
+    expect($result['messages'])->toContain(__('api.basic_info_updates_limit_reached'));
 });
 
 it('User can update his social media links', function () {
@@ -342,7 +342,7 @@ it('prevents update when country update limit is reached', function () {
     );
 
     $response->assertStatus(403);
-    expect($response['messages'][0])->toBe('country_updates_limit_reached');
+    expect($response['messages'][0])->toBe(__('api.country_updates_limit_reached'));
 });
 
 // ❌ 5. Invalid country / city

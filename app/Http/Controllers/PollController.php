@@ -14,7 +14,6 @@ use App\Http\Resources\PollResource;
 use App\Services\ApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class PollController extends Controller
@@ -56,14 +55,14 @@ class PollController extends Controller
         try {
             $poll = $this->pollService->createPoll(
                 $request->validated(),
-                Auth::id(),
+                $request->user()->id,
             );
 
             return ApiService::success(new PollResource($poll));
         } catch (\Throwable $e) {
             Log::error('Poll creation failed', [
                 'error' => $e->getMessage(),
-                'user_id' => Auth::id(),
+                'user_id' => $request->user()->id,
             ]);
 
             return ApiService::error(500);
@@ -87,7 +86,7 @@ class PollController extends Controller
             $this->pollService->vote(
                 $request->poll_id,
                 $request->poll_option_id,
-                Auth::id(),
+                $request->user()->id,
             );
 
             return ApiService::success([]);
@@ -102,7 +101,7 @@ class PollController extends Controller
             $this->pollService->react(
                 $request->poll_id,
                 $request->reaction,
-                Auth::id(),
+                $request->user()->id,
             );
 
             return ApiService::success([]);
