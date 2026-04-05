@@ -38,12 +38,13 @@ class PollOption extends Model
 
     /**
      * Get the latest 3 voters for the poll option.
+     * Only selects the minimum user fields needed for display (privacy).
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function latestVoters()
     {
-        return $this->hasMany(PollVote::class)->latest()->take(3)->with('user');
+        return $this->hasMany(PollVote::class)->latest()->take(3)->with('user:id,uuid,name,surname,avatar');
     }
 
     /**

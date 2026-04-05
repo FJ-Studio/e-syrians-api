@@ -91,7 +91,55 @@ class PollController extends Controller
 
             return ApiService::success([]);
         } catch (PollVotingException $e) {
-            return ApiService::error($e->getCode(), $e->getMessage());
+            $data = $e->getDetails() ? ['reasons' => $e->getDetails()] : null;
+
+            return ApiService::error($e->getCode(), $e->getMessage(), $data);
+        }
+    }
+
+    public function optionVoters(Request $request): JsonResponse
+    {
+        $request->validate([
+            'poll_option_id' => 'required|integer|exists:poll_options,id',
+        ]);
+
+        try {
+            $voters = $this->pollService->getOptionVoters(
+                (int) $request->input('poll_option_id'),
+            );
+
+            $fileService = app(\App\Contracts\FileUploadServiceContract::class);
+
+            $data = collect($voters->items())->map(function ($vote) use ($fileService) {
+                $user = $vote->user;
+                $avatarUrl = null;
+                if ($user->avatar) {
+                    try {
+                        $avatarUrl = $fileService->temporaryUrl(
+                            $user->avatar,
+                            (int) config('e-syrians.files.avatar.ttl', 60),
+                        );
+                    } catch (\Exception $e) {
+                        $avatarUrl = null;
+                    }
+                }
+
+                return [
+                    'id' => $user->uuid,
+                    'name' => $user->name,
+                    'surname' => $user->surname,
+                    'avatar' => $avatarUrl,
+                ];
+            });
+
+            return ApiService::success([
+                'data' => $data,
+                'current_page' => $voters->currentPage(),
+                'last_page' => $voters->lastPage(),
+                'total' => $voters->total(),
+            ]);
+        } catch (\Exception $e) {
+            return ApiService::error(403, $e->getMessage());
         }
     }
 

@@ -109,19 +109,19 @@ class AuthService implements AuthServiceContract
         $user = User::findOrFail($userId);
 
         if ($user->hasVerifiedEmail()) {
-            return ['success' => false, 'message' => __('api.user_already_verified'), 'code' => 403];
+            return ['success' => false, 'message' => 'user_already_verified', 'code' => 403];
         }
 
         if (! hash_equals($hash, sha1($user->email))) {
-            return ['success' => false, 'message' => __('api.invalid_verification_link'), 'code' => 403];
+            return ['success' => false, 'message' => 'invalid_verification_link', 'code' => 403];
         }
 
         if (! URL::hasValidSignature(request(), false)) {
-            return ['success' => false, 'message' => __('api.invalid_verification_signature'), 'code' => 400];
+            return ['success' => false, 'message' => 'invalid_verification_signature', 'code' => 400];
         }
 
         $user->markEmailAsVerified();
 
-        return ['success' => true, 'message' => __('api.email_verified'), 'code' => 200];
+        return ['success' => true, 'message' => 'email_verified', 'code' => 200];
     }
 }

@@ -27,7 +27,7 @@ class CanVerify
         $result = $this->verificationService->canUserVerify($user, $request->input('uuid'));
 
         if ($result[0] === false) {
-            return ApiService::error(403, __('api.' . $result[1]));
+            return ApiService::error(403, $result[1]);
         }
 
         return $next($request);

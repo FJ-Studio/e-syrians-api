@@ -48,4 +48,9 @@ interface PollServiceContract
      * Determine if results should be revealed to a user
      */
     public function shouldRevealResults(Poll $poll, ?User $user): bool;
+
+    /**
+     * Get paginated voters for a specific poll option
+     */
+    public function getOptionVoters(int $optionId, int $perPage = 20): LengthAwarePaginator;
 }

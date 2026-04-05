@@ -94,13 +94,14 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function () {
 */
 Route::prefix('polls')->group(function () {
     Route::get('/', [PollController::class, 'index']);
-    Route::get('/{poll}', [PollController::class, 'show']);
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/option-voters', [PollController::class, 'optionVoters']);
         Route::post('/', [PollController::class, 'store']);
         Route::post('/status/{poll}', [PollController::class, 'status']);
         Route::post('/vote', [PollController::class, 'vote'])->middleware(UserIsVerified::class);
         Route::post('/react', [PollController::class, 'react'])->middleware(UserIsVerified::class);
     });
+    Route::get('/{poll}', [PollController::class, 'show']);
 });
 
 /*

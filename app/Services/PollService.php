@@ -93,26 +93,26 @@ class PollService implements PollServiceContract
         $poll = Poll::findOrFail($pollId);
 
         if ($poll->start_date->isFuture()) {
-            throw new PollVotingException(__('api.poll_has_not_started_yet'));
+            throw new PollVotingException('poll_has_not_started_yet');
         }
 
         if ($poll->end_date->isPast()) {
-            throw new PollVotingException(__('api.poll_has_expired'));
+            throw new PollVotingException('poll_has_expired');
         }
 
         if ($poll->votes()->where('user_id', $userId)->exists()) {
-            throw new PollVotingException(__('api.you_have_already_voted'));
+            throw new PollVotingException('you_have_already_voted');
         }
 
         // Audience eligibility check
         $user = User::findOrFail($userId);
-        $inAudience = $user->isInAudience($poll->audience);
-        if (! $inAudience[0]) {
-            throw new PollVotingException(__('api.user_is_not_in_poll_audience'));
+        [$eligible, $failures] = $user->isInAudience($poll->audience);
+        if (! $eligible) {
+            throw new PollVotingException('user_is_not_in_poll_audience', 400, $failures);
         }
 
         if (count($optionIds) > $poll->max_selections) {
-            throw new PollVotingException(__('api.user_has_reached_the_max_selections'));
+            throw new PollVotingException('user_has_reached_the_max_selections');
         }
 
         // Validate options belong to the poll
@@ -121,7 +121,7 @@ class PollService implements PollServiceContract
             ->count();
 
         if ($validOptions !== count($optionIds)) {
-            throw new PollVotingException(__('api.invalid_options'));
+            throw new PollVotingException('invalid_options');
         }
 
         $poll->votes()->createMany(
@@ -139,11 +139,11 @@ class PollService implements PollServiceContract
         $poll = Poll::findOrFail($pollId);
 
         if ($poll->start_date->isFuture()) {
-            throw new PollReactionException(__('api.poll_has_not_started_yet'));
+            throw new PollReactionException('poll_has_not_started_yet');
         }
 
         if ($poll->end_date->isPast()) {
-            throw new PollReactionException(__('api.poll_has_expired'));
+            throw new PollReactionException('poll_has_expired');
         }
 
         // Remove previous reaction and add new one
@@ -174,6 +174,22 @@ class PollService implements PollServiceContract
         }
 
         return false;
+    }
+
+    public function getOptionVoters(int $optionId, int $perPage = 20): LengthAwarePaginator
+    {
+        $option = PollOption::findOrFail($optionId);
+
+        // Ensure the poll has voters_are_visible enabled
+        $poll = $option->poll;
+        if (! $poll->voters_are_visible) {
+            abort(403, 'voters_not_visible');
+        }
+
+        return PollVote::where('poll_option_id', $optionId)
+            ->with('user:id,uuid,name,surname,avatar')
+            ->latest()
+            ->paginate($perPage);
     }
 
     /**

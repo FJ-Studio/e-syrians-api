@@ -314,28 +314,32 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isInAudience(array $audience): array
     {
         $failures = [];
-        // age check
-        if (isset($audience['age_range'])) {
-            if ($audience['age_range']['min'] && Carbon::parse($this->birth_date)->diffInYears(now()) < $audience['age_range']['min']) {
-                // return [false, 'age_min'];
-                $failures[] = 'age_min';
-            }
 
-            if ($audience['age_range']['max'] && Carbon::parse($this->birth_date)->diffInYears(now()) > $audience['age_range']['max']) {
-                // return [false, 'age_max'];
-                $failures[] = 'age_max';
+        // Age check
+        if (isset($audience['age_range'])) {
+            if (! $this->birth_date) {
+                $failures[] = 'birth_date_missing';
+            } else {
+                $age = Carbon::parse($this->birth_date)->diffInYears(now());
+
+                if (isset($audience['age_range']['min']) && $audience['age_range']['min'] !== '' && $age < $audience['age_range']['min']) {
+                    $failures[] = 'age_min';
+                }
+
+                if (isset($audience['age_range']['max']) && $audience['age_range']['max'] !== '' && $age > $audience['age_range']['max']) {
+                    $failures[] = 'age_max';
+                }
             }
         }
 
+        // Criteria checks
         $criteria = ['country', 'religious_affiliation', 'hometown', 'gender', 'ethnicity'];
         foreach ($criteria as $criterion) {
-            if (isset($audience[$criterion])) {
-                // if this criteria has values
-                if (count($audience[$criterion]) > 0) {
-                    if (! $this->{$criterion} || ! in_array($this->{$criterion}, $audience[$criterion])) {
-                        // return [false, $criterion];
-                        $failures[] = $criterion;
-                    }
+            if (isset($audience[$criterion]) && count($audience[$criterion]) > 0) {
+                if (! $this->{$criterion}) {
+                    $failures[] = $criterion . '_missing';
+                } elseif (! in_array($this->{$criterion}, $audience[$criterion])) {
+                    $failures[] = $criterion;
                 }
             }
         }

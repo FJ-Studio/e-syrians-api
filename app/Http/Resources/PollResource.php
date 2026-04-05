@@ -47,6 +47,11 @@ class PollResource extends JsonResource
             'options' => $this->relationLoaded('options')
                 ? PollOptionResource::collection(
                     $this->options->map(function ($option) use ($revealResults) {
+                        // Load voters preview when voters are visible
+                        if ($this->voters_are_visible) {
+                            $option->load(['latestVoters.user:id,uuid,name,surname,avatar']);
+                        }
+
                         if (! $revealResults) {
                             $option->percentage = null;
 

@@ -63,7 +63,7 @@ class VerificationService implements VerificationServiceContract
             empty($targetUser->hometown) ||
             empty($targetUser->country)
         ) {
-            throw new \DomainException(__('api.target_user_data_not_filled'));
+            throw new \DomainException('target_user_data_not_filled');
         }
 
         $verification = $targetUser->verifiers()->make([

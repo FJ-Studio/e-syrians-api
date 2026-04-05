@@ -65,7 +65,7 @@ class AuthController extends Controller
     {
         $this->authService->logout($request->user());
 
-        return ApiService::success([], __('api.logged_out'));
+        return ApiService::success([], 'logged_out');
     }
 
     public function verifyEmail(UserEmailVerification $request): JsonResponse
@@ -89,11 +89,11 @@ class AuthController extends Controller
         $user = $request->user();
 
         if ($user->hasVerifiedEmail()) {
-            return ApiService::error(403, __('api.user_already_verified'));
+            return ApiService::error(403, 'user_already_verified');
         }
 
         $user->sendEmailVerificationNotification();
 
-        return ApiService::success([], __('api.verification_email_sent'));
+        return ApiService::success([], 'verification_email_sent');
     }
 }

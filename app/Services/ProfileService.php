@@ -22,7 +22,7 @@ class ProfileService implements ProfileServiceContract
         $limit = config('e-syrians.verification.basic_info_updates_limit');
 
         if ($user->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value) >= $limit) {
-            throw new UpdateLimitReachedException(__('api.basic_info_updates_limit_reached'));
+            throw new UpdateLimitReachedException('basic_info_updates_limit_reached');
         }
 
         $user->update($data);
@@ -56,7 +56,7 @@ class ProfileService implements ProfileServiceContract
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
         if (! in_array(strtolower($ext), $allowedExtensions)) {
-            throw new \InvalidArgumentException(__('api.invalid_file_type'));
+            throw new \InvalidArgumentException('invalid_file_type');
         }
 
         $fileName = $user->uuid . '.' . $ext;
@@ -81,7 +81,7 @@ class ProfileService implements ProfileServiceContract
         $limit = config('e-syrians.verification.country_updates_limit');
 
         if ($user->getAddressUpdatesCount() >= $limit) {
-            throw new UpdateLimitReachedException(__('api.country_updates_limit_reached'));
+            throw new UpdateLimitReachedException('country_updates_limit_reached');
         }
 
         $user->update($data);
