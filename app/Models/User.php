@@ -9,8 +9,10 @@ namespace App\Models;
 use App\Enums\ProfileChangeTypeEnum;
 use App\Services\StrService;
 use Carbon\Carbon;
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -22,7 +24,7 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory;
 
     use HasRoles;
@@ -168,7 +170,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the verifications that this user has received
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function verifiers()
     {
@@ -183,7 +185,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the verifications that this user has made
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function verifications()
     {
@@ -193,7 +195,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the polls that this user has created
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function polls()
     {
@@ -203,7 +205,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the votes that this user has cast
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function votes()
     {
@@ -213,7 +215,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the reactions that this user has made
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function reactions()
     {
@@ -223,7 +225,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the profile update that this user has made
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function profileUpdates()
     {
@@ -337,7 +339,7 @@ class User extends Authenticatable implements MustVerifyEmail
         foreach ($criteria as $criterion) {
             if (isset($audience[$criterion]) && count($audience[$criterion]) > 0) {
                 if (! $this->{$criterion}) {
-                    $failures[] = $criterion . '_missing';
+                    $failures[] = $criterion.'_missing';
                 } elseif (! in_array($this->{$criterion}, $audience[$criterion])) {
                     $failures[] = $criterion;
                 }

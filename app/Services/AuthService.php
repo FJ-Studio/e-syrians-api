@@ -9,7 +9,6 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
-use App\Services\StrService;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthService implements AuthServiceContract
@@ -28,7 +27,7 @@ class AuthService implements AuthServiceContract
 
         if (! $user) {
             $user = User::create([
-                $provider . '_id' => $socialUser->getId(),
+                $provider.'_id' => $socialUser->getId(),
                 'name' => $name[0],
                 'surname' => $name[1] ?? '',
                 'email' => $socialUser->getEmail(),

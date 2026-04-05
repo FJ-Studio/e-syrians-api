@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use SocialiteProviders\Google\Provider;
+use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -60,12 +62,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Event::listen(function (\SocialiteProviders\Manager\SocialiteWasCalled $event) {
-            $event->extendSocialite('google', \SocialiteProviders\Google\Provider::class);
+        Event::listen(function (SocialiteWasCalled $event) {
+            $event->extendSocialite('google', Provider::class);
         });
 
         ResetPassword::createUrlUsing(function (User $user, string $token) {
-            return env('FRONTEND_URL') . '/auth/reset-password?token=' . $token;
+            return env('FRONTEND_URL').'/auth/reset-password?token='.$token;
         });
 
         VerifyEmail::createUrlUsing(function ($notifiable) {
@@ -81,7 +83,7 @@ class AppServiceProvider extends ServiceProvider
                 false
             );
 
-            return $frontendUrl . $verifyUrl;
+            return $frontendUrl.$verifyUrl;
         });
     }
 }

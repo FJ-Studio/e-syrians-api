@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Contracts\FileUploadServiceContract;
 use App\Contracts\PollServiceContract;
 use App\Exceptions\PollReactionException;
 use App\Exceptions\PollVotingException;
@@ -108,7 +109,7 @@ class PollController extends Controller
                 (int) $request->input('poll_option_id'),
             );
 
-            $fileService = app(\App\Contracts\FileUploadServiceContract::class);
+            $fileService = app(FileUploadServiceContract::class);
 
             $data = collect($voters->items())->map(function ($vote) use ($fileService) {
                 $user = $vote->user;

@@ -7,12 +7,14 @@ namespace App\Http\Requests\User;
 use App\Enums\CountryEnum;
 use App\Enums\EducationLevelEnum;
 use App\Enums\EthnicityEnum;
+use App\Enums\GenderEnum;
 use App\Enums\HealthStatusEnum;
 use App\Enums\HometownEnum;
 use App\Enums\IncomeSourceEnum;
 use App\Enums\LanguageEnum;
 use App\Enums\MaritalStatusEnum;
 use App\Enums\ReligiousAffiliationEnum;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UserStoreRequest extends FormRequest
@@ -28,7 +30,7 @@ class UserStoreRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -38,9 +40,9 @@ class UserStoreRequest extends FormRequest
             'surname' => ['required', 'string', 'max:255', 'min:2'],
             'middle_name' => ['nullable', 'string', 'max:255'],
             'national_id' => ['nullable', 'string', 'max:15', 'min:9'],
-            'gender' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, \App\Enums\GenderEnum::cases()))],
+            'gender' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, GenderEnum::cases()))],
             'birth_date' => ['required', 'date'],
-            'hometown' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, \App\Enums\HometownEnum::cases()))],
+            'hometown' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
             // E-data
             'email' => ['required', 'email:rfc,dns,spoof,strict', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:255'],

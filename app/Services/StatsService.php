@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Contracts\StatsServiceContract;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
-class StatsService implements \App\Contracts\StatsServiceContract
+class StatsService implements StatsServiceContract
 {
     public function getDailyUsersStats(): array
     {

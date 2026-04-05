@@ -3,6 +3,7 @@
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 beforeEach(function () {
     Mail::fake();
@@ -19,7 +20,7 @@ it('registers a new user via API and returns 201', function () {
         'email' => 'feat_register@gmail.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'national_id' => '998877660' . rand(1, 999),
+        'national_id' => '998877660'.rand(1, 999),
         'gender' => 'm',
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
@@ -48,7 +49,7 @@ it('returns 422 when email is already taken', function () {
         'email' => 'dup_email@gmail.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'national_id' => '112233440' . rand(1, 999),
+        'national_id' => '112233440'.rand(1, 999),
         'gender' => 'm',
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
@@ -168,7 +169,7 @@ it('verifies email via signed URL', function () {
 
     $hash = sha1($user->email);
     // Use $absolute = false to match the service's URL::hasValidSignature(request(), false)
-    $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+    $url = URL::temporarySignedRoute(
         'verification.verify',
         now()->addMinutes(60),
         ['id' => $user->id, 'hash' => $hash],
@@ -186,7 +187,7 @@ it('rejects email verification with invalid hash via signed URL', function () {
         'email_verified_at' => null,
     ]);
 
-    $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+    $url = URL::temporarySignedRoute(
         'verification.verify',
         now()->addMinutes(60),
         ['id' => $user->id, 'hash' => 'invalidhash'],
@@ -205,7 +206,7 @@ it('rejects email verification for already verified user via signed URL', functi
     ]);
 
     $hash = sha1($user->email);
-    $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+    $url = URL::temporarySignedRoute(
         'verification.verify',
         now()->addMinutes(60),
         ['id' => $user->id, 'hash' => $hash],

@@ -6,7 +6,6 @@ namespace App\Services;
 
 use App\Contracts\PasswordServiceContract;
 use App\Models\User;
-use App\Services\StrService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 

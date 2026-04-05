@@ -103,7 +103,7 @@ it('throws when target user has incomplete data', function () {
         test()->unverifiedUser->uuid,
         '127.0.0.1',
         'TestAgent',
-    ))->toThrow(\DomainException::class, 'target_user_data_not_filled');
+    ))->toThrow(DomainException::class, 'target_user_data_not_filled');
 });
 
 it('creates a verification record for complete target user', function () {

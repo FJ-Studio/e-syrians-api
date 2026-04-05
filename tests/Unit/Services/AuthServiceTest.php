@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use App\Services\AuthService;
-use App\Services\StrService;
 use Illuminate\Support\Facades\Hash;
 
 beforeEach(function () {
@@ -19,7 +18,7 @@ it('registers a new user with valid data', function () {
         'surname' => 'Doe',
         'email' => 'register-test@example.com',
         'password' => 'password123',
-        'national_id' => '999888777' . rand(1, 999),
+        'national_id' => '999888777'.rand(1, 999),
         'gender' => 'm',
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
@@ -40,7 +39,7 @@ it('converts array fields to comma-separated strings on registration', function 
         'surname' => 'Doe',
         'email' => 'register-arrays@example.com',
         'password' => 'password123',
-        'national_id' => '111222333' . rand(1, 999),
+        'national_id' => '111222333'.rand(1, 999),
         'gender' => 'f',
         'birth_date' => '1992-05-15',
         'hometown' => 'aleppo',

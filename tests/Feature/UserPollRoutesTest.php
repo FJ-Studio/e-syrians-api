@@ -2,7 +2,6 @@
 
 use App\Models\Poll;
 use App\Models\PollOption;
-use App\Models\PollReaction;
 use App\Models\User;
 
 beforeEach(function () {

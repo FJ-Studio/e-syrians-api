@@ -10,6 +10,7 @@ use App\Http\Requests\Violations\UpdateViolationRequest;
 use App\Http\Resources\ViolationResource;
 use App\Models\Violation;
 use App\Services\ApiService;
+use Illuminate\Http\Request;
 
 class ViolationController extends Controller
 {
@@ -51,7 +52,7 @@ class ViolationController extends Controller
     /**
      * React to a violation
      */
-    public function react(\Illuminate\Http\Request $request)
+    public function react(Request $request)
     {
         // TODO: Implement violation reactions
         return ApiService::error(501, 'not_implemented');

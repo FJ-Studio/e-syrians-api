@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Contracts\ProfileServiceContract;
+use App\Enums\SysLanguageEnum;
 use App\Exceptions\UpdateLimitReachedException;
 use App\Http\Requests\User\UpdateSocialLinksRequest;
 use App\Http\Requests\User\UpdateUserAddressRequest;
@@ -117,9 +118,9 @@ class ProfileController extends Controller
     public function updateLanguage(Request $request): JsonResponse
     {
         $request->validate([
-            'language' => 'required|in:' . implode(',', array_map(
+            'language' => 'required|in:'.implode(',', array_map(
                 fn ($lang) => $lang->value,
-                \App\Enums\SysLanguageEnum::cases()
+                SysLanguageEnum::cases()
             )),
         ]);
 

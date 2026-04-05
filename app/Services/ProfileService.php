@@ -59,7 +59,7 @@ class ProfileService implements ProfileServiceContract
             throw new \InvalidArgumentException('invalid_file_type');
         }
 
-        $fileName = $user->uuid . '.' . $ext;
+        $fileName = $user->uuid.'.'.$ext;
 
         // Delete old avatar if it exists
         if (! empty($user->avatar)) {

@@ -13,9 +13,8 @@ use App\Models\PollOption;
 use App\Models\PollVote;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class PollService implements PollServiceContract
 {
@@ -196,7 +195,7 @@ class PollService implements PollServiceContract
      * Build the common poll query with user interaction data
      * (Eliminates the duplication between index() and show())
      */
-    private function buildPollQuery(?int $userId): \Illuminate\Database\Eloquent\Builder
+    private function buildPollQuery(?int $userId): Builder
     {
         return Poll::with(['user', 'options' => fn ($q) => $q->withCount('votes')])
             ->withCount([
