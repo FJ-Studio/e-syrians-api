@@ -91,9 +91,9 @@ class PollController extends Controller
 
             return ApiService::success([]);
         } catch (PollVotingException $e) {
-            $data = $e->getDetails() ? ['reasons' => $e->getDetails()] : null;
+            $messages = $e->getDetails() ?: [$e->getMessage()];
 
-            return ApiService::error($e->getCode(), $e->getMessage(), $data);
+            return ApiService::error($e->getCode(), $messages);
         }
     }
 
