@@ -20,7 +20,7 @@ class UserIsVerified
     {
         $user = $request->user();
         if (! $user->verified_at) {
-            return ApiService::error(403);
+            return ApiService::error(403, 'you_are_not_verified');
         }
 
         return $next($request);

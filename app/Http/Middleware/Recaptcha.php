@@ -22,7 +22,7 @@ class Recaptcha
         $recaptchaToken = $request->input('recaptcha_token');
 
         if (! $recaptchaToken) {
-            return ApiService::error(400, 'reCAPTCHA token is required');
+            return ApiService::error(400, 'recaptcha_token_required');
         }
         $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
             'secret' => config('services.recaptcha.secret'),
@@ -32,8 +32,8 @@ class Recaptcha
 
         $result = $response->json();
 
-        if (! $result['success'] || $result['score'] < 0.7) {
-            return ApiService::error(403, 'reCAPTCHA verification failed');
+        if (! is_array($result) || empty($result['success']) || ($result['score'] ?? 0) < 0.7) {
+            return ApiService::error(403, 'recaptcha_verification_failed');
         }
 
         return $next($request);

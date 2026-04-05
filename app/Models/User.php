@@ -71,7 +71,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_hashed',
         'avatar',
         'google_id',
-        'password',
         'country',
         'city',
         'shelter',
@@ -167,26 +166,6 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * When a user handovers weapon(s)
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function handovers()
-    {
-        return $this->hasMany(WeaponDelivery::class, 'citizen_id', 'id');
-    }
-
-    /**
-     * When an authorized user adds weapon(s) to the system
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function received_items()
-    {
-        return $this->hasMany(WeaponDelivery::class, 'added_by', 'id');
-    }
-
-    /**
      * Get the verifications that this user has received
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
@@ -264,11 +243,11 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @return int
      */
-    public function getTotalUpdatesCount(string $change_Type)
+    public function getTotalUpdatesCount(string $changeType)
     {
         return $this->profileUpdates()->where(
             'change_type',
-            $change_Type
+            $changeType
         )->count();
     }
 
@@ -334,33 +313,37 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isInAudience(array $audience): array
     {
-        $failes = [];
-        // age check
+        $failures = [];
+
+        // Age check
         if (isset($audience['age_range'])) {
-            if ($audience['age_range']['min'] && Carbon::parse($this->birth_date)->diffInYears(now()) < $audience['age_range']['min']) {
-                // return [false, 'age_min'];
-                $failes[] = 'age_min';
-            }
+            if (! $this->birth_date) {
+                $failures[] = 'birth_date_missing';
+            } else {
+                $age = Carbon::parse($this->birth_date)->diffInYears(now());
 
-            if ($audience['age_range']['max'] && Carbon::parse($this->birth_date)->diffInYears(now()) > $audience['age_range']['max']) {
-                // return [false, 'age_max'];
-                $failes[] = 'age_max';
-            }
-        }
+                if (isset($audience['age_range']['min']) && $audience['age_range']['min'] !== '' && $age < $audience['age_range']['min']) {
+                    $failures[] = 'age_min';
+                }
 
-        $criteria = ['country', 'religious_affiliation', 'hometown', 'gender', 'ethnicity'];
-        foreach ($criteria as $criterion) {
-            if (isset($audience[$criterion])) {
-                // if this criteria has values
-                if (count($audience[$criterion]) > 0) {
-                    if (! $this->{$criterion} || ! in_array($this->{$criterion}, $audience[$criterion])) {
-                        // return [false, $criterion];
-                        $failes[] = $criterion;
-                    }
+                if (isset($audience['age_range']['max']) && $audience['age_range']['max'] !== '' && $age > $audience['age_range']['max']) {
+                    $failures[] = 'age_max';
                 }
             }
         }
 
-        return [count($failes) === 0, $failes];
+        // Criteria checks
+        $criteria = ['country', 'religious_affiliation', 'hometown', 'gender', 'ethnicity'];
+        foreach ($criteria as $criterion) {
+            if (isset($audience[$criterion]) && count($audience[$criterion]) > 0) {
+                if (! $this->{$criterion}) {
+                    $failures[] = $criterion . '_missing';
+                } elseif (! in_array($this->{$criterion}, $audience[$criterion])) {
+                    $failures[] = $criterion;
+                }
+            }
+        }
+
+        return [count($failures) === 0, $failures];
     }
 }

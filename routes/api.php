@@ -1,61 +1,114 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\PollController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserPollController;
+use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\ViolationController;
-use App\Http\Controllers\WeaponDeliveryController;
 use App\Http\Middleware\CanVerify;
 use App\Http\Middleware\UserIsVerified;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('weapons-delivery')->group(function () {
-    Route::middleware(['auth:sanctum'])->post('/', [WeaponDeliveryController::class, 'store']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/ping', function () {
+    return response()->json(['message' => 'pong']);
+})->name('ping');
+
+/*
+|--------------------------------------------------------------------------
+| Auth Routes (guest only)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('users')->group(function () {
+    Route::middleware(['guest', 'throttle:6,1,register'])->post('/register', [AuthController::class, 'register'])->name('users.register');
+    Route::middleware(['guest', 'throttle:6,1,login'])->post('/login', [AuthController::class, 'login']);
+    Route::middleware(['guest', 'throttle:6,1,social_login'])->post('/login/social', [AuthController::class, 'socialLogin']);
+    Route::middleware(['guest', 'throttle:2,1,forgot_password'])->post('/forgot-password', [PasswordController::class, 'forgot']);
+    Route::middleware(['guest', 'throttle:2,1,reset_password'])->post('/reset-password', [PasswordController::class, 'reset']);
 });
 
+/*
+|--------------------------------------------------------------------------
+| Public User Routes
+|--------------------------------------------------------------------------
+*/
 Route::prefix('users')->group(function () {
     Route::get('/first', [UserController::class, 'first']);
     Route::get('/verify/{user:uuid}', [UserController::class, 'show']);
-    Route::middleware(['guest', 'throttle:6,1,register'])->post('/register', [UserController::class, 'store'])->name('users.register');
-    Route::middleware(['guest', 'throttle:6,1,login'])->post('/login', [UserController::class, 'login']);
-    Route::middleware(['guest', 'throttle:6,1,social_login'])->post('/login/social', [UserController::class, 'social_login']);
-    Route::middleware(['guest', 'throttle:2,1,forgot_password'])->post('/forgot-password', [UserController::class, 'forgot_password']);
-    Route::middleware(['guest', 'throttle:2,1,reset_password'])->post('/reset-password', [UserController::class, 'reset_password']);
-    Route::middleware(['auth:sanctum'])->group(function () {
-        Route::middleware(['throttle:1,1,change-password'])->post('/change-password', [UserController::class, 'change_password']);
-        Route::middleware(['throttle:1,1,change-email'])->post('/change-email', [UserController::class, 'change_email']);
-        Route::middleware(['throttle:1,1,get_verification_email'])->post('/get-email-verification-link', [UserController::class, 'get_email_verification_link']);
-        Route::middleware(['throttle:1,1,change-notifications'])->post('/change-notifications', [UserController::class, 'change_notifications']);
-        Route::get('/me', [UserController::class, 'me'])->name('users.me');
-        Route::post('/verify', [UserController::class, 'verify'])->middleware(CanVerify::class)->name('users.verify');
-
-        Route::get('/my-polls', [UserController::class, 'my_polls']);
-        Route::get('/my-reactions', [UserController::class, 'my_reactions']);
-        Route::get('/my-votes', [UserController::class, 'my_votes']);
-        Route::get('/my-verifications', [UserController::class, 'my_verifications']);
-        Route::get('/my-verifiers', [UserController::class, 'my_verifiers']);
-
-        Route::post('/update/basic-info', [UserController::class, 'update_basic_info'])->name('users.update.basic-info');
-        Route::post('/update/social', [UserController::class, 'update_social_links'])->name('users.update.social');
-        Route::post('/update/avatar', [UserController::class, 'update_avatar'])->name('users.update.avatar');
-        Route::post('/update/address', [UserController::class, 'update_address'])->name('users.update.address');
-        Route::post('/update/language', [UserController::class, 'update_language'])->middleware(['throttle:4,1,change-language']);
-        Route::post('/update/census', [UserController::class, 'update_census'])->name('users.update.census');
-        Route::post('/logout', [UserController::class, 'logout']);
-    });
 });
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated User Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('users')->middleware(['auth:sanctum'])->group(function () {
+    // Current user
+    Route::get('/me', [UserController::class, 'me'])->name('users.me');
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Password management
+    Route::middleware(['throttle:1,1,change-password'])->post('/change-password', [PasswordController::class, 'change']);
+
+    // Email & verification
+    Route::middleware(['throttle:1,1,change-email'])->post('/change-email', [ProfileController::class, 'changeEmail']);
+    Route::middleware(['throttle:1,1,get_verification_email'])->post('/get-email-verification-link', [AuthController::class, 'getEmailVerificationLink']);
+
+    // Notification preferences
+    Route::middleware(['throttle:1,1,change-notifications'])->post('/change-notifications', [ProfileController::class, 'changeNotifications']);
+
+    // User verification
+    Route::post('/verify', [VerificationController::class, 'verify'])->middleware(CanVerify::class)->name('users.verify');
+
+    // User's polls, votes, reactions
+    Route::get('/my-polls', [UserPollController::class, 'myPolls']);
+    Route::get('/my-reactions', [UserPollController::class, 'myReactions']);
+    Route::get('/my-votes', [UserPollController::class, 'myVotes']);
+
+    // User's verifications
+    Route::get('/my-verifications', [VerificationController::class, 'myVerifications']);
+    Route::get('/my-verifiers', [VerificationController::class, 'myVerifiers']);
+
+    // Profile updates
+    Route::post('/update/basic-info', [ProfileController::class, 'updateBasicInfo'])->name('users.update.basic-info');
+    Route::post('/update/social', [ProfileController::class, 'updateSocialLinks'])->name('users.update.social');
+    Route::post('/update/avatar', [ProfileController::class, 'updateAvatar'])->name('users.update.avatar');
+    Route::post('/update/address', [ProfileController::class, 'updateAddress'])->name('users.update.address');
+    Route::post('/update/language', [ProfileController::class, 'updateLanguage'])->middleware(['throttle:4,1,change-language']);
+    Route::post('/update/census', [ProfileController::class, 'updateCensus'])->name('users.update.census');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Poll Routes
+|--------------------------------------------------------------------------
+*/
 Route::prefix('polls')->group(function () {
     Route::get('/', [PollController::class, 'index']);
-    Route::get('/{poll}', [PollController::class, 'show']);
     Route::middleware(['auth:sanctum'])->group(function () {
+        Route::get('/option-voters', [PollController::class, 'optionVoters']);
         Route::post('/', [PollController::class, 'store']);
         Route::post('/status/{poll}', [PollController::class, 'status']);
         Route::post('/vote', [PollController::class, 'vote'])->middleware(UserIsVerified::class);
         Route::post('/react', [PollController::class, 'react'])->middleware(UserIsVerified::class);
     });
+    Route::get('/{poll}', [PollController::class, 'show']);
 });
 
+/*
+|--------------------------------------------------------------------------
+| Violation Routes
+|--------------------------------------------------------------------------
+*/
 Route::prefix('violations')->group(function () {
     Route::get('/', [ViolationController::class, 'index']);
     Route::get('/{violation}', [ViolationController::class, 'show']);
@@ -66,8 +119,13 @@ Route::prefix('violations')->group(function () {
     });
 });
 
+/*
+|--------------------------------------------------------------------------
+| Stats & Email Verification
+|--------------------------------------------------------------------------
+*/
 Route::get('/stats', [StatsController::class, 'index'])->middleware((['throttle:10,1']));
 
 Route::middleware(['guest', 'throttle:6,1,verify_email'])
-    ->get('/verify-email', [UserController::class, 'verifyEmail'])
+    ->get('/verify-email', [AuthController::class, 'verifyEmail'])
     ->name('verification.verify');

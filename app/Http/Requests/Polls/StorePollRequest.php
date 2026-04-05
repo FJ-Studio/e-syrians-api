@@ -18,8 +18,8 @@ class StorePollRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'duration' => StrService::mapArabicNumbers($this->input('duration')),
-            'max_selections' => StrService::mapArabicNumbers($this->input('max_selections')),
+            'duration' => StrService::mapArabicNumbers((string) $this->input('duration', '')),
+            'max_selections' => StrService::mapArabicNumbers((string) $this->input('max_selections', '')),
         ]);
     }
 

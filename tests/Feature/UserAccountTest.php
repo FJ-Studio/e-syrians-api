@@ -245,8 +245,8 @@ it('fails when avatar is not an image', function () {
     expect($response['messages'])->toHaveKey('avatar');
 });
 
-it('fails when avatar exceeds 500KB', function () {
-    $file = UploadedFile::fake()->image('big-avatar.jpg')->size(600);
+it('fails when avatar exceeds 1MB', function () {
+    $file = UploadedFile::fake()->image('big-avatar.jpg')->size(1100);
     $response = $this->actingAs(test()->user)->postJson(route('users.update.avatar'), [
         'avatar' => $file,
     ]);
@@ -255,7 +255,7 @@ it('fails when avatar exceeds 500KB', function () {
 });
 
 it('fails when avatar image exceeds max dimensions', function () {
-    $file = UploadedFile::fake()->image('large.jpg', 1000, 1000); // Exceeds 800x800
+    $file = UploadedFile::fake()->image('large.jpg', 2000, 2000); // Exceeds 1600x1600
 
     $response = $this->actingAs(test()->user)->postJson(route('users.update.avatar'), [
         'avatar' => $file,
