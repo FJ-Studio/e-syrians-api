@@ -111,7 +111,7 @@ it('rejects non-image file types', function () {
     $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
     expect(fn () => test()->profileService->updateAvatar(test()->user, $file))
-        ->toThrow(\InvalidArgumentException::class, __('api.invalid_file_type'));
+        ->toThrow(\InvalidArgumentException::class, 'invalid_file_type');
 });
 
 it('updates avatar path when uploading new avatar', function () {

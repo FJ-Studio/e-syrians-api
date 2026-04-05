@@ -116,7 +116,7 @@ it('rejects verification for already-verified user', function () {
     $result = test()->authService->verifyEmail($user->id, sha1($user->email), '');
 
     expect($result['success'])->toBeFalse();
-    expect($result['message'])->toBe(__('api.user_already_verified'));
+    expect($result['message'])->toBe('user_already_verified');
     expect($result['code'])->toBe(403);
 });
 
@@ -128,5 +128,5 @@ it('rejects verification with invalid hash', function () {
     $result = test()->authService->verifyEmail($user->id, 'invalid-hash', '');
 
     expect($result['success'])->toBeFalse();
-    expect($result['message'])->toBe(__('api.invalid_verification_link'));
+    expect($result['message'])->toBe('invalid_verification_link');
 });

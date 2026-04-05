@@ -169,7 +169,7 @@ it('User updates his profile for limited times', function () {
         authHeader(test()->user));
     // Check the response status and messages
     $result->assertStatus(403);
-    expect($result['messages'])->toContain(__('api.basic_info_updates_limit_reached'));
+    expect($result['messages'])->toContain('basic_info_updates_limit_reached');
 });
 
 it('User can update his social media links', function () {
@@ -245,8 +245,8 @@ it('fails when avatar is not an image', function () {
     expect($response['messages'])->toHaveKey('avatar');
 });
 
-it('fails when avatar exceeds 500KB', function () {
-    $file = UploadedFile::fake()->image('big-avatar.jpg')->size(600);
+it('fails when avatar exceeds 1MB', function () {
+    $file = UploadedFile::fake()->image('big-avatar.jpg')->size(1100);
     $response = $this->actingAs(test()->user)->postJson(route('users.update.avatar'), [
         'avatar' => $file,
     ]);
@@ -255,7 +255,7 @@ it('fails when avatar exceeds 500KB', function () {
 });
 
 it('fails when avatar image exceeds max dimensions', function () {
-    $file = UploadedFile::fake()->image('large.jpg', 1000, 1000); // Exceeds 800x800
+    $file = UploadedFile::fake()->image('large.jpg', 2000, 2000); // Exceeds 1600x1600
 
     $response = $this->actingAs(test()->user)->postJson(route('users.update.avatar'), [
         'avatar' => $file,
@@ -342,7 +342,7 @@ it('prevents update when country update limit is reached', function () {
     );
 
     $response->assertStatus(403);
-    expect($response['messages'][0])->toBe(__('api.country_updates_limit_reached'));
+    expect($response['messages'][0])->toBe('country_updates_limit_reached');
 });
 
 // ❌ 5. Invalid country / city
