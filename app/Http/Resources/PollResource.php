@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Services\PollService;
+use App\Contracts\PollServiceContract;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -19,7 +19,9 @@ class PollResource extends JsonResource
     {
         $user = auth('sanctum')->check() ? auth('sanctum')->user() : null;
         $userId = $user?->id;
-        $revealResults = PollService::revealResults($this->resource, $user);
+
+        $pollService = app(PollServiceContract::class);
+        $revealResults = $pollService->shouldRevealResults($this->resource, $user);
 
         return [
             'id' => $this->id,
@@ -45,14 +47,19 @@ class PollResource extends JsonResource
             'options' => $this->relationLoaded('options')
                 ? PollOptionResource::collection(
                     $this->options->map(function ($option) use ($revealResults) {
+                        // Load voters preview when voters are visible
+                        if ($this->voters_are_visible) {
+                            $option->load(['latestVoters.user:id,uuid,name,surname,avatar']);
+                        }
+
                         if (! $revealResults) {
                             $option->percentage = null;
 
                             return new PollOptionResource($option);
                         }
-                        $totalVotes = $this->total_votes ?? 0; // Get total votes from the poll
-                        $optionVotes = $option->votes()->count(); // Get votes for this option
-                        $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0; // Calculate %
+                        $totalVotes = $this->total_votes ?? 0;
+                        $optionVotes = $option->votes_count ?? 0;
+                        $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0;
                         $option->percentage = $percentage;
 
                         return new PollOptionResource($option);

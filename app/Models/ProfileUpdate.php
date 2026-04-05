@@ -17,8 +17,6 @@ class ProfileUpdate extends Model
         'user_id',
         'change_type',
         'meta_data',
-        'ip_address',
-        'user_agent',
     ];
 
     protected $casts = [

@@ -14,13 +14,13 @@ class UserIsVerified
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
         if (! $user->verified_at) {
-            return ApiService::error(403);
+            return ApiService::error(403, 'you_are_not_verified');
         }
 
         return $next($request);

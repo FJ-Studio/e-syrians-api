@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\User;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateUserAvatarRequest extends FormRequest
@@ -19,12 +20,12 @@ class UpdateUserAvatarRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'avatar' => ['required', 'image', 'max:500', 'dimensions:max_width=800,max_height=800'],
+            'avatar' => ['required', 'image', 'max:1024', 'dimensions:max_width=1600,max_height=1600'],
         ];
     }
 }

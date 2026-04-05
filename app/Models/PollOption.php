@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PollOption extends Model
@@ -14,13 +16,12 @@ class PollOption extends Model
     protected $fillable = [
         'poll_id',
         'option_text',
-        'created_by', // by default, the user who created the poll option
     ];
 
     /**
      * Get the poll that the poll option belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function poll()
     {
@@ -30,7 +31,7 @@ class PollOption extends Model
     /**
      * Get the votes for the poll option.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function votes()
     {
@@ -39,18 +40,19 @@ class PollOption extends Model
 
     /**
      * Get the latest 3 voters for the poll option.
+     * Only selects the minimum user fields needed for display (privacy).
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return HasMany
      */
     public function latestVoters()
     {
-        return $this->hasMany(PollVote::class)->latest()->take(3)->with('user');
+        return $this->hasMany(PollVote::class)->latest()->take(3)->with('user:id,uuid,name,surname,avatar');
     }
 
     /**
      * Get the user that created the poll option.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function user()
     {

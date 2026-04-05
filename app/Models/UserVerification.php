@@ -16,8 +16,6 @@ class UserVerification extends Model
         'user_id',
         'cancelled_at',
         'cancelation_payload',
-        'ip_address',
-        'user_agent',
     ];
 
     protected $casts = [

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\SetAppLocalization;
 use App\Services\ApiService;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SetAppLocalization::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            return ApiService::error(401, __('api.unauthenticated'));
+        });
         $exceptions->render(function (ValidationException $e, Request $request) {
             return ApiService::error(422, $e->errors());
         });
@@ -30,6 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
             return ApiService::error(404, $e->getMessage());
         });
         $exceptions->render(function (HttpException $e, Request $request) {
-            return ApiService::error(500, $e->getMessage());
+            return ApiService::error($e->getStatusCode(), $e->getMessage());
         });
     })->create();

@@ -20,7 +20,6 @@ class Poll extends Model
         'audience',
         'max_selections',
         'audience_can_add_options',
-        'created_by',
         'deletion_reason',
         'deleted_at',
         'reveal_results',

@@ -13,9 +13,10 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
+use Tests\TestCase;
 
-pest()->extend(Tests\TestCase::class)
-    ->in('Feature');
+pest()->extend(TestCase::class)
+    ->in('Feature', 'Unit');
 
 /*
 |--------------------------------------------------------------------------
