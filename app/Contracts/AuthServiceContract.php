@@ -19,7 +19,9 @@ interface AuthServiceContract
     /**
      * Authenticate via credentials (email/phone/national_id + password)
      *
-     * @return array{user: User, token: string}|null
+     * Returns token on success, or 2FA challenge data if 2FA is enabled.
+     *
+     * @return array{user: User, token?: string, requires_2fa?: bool, challenge_token?: string, expires_at?: string}|null
      */
     public function authenticateViaCredentials(string $identifier, string $password): ?array;
 

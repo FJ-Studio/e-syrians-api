@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Contracts\AuthServiceContract;
 use App\Models\User;
+use App\Services\TwoFactorChallengeService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
@@ -64,6 +65,18 @@ class AuthService implements AuthServiceContract
 
         if (! $user || ! Hash::check($password, $user->password)) {
             return null;
+        }
+
+        // Check if 2FA is enabled — return a challenge instead of a token
+        if ($user->hasTwoFactorEnabled()) {
+            $challenge = TwoFactorChallengeService::createChallenge($user->id);
+
+            return [
+                'user' => $user,
+                'requires_2fa' => true,
+                'challenge_token' => $challenge['challenge_token'],
+                'expires_at' => $challenge['expires_at'],
+            ];
         }
 
         $plainToken = $user->createToken(date('Y-m-d-H:i:s'))->plainTextToken;

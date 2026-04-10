@@ -4,7 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\VerificationController;
@@ -34,6 +36,9 @@ Route::prefix('users')->group(function () {
     Route::middleware(['guest', 'throttle:6,1,social_login'])->post('/login/social', [AuthController::class, 'socialLogin']);
     Route::middleware(['guest', 'throttle:2,1,forgot_password'])->post('/forgot-password', [PasswordController::class, 'forgot']);
     Route::middleware(['guest', 'throttle:2,1,reset_password'])->post('/reset-password', [PasswordController::class, 'reset']);
+
+    // 2FA verification during login (no auth required, uses challenge token)
+    Route::middleware(['guest', 'throttle:6,1'])->post('/2fa/verify', [TwoFactorController::class, 'verify']);
 });
 
 /*
@@ -65,6 +70,18 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function () {
 
     // Notification preferences
     Route::middleware(['throttle:1,1,change-notifications'])->post('/change-notifications', [ProfileController::class, 'changeNotifications']);
+
+    // Two-Factor Authentication
+    Route::prefix('2fa')->group(function () {
+        Route::get('/status', [TwoFactorController::class, 'status']);
+        Route::post('/setup', [TwoFactorController::class, 'setup']);
+        Route::post('/confirm', [TwoFactorController::class, 'confirm']);
+        Route::post('/disable', [TwoFactorController::class, 'disable']);
+    });
+
+    // Recovery codes
+    Route::get('/recovery-codes', [RecoveryCodeController::class, 'index']);
+    Route::post('/recovery-codes/regenerate', [RecoveryCodeController::class, 'regenerate']);
 
     // User verification
     Route::post('/verify', [VerificationController::class, 'verify'])->middleware(CanVerify::class)->name('users.verify');

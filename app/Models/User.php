@@ -114,6 +114,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'account_verified_email',
         'city_inside_syria',
         'language',
+        // Two-factor authentication
+        'two_factor_secret',
+        'two_factor_enabled',
+        'two_factor_confirmed_at',
+        'recovery_codes',
     ];
 
     public function getRouteKeyName()
@@ -129,6 +134,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'recovery_codes',
     ];
 
     /**
@@ -144,6 +151,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'address' => 'encrypted',
             'national_id' => 'encrypted',
+            'recovery_codes' => 'array',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -257,6 +267,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('change_type', ProfileChangeTypeEnum::Address->value)
             ->where('created_at', '>=', now()->subYear())
             ->count();
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_enabled && $this->two_factor_confirmed_at !== null;
     }
 
     public function isVerified(): bool

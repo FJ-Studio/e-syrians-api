@@ -38,6 +38,15 @@ class AuthController extends Controller
             return ApiService::error(401);
         }
 
+        // If 2FA is required, return the challenge instead of the full login response
+        if (! empty($result['requires_2fa'])) {
+            return ApiService::success([
+                'requires_2fa' => true,
+                'challenge_token' => $result['challenge_token'],
+                'expires_at' => $result['expires_at'],
+            ]);
+        }
+
         return ApiService::success([
             'user' => (new UserResource($result['user']))->additional(['isOwner' => true]),
             'token' => $result['token'],
