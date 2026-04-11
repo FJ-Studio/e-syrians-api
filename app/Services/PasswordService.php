@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\PasswordServiceContract;
 use App\Models\User;
-use App\Services\StrService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use App\Contracts\PasswordServiceContract;
 
 class PasswordService implements PasswordServiceContract
 {
@@ -52,7 +51,7 @@ class PasswordService implements PasswordServiceContract
                 'password_confirmation' => $password,
                 'token' => $token,
             ],
-            function ($user, $password) {
+            function ($user, $password): void {
                 $user->forceFill([
                     'password' => Hash::make($password),
                 ])->save();

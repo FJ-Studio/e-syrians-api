@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Contracts\FileUploadServiceContract;
-use App\Enums\ProfileChangeTypeEnum;
+use Exception;
 use Illuminate\Http\Request;
+use App\Enums\ProfileChangeTypeEnum;
+use App\Contracts\FileUploadServiceContract;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserResource extends JsonResource
@@ -24,12 +25,12 @@ class UserResource extends JsonResource
         $avatarUrl = null;
         if ($this->avatar) {
             try {
-                $fileService = app(FileUploadServiceContract::class);
+                $fileService = resolve(FileUploadServiceContract::class);
                 $avatarUrl = $fileService->temporaryUrl(
                     $this->avatar,
                     (int) config('e-syrians.files.avatar.ttl', 60),
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $avatarUrl = null;
             }
         }

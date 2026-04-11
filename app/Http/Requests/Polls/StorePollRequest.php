@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Polls;
 
-use App\Enums\CountryEnum;
-use App\Enums\EthnicityEnum;
 use App\Enums\GenderEnum;
+use App\Enums\CountryEnum;
 use App\Enums\HometownEnum;
-use App\Enums\ReligiousAffiliationEnum;
-use App\Enums\RevealResultsEnum;
+use App\Enums\EthnicityEnum;
 use App\Services\StrService;
+use App\Enums\RevealResultsEnum;
+use App\Enums\ReligiousAffiliationEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class StorePollRequest extends FormRequest
 {
@@ -47,7 +48,7 @@ class StorePollRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

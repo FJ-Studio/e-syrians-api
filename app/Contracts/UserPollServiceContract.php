@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Contracts;
 
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface UserPollServiceContract
 {

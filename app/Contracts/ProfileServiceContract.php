@@ -6,13 +6,14 @@ namespace App\Contracts;
 
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use App\Exceptions\UpdateLimitReachedException;
 
 interface ProfileServiceContract
 {
     /**
      * Update user's basic info and cancel verifications
      *
-     * @throws \App\Exceptions\UpdateLimitReachedException
+     * @throws UpdateLimitReachedException
      */
     public function updateBasicInfo(User $user, array $data): void;
 
@@ -31,7 +32,7 @@ interface ProfileServiceContract
     /**
      * Update user's address with profile tracking
      *
-     * @throws \App\Exceptions\UpdateLimitReachedException
+     * @throws UpdateLimitReachedException
      */
     public function updateAddress(User $user, array $data, ?string $ipAddress, ?string $userAgent): void;
 

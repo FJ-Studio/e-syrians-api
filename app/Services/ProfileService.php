@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\FileUploadServiceContract;
-use App\Contracts\ProfileServiceContract;
-use App\Enums\ProfileChangeTypeEnum;
-use App\Exceptions\UpdateLimitReachedException;
 use App\Models\User;
+use InvalidArgumentException;
 use Illuminate\Http\UploadedFile;
+use App\Enums\ProfileChangeTypeEnum;
+use App\Contracts\ProfileServiceContract;
+use App\Contracts\FileUploadServiceContract;
+use App\Exceptions\UpdateLimitReachedException;
 
 class ProfileService implements ProfileServiceContract
 {
     public function __construct(
         private readonly FileUploadServiceContract $fileUploadService,
-    ) {}
+    ) {
+    }
 
     public function updateBasicInfo(User $user, array $data): void
     {
@@ -56,7 +58,7 @@ class ProfileService implements ProfileServiceContract
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
         if (! in_array(strtolower($ext), $allowedExtensions)) {
-            throw new \InvalidArgumentException('invalid_file_type');
+            throw new InvalidArgumentException('invalid_file_type');
         }
 
         $fileName = $user->uuid . '.' . $ext;

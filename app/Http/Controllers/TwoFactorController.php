@@ -4,24 +4,25 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\TwoFactor\ConfirmTwoFactorRequest;
-use App\Http\Requests\TwoFactor\DisableTwoFactorRequest;
-use App\Http\Requests\TwoFactor\VerifyTwoFactorRequest;
-use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\ApiService;
-use App\Services\AuthService;
-use App\Services\TwoFactorChallengeService;
-use App\Services\TwoFactorService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Services\AuthService;
+use Illuminate\Http\JsonResponse;
+use App\Services\TwoFactorService;
+use App\Http\Resources\UserResource;
+use App\Services\TwoFactorChallengeService;
+use App\Http\Requests\TwoFactor\VerifyTwoFactorRequest;
+use App\Http\Requests\TwoFactor\ConfirmTwoFactorRequest;
+use App\Http\Requests\TwoFactor\DisableTwoFactorRequest;
 
 class TwoFactorController extends Controller
 {
     public function __construct(
         private readonly TwoFactorService $twoFactorService,
         private readonly AuthService $authService,
-    ) {}
+    ) {
+    }
 
     /**
      * Get the current 2FA status for the authenticated user.

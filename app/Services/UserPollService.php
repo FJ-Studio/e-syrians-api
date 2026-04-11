@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\UserPollServiceContract;
 use App\Models\User;
+use App\Contracts\UserPollServiceContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserPollService implements UserPollServiceContract
@@ -21,7 +21,7 @@ class UserPollService implements UserPollServiceContract
     public function getUserReactions(User $user, int $perPage = 25): LengthAwarePaginator
     {
         return $user->reactions()
-            ->whereHas('poll', function ($query) {
+            ->whereHas('poll', function ($query): void {
                 $query->whereNull('deleted_at');
             })
             ->with(['poll:id,question'])

@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Contracts\UserPollServiceContract;
 use App\Services\ApiService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Contracts\UserPollServiceContract;
 
 class UserPollController extends Controller
 {
     public function __construct(
         private readonly UserPollServiceContract $userPollService,
-    ) {}
+    ) {
+    }
 
     public function myPolls(Request $request): JsonResponse
     {

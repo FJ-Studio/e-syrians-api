@@ -6,6 +6,8 @@ namespace App\Contracts;
 
 use App\Models\Poll;
 use App\Models\User;
+use App\Exceptions\PollVotingException;
+use App\Exceptions\PollReactionException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface PollServiceContract
@@ -33,14 +35,14 @@ interface PollServiceContract
     /**
      * Cast a vote on a poll
      *
-     * @throws \App\Exceptions\PollVotingException
+     * @throws PollVotingException
      */
     public function vote(int $pollId, array $optionIds, int $userId): void;
 
     /**
      * React (up/down) to a poll
      *
-     * @throws \App\Exceptions\PollReactionException
+     * @throws PollReactionException
      */
     public function react(int $pollId, string $reaction, int $userId): void;
 

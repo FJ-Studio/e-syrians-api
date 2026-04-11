@@ -4,22 +4,25 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\ApiService;
+use Illuminate\Http\Request;
+use InvalidArgumentException;
+use App\Enums\SysLanguageEnum;
+use Illuminate\Http\JsonResponse;
 use App\Contracts\ProfileServiceContract;
 use App\Exceptions\UpdateLimitReachedException;
+use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateSocialLinksRequest;
 use App\Http\Requests\User\UpdateUserAddressRequest;
-use App\Http\Requests\User\UpdateUserAvatarRequest;
 use App\Http\Requests\User\UpdateUserBasicInfoRequest;
 use App\Http\Requests\User\UpdateUserCensusDataRequest;
-use App\Services\ApiService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
     public function __construct(
         private readonly ProfileServiceContract $profileService,
-    ) {}
+    ) {
+    }
 
     public function updateBasicInfo(UpdateUserBasicInfoRequest $request): JsonResponse
     {
@@ -54,7 +57,7 @@ class ProfileController extends Controller
             );
 
             return ApiService::success(['url' => $url]);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return ApiService::error(422, $e->getMessage());
         }
     }
@@ -88,7 +91,7 @@ class ProfileController extends Controller
     public function changeEmail(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email|unique:users,email',
+            'email' => ['required', 'email', 'unique:users,email'],
         ]);
 
         $this->profileService->changeEmail(
@@ -102,8 +105,8 @@ class ProfileController extends Controller
     public function changeNotifications(Request $request): JsonResponse
     {
         $request->validate([
-            'received_verification_email' => 'required|boolean',
-            'account_verified_email' => 'required|boolean',
+            'received_verification_email' => ['required', 'boolean'],
+            'account_verified_email' => ['required', 'boolean'],
         ]);
 
         $this->profileService->updateNotifications(
@@ -119,7 +122,7 @@ class ProfileController extends Controller
         $request->validate([
             'language' => 'required|in:' . implode(',', array_map(
                 fn ($lang) => $lang->value,
-                \App\Enums\SysLanguageEnum::cases()
+                SysLanguageEnum::cases()
             )),
         ]);
 

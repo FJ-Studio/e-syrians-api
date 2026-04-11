@@ -3,8 +3,8 @@
 use App\Models\User;
 use App\Services\VerificationService;
 
-beforeEach(function () {
-    test()->verificationService = app(VerificationService::class);
+beforeEach(function (): void {
+    test()->verificationService = resolve(VerificationService::class);
 
     test()->verifiedUser = User::factory()->create([
         'name' => 'Verified',
@@ -33,35 +33,35 @@ beforeEach(function () {
 // canUserVerify()
 // ───────────────────────────────────────────────
 
-it('allows a verified first registrant to verify another user', function () {
+it('allows a verified first registrant to verify another user', function (): void {
     $result = test()->verificationService->canUserVerify(test()->verifiedUser, test()->unverifiedUser);
 
     expect($result[0])->toBeTrue();
     expect($result[1])->toBe('');
 });
 
-it('prevents unverified user from verifying', function () {
+it('prevents unverified user from verifying', function (): void {
     $result = test()->verificationService->canUserVerify(test()->unverifiedUser, test()->verifiedUser);
 
     expect($result[0])->toBeFalse();
     expect($result[1])->toBe('you_are_not_verified');
 });
 
-it('prevents self-verification', function () {
+it('prevents self-verification', function (): void {
     $result = test()->verificationService->canUserVerify(test()->verifiedUser, test()->verifiedUser);
 
     expect($result[0])->toBeFalse();
     expect($result[1])->toBe('you_cannot_verify_yourself');
 });
 
-it('prevents verifying a banned user', function () {
+it('prevents verifying a banned user', function (): void {
     $result = test()->verificationService->canUserVerify(test()->verifiedUser, test()->bannedUser);
 
     expect($result[0])->toBeFalse();
     expect($result[1])->toBe('user_is_banned');
 });
 
-it('resolves users by UUID string', function () {
+it('resolves users by UUID string', function (): void {
     $result = test()->verificationService->canUserVerify(
         test()->verifiedUser->uuid,
         test()->unverifiedUser->uuid,
@@ -70,7 +70,7 @@ it('resolves users by UUID string', function () {
     expect($result[0])->toBeTrue();
 });
 
-it('resolves users by integer ID', function () {
+it('resolves users by integer ID', function (): void {
     $result = test()->verificationService->canUserVerify(
         test()->verifiedUser->id,
         test()->unverifiedUser->id,
@@ -79,14 +79,14 @@ it('resolves users by integer ID', function () {
     expect($result[0])->toBeTrue();
 });
 
-it('returns error for non-existent verifier', function () {
+it('returns error for non-existent verifier', function (): void {
     $result = test()->verificationService->canUserVerify(999999, test()->unverifiedUser);
 
     expect($result[0])->toBeFalse();
     expect($result[1])->toBe('user_not_found');
 });
 
-it('returns error for non-existent target', function () {
+it('returns error for non-existent target', function (): void {
     $result = test()->verificationService->canUserVerify(test()->verifiedUser, 999999);
 
     expect($result[0])->toBeFalse();
@@ -97,16 +97,16 @@ it('returns error for non-existent target', function () {
 // verifyUser()
 // ───────────────────────────────────────────────
 
-it('throws when target user has incomplete data', function () {
+it('throws when target user has incomplete data', function (): void {
     expect(fn () => test()->verificationService->verifyUser(
         test()->verifiedUser,
         test()->unverifiedUser->uuid,
         '127.0.0.1',
         'TestAgent',
-    ))->toThrow(\DomainException::class, 'target_user_data_not_filled');
+    ))->toThrow(DomainException::class, 'target_user_data_not_filled');
 });
 
-it('creates a verification record for complete target user', function () {
+it('creates a verification record for complete target user', function (): void {
     $target = User::factory()->create([
         'name' => 'Complete',
         'surname' => 'Target',
@@ -135,7 +135,7 @@ it('creates a verification record for complete target user', function () {
 // Circular Verification
 // ───────────────────────────────────────────────
 
-it('prevents circular verification', function () {
+it('prevents circular verification', function (): void {
     // Create 2 verified users
     $userA = User::factory()->create([
         'email' => 'vs_circular_a@example.com',

@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Contracts\FileUploadServiceContract;
+use Exception;
 use Illuminate\Http\Request;
+use App\Contracts\FileUploadServiceContract;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class PollOptionResource extends JsonResource
@@ -23,7 +24,7 @@ class PollOptionResource extends JsonResource
             'option_text' => $this->option_text,
             'created_at' => $this->created_at,
             'user' => $this->whenLoaded('user', function () {
-                $fileService = app(FileUploadServiceContract::class);
+                $fileService = resolve(FileUploadServiceContract::class);
                 $avatarUrl = null;
                 if ($this->user->avatar) {
                     try {
@@ -31,7 +32,7 @@ class PollOptionResource extends JsonResource
                             $this->user->avatar,
                             (int) config('e-syrians.files.avatar.ttl', 60),
                         );
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $avatarUrl = null;
                     }
                 }
@@ -49,7 +50,7 @@ class PollOptionResource extends JsonResource
 
         // Include voters_preview when the relationship is loaded
         if ($this->relationLoaded('latestVoters')) {
-            $fileService = app(FileUploadServiceContract::class);
+            $fileService = resolve(FileUploadServiceContract::class);
             $data['voters_preview'] = $this->latestVoters->map(function ($vote) use ($fileService) {
                 $user = $vote->user;
                 $avatarUrl = null;
@@ -59,7 +60,7 @@ class PollOptionResource extends JsonResource
                             $user->avatar,
                             (int) config('e-syrians.files.avatar.ttl', 60),
                         );
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $avatarUrl = null;
                     }
                 }

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Hash;
 // Change Password
 // ───────────────────────────────────────────────
 
-it('changes password with correct current password', function () {
+it('changes password with correct current password', function (): void {
     $user = User::factory()->create([
         'password' => Hash::make('old_password'),
     ]);
@@ -22,7 +22,7 @@ it('changes password with correct current password', function () {
     expect(Hash::check('new_password123', $user->fresh()->password))->toBeTrue();
 });
 
-it('rejects password change with wrong current password', function () {
+it('rejects password change with wrong current password', function (): void {
     $user = User::factory()->create([
         'password' => Hash::make('correct_password'),
     ]);
@@ -36,7 +36,7 @@ it('rejects password change with wrong current password', function () {
     $response->assertStatus(401);
 });
 
-it('returns 422 when new password is missing confirmation', function () {
+it('returns 422 when new password is missing confirmation', function (): void {
     $user = User::factory()->create([
         'password' => Hash::make('old_password'),
     ]);
@@ -49,7 +49,7 @@ it('returns 422 when new password is missing confirmation', function () {
     $response->assertStatus(422);
 });
 
-it('returns 422 when new password is same as current', function () {
+it('returns 422 when new password is same as current', function (): void {
     $user = User::factory()->create([
         'password' => Hash::make('same_password'),
     ]);
@@ -63,7 +63,7 @@ it('returns 422 when new password is same as current', function () {
     $response->assertStatus(422);
 });
 
-it('returns 401 when changing password without authentication', function () {
+it('returns 401 when changing password without authentication', function (): void {
     $response = $this->postJson('/users/change-password', [
         'current_password' => 'anything',
         'new_password' => 'new_password123',
@@ -77,7 +77,7 @@ it('returns 401 when changing password without authentication', function () {
 // Forgot Password
 // ───────────────────────────────────────────────
 
-it('returns success for forgot password with existing email', function () {
+it('returns success for forgot password with existing email', function (): void {
     User::factory()->create(['email' => 'feat_forgot@example.com']);
 
     $response = $this->postJson('/users/forgot-password', [
@@ -87,7 +87,7 @@ it('returns success for forgot password with existing email', function () {
     $response->assertOk();
 });
 
-it('returns success for forgot password with non-existent email (privacy)', function () {
+it('returns success for forgot password with non-existent email (privacy)', function (): void {
     $response = $this->postJson('/users/forgot-password', [
         'email' => 'nonexistent@example.com',
     ]);
@@ -95,7 +95,7 @@ it('returns success for forgot password with non-existent email (privacy)', func
     $response->assertOk();
 });
 
-it('returns 422 for forgot password with invalid email format', function () {
+it('returns 422 for forgot password with invalid email format', function (): void {
     $response = $this->postJson('/users/forgot-password', [
         'email' => 'not-an-email',
     ]);
@@ -107,13 +107,13 @@ it('returns 422 for forgot password with invalid email format', function () {
 // Reset Password
 // ───────────────────────────────────────────────
 
-it('returns 422 for reset password with missing fields', function () {
+it('returns 422 for reset password with missing fields', function (): void {
     $response = $this->postJson('/users/reset-password', []);
 
     $response->assertStatus(422);
 });
 
-it('returns 422 for reset password without confirmation', function () {
+it('returns 422 for reset password without confirmation', function (): void {
     $response = $this->postJson('/users/reset-password', [
         'token' => 'some-token',
         'email' => 'test@example.com',

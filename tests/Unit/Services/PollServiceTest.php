@@ -1,14 +1,14 @@
 <?php
 
-use App\Exceptions\PollReactionException;
-use App\Exceptions\PollVotingException;
 use App\Models\Poll;
-use App\Models\PollOption;
 use App\Models\User;
+use App\Models\PollOption;
 use App\Services\PollService;
+use App\Exceptions\PollVotingException;
+use App\Exceptions\PollReactionException;
 
-beforeEach(function () {
-    test()->pollService = app(PollService::class);
+beforeEach(function (): void {
+    test()->pollService = resolve(PollService::class);
 
     test()->user = User::factory()->create([
         'email' => 'poll_test@example.com',
@@ -27,7 +27,7 @@ beforeEach(function () {
 // Create Poll
 // ───────────────────────────────────────────────
 
-it('creates a poll with options', function () {
+it('creates a poll with options', function (): void {
     $poll = test()->pollService->createPoll([
         'question' => 'Test question?',
         'start_date' => now()->toDateString(),
@@ -45,7 +45,7 @@ it('creates a poll with options', function () {
     expect($poll->created_by)->toBe(test()->user->id);
 });
 
-it('sets audience correctly', function () {
+it('sets audience correctly', function (): void {
     $poll = test()->pollService->createPoll([
         'question' => 'Targeted question?',
         'start_date' => now()->toDateString(),
@@ -71,7 +71,7 @@ it('sets audience correctly', function () {
 // Vote
 // ───────────────────────────────────────────────
 
-it('allows voting on an active poll', function () {
+it('allows voting on an active poll', function (): void {
     $poll = createActivePoll(test()->user);
 
     test()->pollService->vote(
@@ -86,7 +86,7 @@ it('allows voting on an active poll', function () {
     ]);
 });
 
-it('prevents voting on a poll that has not started yet', function () {
+it('prevents voting on a poll that has not started yet', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'Future poll?',
         'start_date' => now()->addDays(5),
@@ -109,7 +109,7 @@ it('prevents voting on a poll that has not started yet', function () {
         ->toThrow(PollVotingException::class, 'poll_has_not_started_yet');
 });
 
-it('prevents voting on an expired poll', function () {
+it('prevents voting on an expired poll', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'Expired poll?',
         'start_date' => now()->subDays(10),
@@ -132,7 +132,7 @@ it('prevents voting on an expired poll', function () {
         ->toThrow(PollVotingException::class, 'poll_has_expired');
 });
 
-it('prevents double voting', function () {
+it('prevents double voting', function (): void {
     $poll = createActivePoll(test()->user);
     $optionId = $poll->options->first()->id;
 
@@ -142,7 +142,7 @@ it('prevents double voting', function () {
         ->toThrow(PollVotingException::class, 'you_have_already_voted');
 });
 
-it('prevents selecting more options than max_selections', function () {
+it('prevents selecting more options than max_selections', function (): void {
     $poll = createActivePoll(test()->user, maxSelections: 1);
     $optionIds = $poll->options->pluck('id')->toArray();
 
@@ -150,7 +150,7 @@ it('prevents selecting more options than max_selections', function () {
         ->toThrow(PollVotingException::class, 'user_has_reached_the_max_selections');
 });
 
-it('rejects invalid option IDs', function () {
+it('rejects invalid option IDs', function (): void {
     $poll = createActivePoll(test()->user);
 
     expect(fn () => test()->pollService->vote($poll->id, [99999], test()->user->id))
@@ -161,7 +161,7 @@ it('rejects invalid option IDs', function () {
 // React
 // ───────────────────────────────────────────────
 
-it('allows reacting to an active poll', function () {
+it('allows reacting to an active poll', function (): void {
     $poll = createActivePoll(test()->user);
 
     test()->pollService->react($poll->id, 'up', test()->user->id);
@@ -173,7 +173,7 @@ it('allows reacting to an active poll', function () {
     ]);
 });
 
-it('replaces previous reaction', function () {
+it('replaces previous reaction', function (): void {
     $poll = createActivePoll(test()->user);
 
     test()->pollService->react($poll->id, 'up', test()->user->id);
@@ -187,7 +187,7 @@ it('replaces previous reaction', function () {
     ]);
 });
 
-it('prevents reacting to an expired poll', function () {
+it('prevents reacting to an expired poll', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'Expired react poll?',
         'start_date' => now()->subDays(10),
@@ -209,7 +209,7 @@ it('prevents reacting to an expired poll', function () {
 // Toggle Status
 // ───────────────────────────────────────────────
 
-it('soft deletes an active poll', function () {
+it('soft deletes an active poll', function (): void {
     $poll = createActivePoll(test()->user);
 
     test()->pollService->toggleStatus($poll->id);
@@ -217,7 +217,7 @@ it('soft deletes an active poll', function () {
     expect(Poll::withTrashed()->find($poll->id)->trashed())->toBeTrue();
 });
 
-it('restores a soft-deleted poll', function () {
+it('restores a soft-deleted poll', function (): void {
     $poll = createActivePoll(test()->user);
     $poll->delete();
 
@@ -230,13 +230,13 @@ it('restores a soft-deleted poll', function () {
 // Reveal Results
 // ───────────────────────────────────────────────
 
-it('reveals results before voting', function () {
+it('reveals results before voting', function (): void {
     $poll = createActivePoll(test()->user, revealResults: 'before-voting');
 
     expect(test()->pollService->shouldRevealResults($poll, null))->toBeTrue();
 });
 
-it('reveals results after expiration', function () {
+it('reveals results after expiration', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'Expired reveal?',
         'start_date' => now()->subDays(10),
@@ -253,13 +253,13 @@ it('reveals results after expiration', function () {
     expect(test()->pollService->shouldRevealResults($poll, null))->toBeTrue();
 });
 
-it('hides results before expiration for after-expiration polls', function () {
+it('hides results before expiration for after-expiration polls', function (): void {
     $poll = createActivePoll(test()->user, revealResults: 'after-expiration');
 
     expect(test()->pollService->shouldRevealResults($poll, null))->toBeFalse();
 });
 
-it('reveals results after user has voted', function () {
+it('reveals results after user has voted', function (): void {
     $poll = createActivePoll(test()->user, revealResults: 'after-voting');
 
     test()->pollService->vote($poll->id, [$poll->options->first()->id], test()->user->id);
@@ -267,10 +267,129 @@ it('reveals results after user has voted', function () {
     expect(test()->pollService->shouldRevealResults($poll, test()->user))->toBeTrue();
 });
 
-it('hides results for after-voting polls when user has not voted', function () {
+it('hides results for after-voting polls when user has not voted', function (): void {
     $poll = createActivePoll(test()->user, revealResults: 'after-voting');
 
     expect(test()->pollService->shouldRevealResults($poll, test()->user))->toBeFalse();
+});
+
+// ───────────────────────────────────────────────
+// Create Poll — Audience with allowed_voters
+// ───────────────────────────────────────────────
+
+it('stores allowed_voters in audience when provided', function (): void {
+    $poll = test()->pollService->createPoll([
+        'question' => 'Allowed voters poll?',
+        'start_date' => now()->toDateString(),
+        'duration' => 7,
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'options' => ['Yes', 'No'],
+        'allowed_voters' => ['user1@example.com', '12345678'],
+    ], test()->user->id);
+
+    expect($poll->audience)->toHaveKey('allowed_voters');
+    expect($poll->audience['allowed_voters'])->toBe(['user1@example.com', '12345678']);
+    expect($poll->audience)->not->toHaveKey('gender');
+    expect($poll->audience)->not->toHaveKey('country');
+});
+
+it('stores criteria-based audience when allowed_voters is empty', function (): void {
+    $poll = test()->pollService->createPoll([
+        'question' => 'Criteria poll?',
+        'start_date' => now()->toDateString(),
+        'duration' => 7,
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'options' => ['Yes', 'No'],
+        'allowed_voters' => [],
+        'gender' => ['m'],
+        'country' => ['SY'],
+    ], test()->user->id);
+
+    expect($poll->audience)->not->toHaveKey('allowed_voters');
+    expect($poll->audience['gender'])->toBe(['m']);
+    expect($poll->audience['country'])->toBe(['SY']);
+});
+
+it('stores criteria-based audience when allowed_voters is not provided', function (): void {
+    $poll = test()->pollService->createPoll([
+        'question' => 'No voters poll?',
+        'start_date' => now()->toDateString(),
+        'duration' => 7,
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'options' => ['Yes', 'No'],
+        'gender' => ['f'],
+    ], test()->user->id);
+
+    expect($poll->audience)->not->toHaveKey('allowed_voters');
+    expect($poll->audience['gender'])->toBe(['f']);
+});
+
+it('ignores criteria fields when allowed_voters is provided', function (): void {
+    $poll = test()->pollService->createPoll([
+        'question' => 'Override poll?',
+        'start_date' => now()->toDateString(),
+        'duration' => 7,
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'options' => ['Yes', 'No'],
+        'allowed_voters' => ['specific@example.com'],
+        'gender' => ['m'],
+        'country' => ['SY'],
+        'hometown' => ['damascus'],
+    ], test()->user->id);
+
+    expect($poll->audience)->toHaveKey('allowed_voters');
+    expect($poll->audience)->not->toHaveKey('gender');
+    expect($poll->audience)->not->toHaveKey('country');
+    expect($poll->audience)->not->toHaveKey('hometown');
+});
+
+// ───────────────────────────────────────────────
+// Create Poll — Audience with city_inside_syria
+// ───────────────────────────────────────────────
+
+it('stores city_inside_syria in audience', function (): void {
+    $poll = test()->pollService->createPoll([
+        'question' => 'Syria city poll?',
+        'start_date' => now()->toDateString(),
+        'duration' => 7,
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'options' => ['Yes', 'No'],
+        'country' => ['SY'],
+        'city_inside_syria' => ['daraa', 'damascus'],
+    ], test()->user->id);
+
+    expect($poll->audience['city_inside_syria'])->toBe(['daraa', 'damascus']);
+    expect($poll->audience['country'])->toBe(['SY']);
+});
+
+it('stores empty city_inside_syria when not provided', function (): void {
+    $poll = test()->pollService->createPoll([
+        'question' => 'No city poll?',
+        'start_date' => now()->toDateString(),
+        'duration' => 7,
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'options' => ['Yes', 'No'],
+    ], test()->user->id);
+
+    expect($poll->audience['city_inside_syria'])->toBe([]);
 });
 
 // ───────────────────────────────────────────────

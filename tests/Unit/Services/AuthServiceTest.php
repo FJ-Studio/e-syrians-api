@@ -2,18 +2,17 @@
 
 use App\Models\User;
 use App\Services\AuthService;
-use App\Services\StrService;
 use Illuminate\Support\Facades\Hash;
 
-beforeEach(function () {
-    test()->authService = app(AuthService::class);
+beforeEach(function (): void {
+    test()->authService = resolve(AuthService::class);
 });
 
 // ───────────────────────────────────────────────
 // Register
 // ───────────────────────────────────────────────
 
-it('registers a new user with valid data', function () {
+it('registers a new user with valid data', function (): void {
     $user = test()->authService->register([
         'name' => 'John',
         'surname' => 'Doe',
@@ -34,7 +33,7 @@ it('registers a new user with valid data', function () {
     $this->assertDatabaseHas('users', ['email' => 'register-test@example.com']);
 });
 
-it('converts array fields to comma-separated strings on registration', function () {
+it('converts array fields to comma-separated strings on registration', function (): void {
     $user = test()->authService->register([
         'name' => 'Jane',
         'surname' => 'Doe',
@@ -58,7 +57,7 @@ it('converts array fields to comma-separated strings on registration', function 
 // Credentials Login
 // ───────────────────────────────────────────────
 
-it('authenticates a user with valid email credentials', function () {
+it('authenticates a user with valid email credentials', function (): void {
     $user = User::factory()->create([
         'email' => 'login-test@example.com',
         'password' => Hash::make('secret123'),
@@ -71,7 +70,7 @@ it('authenticates a user with valid email credentials', function () {
     expect($result['token'])->toBeString();
 });
 
-it('returns null for wrong password', function () {
+it('returns null for wrong password', function (): void {
     User::factory()->create([
         'email' => 'wrong-pw@example.com',
         'password' => Hash::make('correct_password'),
@@ -82,7 +81,7 @@ it('returns null for wrong password', function () {
     expect($result)->toBeNull();
 });
 
-it('returns null for non-existent user', function () {
+it('returns null for non-existent user', function (): void {
     $result = test()->authService->authenticateViaCredentials('nonexistent@example.com', 'password');
 
     expect($result)->toBeNull();
@@ -92,7 +91,7 @@ it('returns null for non-existent user', function () {
 // Logout
 // ───────────────────────────────────────────────
 
-it('revokes all tokens on logout', function () {
+it('revokes all tokens on logout', function (): void {
     $user = User::factory()->create();
     $user->createToken('test-token');
     $user->createToken('another-token');
@@ -108,7 +107,7 @@ it('revokes all tokens on logout', function () {
 // Email Verification
 // ───────────────────────────────────────────────
 
-it('rejects verification for already-verified user', function () {
+it('rejects verification for already-verified user', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => now(),
     ]);
@@ -120,7 +119,7 @@ it('rejects verification for already-verified user', function () {
     expect($result['code'])->toBe(403);
 });
 
-it('rejects verification with invalid hash', function () {
+it('rejects verification with invalid hash', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => null,
     ]);

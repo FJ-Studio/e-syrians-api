@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Services\ApiService;
-use App\Services\RecoveryCodeService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Services\RecoveryCodeService;
 
 class RecoveryCodeController extends Controller
 {

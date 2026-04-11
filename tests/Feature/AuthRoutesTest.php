@@ -1,10 +1,11 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
-beforeEach(function () {
+beforeEach(function (): void {
     Mail::fake();
 });
 
@@ -12,7 +13,7 @@ beforeEach(function () {
 // Registration
 // ───────────────────────────────────────────────
 
-it('registers a new user via API and returns 201', function () {
+it('registers a new user via API and returns 201', function (): void {
     $response = $this->postJson(route('users.register'), [
         'name' => 'Feature',
         'surname' => 'Test',
@@ -31,7 +32,7 @@ it('registers a new user via API and returns 201', function () {
     $this->assertDatabaseHas('users', ['email' => 'feat_register@gmail.com']);
 });
 
-it('returns 422 when registration data is incomplete', function () {
+it('returns 422 when registration data is incomplete', function (): void {
     $response = $this->postJson(route('users.register'), [
         'name' => 'Incomplete',
     ]);
@@ -39,7 +40,7 @@ it('returns 422 when registration data is incomplete', function () {
     $response->assertStatus(422);
 });
 
-it('returns 422 when email is already taken', function () {
+it('returns 422 when email is already taken', function (): void {
     User::factory()->create(['email' => 'dup_email@gmail.com']);
 
     $response = $this->postJson(route('users.register'), [
@@ -63,7 +64,7 @@ it('returns 422 when email is already taken', function () {
 // Login
 // ───────────────────────────────────────────────
 
-it('logs in with valid credentials and returns token', function () {
+it('logs in with valid credentials and returns token', function (): void {
     User::factory()->create([
         'email' => 'feat_login@example.com',
         'password' => Hash::make('secret123'),
@@ -78,7 +79,7 @@ it('logs in with valid credentials and returns token', function () {
     $response->assertJsonStructure(['data' => ['user', 'token']]);
 });
 
-it('returns 401 for wrong password', function () {
+it('returns 401 for wrong password', function (): void {
     User::factory()->create([
         'email' => 'feat_wrongpw@example.com',
         'password' => Hash::make('correct'),
@@ -92,7 +93,7 @@ it('returns 401 for wrong password', function () {
     $response->assertStatus(401);
 });
 
-it('returns 401 for non-existent user login', function () {
+it('returns 401 for non-existent user login', function (): void {
     $response = $this->postJson('/users/login', [
         'identifier' => 'ghost@example.com',
         'password' => 'anything',
@@ -105,7 +106,7 @@ it('returns 401 for non-existent user login', function () {
 // Logout
 // ───────────────────────────────────────────────
 
-it('logs out authenticated user and revokes tokens', function () {
+it('logs out authenticated user and revokes tokens', function (): void {
     $user = User::factory()->create();
 
     $response = $this->postJson('/users/logout', [], authHeader($user));
@@ -114,7 +115,7 @@ it('logs out authenticated user and revokes tokens', function () {
     expect($user->tokens()->count())->toBe(0);
 });
 
-it('returns 401 when logging out without authentication', function () {
+it('returns 401 when logging out without authentication', function (): void {
     $response = $this->postJson('/users/logout');
 
     $response->assertStatus(401);
@@ -124,7 +125,7 @@ it('returns 401 when logging out without authentication', function () {
 // Email Verification Link
 // ───────────────────────────────────────────────
 
-it('sends email verification link for unverified user', function () {
+it('sends email verification link for unverified user', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => null,
     ]);
@@ -134,7 +135,7 @@ it('sends email verification link for unverified user', function () {
     $response->assertOk();
 });
 
-it('returns 403 when requesting verification link for already verified user', function () {
+it('returns 403 when requesting verification link for already verified user', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => now(),
     ]);
@@ -148,7 +149,7 @@ it('returns 403 when requesting verification link for already verified user', fu
 // Email Verification
 // ───────────────────────────────────────────────
 
-it('rejects email verification without required signature parameter', function () {
+it('rejects email verification without required signature parameter', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => null,
     ]);
@@ -161,14 +162,14 @@ it('rejects email verification without required signature parameter', function (
     $response->assertStatus(422);
 });
 
-it('verifies email via signed URL', function () {
+it('verifies email via signed URL', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => null,
     ]);
 
     $hash = sha1($user->email);
     // Use $absolute = false to match the service's URL::hasValidSignature(request(), false)
-    $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+    $url = URL::temporarySignedRoute(
         'verification.verify',
         now()->addMinutes(60),
         ['id' => $user->id, 'hash' => $hash],
@@ -181,12 +182,12 @@ it('verifies email via signed URL', function () {
     expect($user->fresh()->email_verified_at)->not->toBeNull();
 });
 
-it('rejects email verification with invalid hash via signed URL', function () {
+it('rejects email verification with invalid hash via signed URL', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => null,
     ]);
 
-    $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+    $url = URL::temporarySignedRoute(
         'verification.verify',
         now()->addMinutes(60),
         ['id' => $user->id, 'hash' => 'invalidhash'],
@@ -199,13 +200,13 @@ it('rejects email verification with invalid hash via signed URL', function () {
     $response->assertStatus(403);
 });
 
-it('rejects email verification for already verified user via signed URL', function () {
+it('rejects email verification for already verified user via signed URL', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => now(),
     ]);
 
     $hash = sha1($user->email);
-    $url = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+    $url = URL::temporarySignedRoute(
         'verification.verify',
         now()->addMinutes(60),
         ['id' => $user->id, 'hash' => $hash],
@@ -221,7 +222,7 @@ it('rejects email verification for already verified user via signed URL', functi
 // Me (current user)
 // ───────────────────────────────────────────────
 
-it('returns current user profile for authenticated user', function () {
+it('returns current user profile for authenticated user', function (): void {
     $user = User::factory()->create();
 
     $response = $this->getJson(route('users.me'), authHeader($user));
@@ -230,7 +231,7 @@ it('returns current user profile for authenticated user', function () {
     $response->assertJsonPath('data.uuid', (string) $user->uuid);
 });
 
-it('returns 401 when accessing me without authentication', function () {
+it('returns 401 when accessing me without authentication', function (): void {
     $response = $this->getJson(route('users.me'));
 
     $response->assertStatus(401);

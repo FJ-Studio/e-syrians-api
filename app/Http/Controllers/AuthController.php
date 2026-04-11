@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\ApiService;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\UserResource;
 use App\Contracts\AuthServiceContract;
-use App\Http\Requests\User\CredentialsLoginRequest;
+use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UserEmailVerification;
-use App\Http\Requests\User\UserStoreRequest;
-use App\Http\Resources\UserResource;
-use App\Services\ApiService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Http\Requests\User\CredentialsLoginRequest;
 
 class AuthController extends Controller
 {
     public function __construct(
         private readonly AuthServiceContract $authService,
-    ) {}
+    ) {
+    }
 
     public function register(UserStoreRequest $request): JsonResponse
     {

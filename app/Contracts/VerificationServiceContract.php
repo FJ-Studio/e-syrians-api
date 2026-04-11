@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
+use Exception;
 use App\Models\User;
 
 interface VerificationServiceContract
@@ -18,7 +19,7 @@ interface VerificationServiceContract
     /**
      * Verify a target user by a verifier
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function verifyUser(User $verifier, string $targetUuid, ?string $ipAddress, ?string $userAgent): void;
 

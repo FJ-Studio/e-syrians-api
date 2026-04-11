@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\PollServiceContract;
-use App\Enums\RevealResultsEnum;
-use App\Exceptions\PollReactionException;
-use App\Exceptions\PollVotingException;
 use App\Models\Poll;
-use App\Models\PollOption;
-use App\Models\PollVote;
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Auth;
+use App\Models\PollVote;
+use App\Models\PollOption;
+use App\Enums\RevealResultsEnum;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use App\Contracts\PollServiceContract;
+use App\Exceptions\PollVotingException;
+use App\Exceptions\PollReactionException;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PollService implements PollServiceContract
 {
@@ -81,7 +80,7 @@ class PollService implements PollServiceContract
                 'updated_at' => now(),
             ]);
 
-            PollOption::insert($options->toArray());
+            PollOption::insert($options->all());
 
             return $poll;
         });
@@ -140,7 +139,7 @@ class PollService implements PollServiceContract
                 'poll_option_id' => $optionId,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ])->toArray()
+            ])->all()
         );
     }
 
@@ -206,7 +205,7 @@ class PollService implements PollServiceContract
      * Build the common poll query with user interaction data
      * (Eliminates the duplication between index() and show())
      */
-    private function buildPollQuery(?int $userId): \Illuminate\Database\Eloquent\Builder
+    private function buildPollQuery(?int $userId): Builder
     {
         return Poll::with(['user', 'options' => fn ($q) => $q->withCount('votes')])
             ->withCount([
@@ -219,7 +218,7 @@ class PollService implements PollServiceContract
                     ->whereColumn('poll_id', 'polls.id'),
                 'unique_voters_count'
             )
-            ->when((bool) $userId, function ($query) use ($userId) {
+            ->when((bool) $userId, function ($query) use ($userId): void {
                 $query->withExists([
                     'votes as has_voted' => fn ($q) => $q->where('user_id', $userId),
                     'ups as has_upvoted' => fn ($q) => $q->where('user_id', $userId),

@@ -19,7 +19,7 @@ final class RecoveryCodeService
     {
         return collect(range(1, $count))
             ->map(fn () => self::generateCode())
-            ->toArray();
+            ->all();
     }
 
     /**

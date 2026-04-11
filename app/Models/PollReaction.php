@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PollReaction extends Model
 {
     protected static function booted()
     {
-        static::saved(function ($reaction) {
+        static::saved(function ($reaction): void {
             Cache::forget("poll_{$reaction->poll_id}_ups_count");
             Cache::forget("poll_{$reaction->poll_id}_downs_count");
         });
 
-        static::deleted(function ($reaction) {
+        static::deleted(function ($reaction): void {
             Cache::forget("poll_{$reaction->poll_id}_ups_count");
             Cache::forget("poll_{$reaction->poll_id}_downs_count");
         });
@@ -31,7 +32,7 @@ class PollReaction extends Model
     /**
      * Get the poll that the reaction belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function poll()
     {
@@ -41,7 +42,7 @@ class PollReaction extends Model
     /**
      * Get the user that made this reaction.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function user()
     {

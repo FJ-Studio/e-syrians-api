@@ -1,14 +1,14 @@
 <?php
 
-use App\Enums\ProfileChangeTypeEnum;
-use App\Exceptions\UpdateLimitReachedException;
 use App\Models\User;
 use App\Services\ProfileService;
 use Illuminate\Http\UploadedFile;
+use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Storage;
+use App\Exceptions\UpdateLimitReachedException;
 
-beforeEach(function () {
-    test()->profileService = app(ProfileService::class);
+beforeEach(function (): void {
+    test()->profileService = resolve(ProfileService::class);
     test()->user = User::factory()->create([
         'name' => 'Original',
         'surname' => 'Name',
@@ -20,7 +20,7 @@ beforeEach(function () {
 // Update Basic Info
 // ───────────────────────────────────────────────
 
-it('updates basic info and creates profile update record', function () {
+it('updates basic info and creates profile update record', function (): void {
     test()->profileService->updateBasicInfo(test()->user, [
         'name' => 'Updated',
         'surname' => 'Surname',
@@ -38,7 +38,7 @@ it('updates basic info and creates profile update record', function () {
     ]);
 });
 
-it('cancels active verifications when basic info changes', function () {
+it('cancels active verifications when basic info changes', function (): void {
     // Create a verification
     test()->user->verifications()->create([
         'user_id' => test()->user->id,
@@ -55,7 +55,7 @@ it('cancels active verifications when basic info changes', function () {
     ]);
 });
 
-it('marks user as unverified after basic info update', function () {
+it('marks user as unverified after basic info update', function (): void {
     test()->user->update(['verified_at' => now()]);
 
     test()->profileService->updateBasicInfo(test()->user, ['name' => 'Changed']);
@@ -63,7 +63,7 @@ it('marks user as unverified after basic info update', function () {
     expect(test()->user->fresh()->verified_at)->toBeNull();
 });
 
-it('throws UpdateLimitReachedException when limit is reached', function () {
+it('throws UpdateLimitReachedException when limit is reached', function (): void {
     $limit = config('e-syrians.verification.basic_info_updates_limit');
 
     for ($i = 0; $i < $limit; $i++) {
@@ -77,7 +77,7 @@ it('throws UpdateLimitReachedException when limit is reached', function () {
 // Update Social Links
 // ───────────────────────────────────────────────
 
-it('updates social media links', function () {
+it('updates social media links', function (): void {
     test()->profileService->updateSocialLinks(test()->user, [
         'facebook_link' => 'https://facebook.com/test',
         'twitter_link' => 'https://twitter.com/test',
@@ -94,7 +94,7 @@ it('updates social media links', function () {
 // Update Avatar
 // ───────────────────────────────────────────────
 
-it('uploads avatar and returns URL', function () {
+it('uploads avatar and returns URL', function (): void {
     Storage::fake('s3');
 
     $file = UploadedFile::fake()->image('avatar.jpg');
@@ -105,16 +105,16 @@ it('uploads avatar and returns URL', function () {
     Storage::disk('s3')->assertExists(test()->user->fresh()->avatar);
 });
 
-it('rejects non-image file types', function () {
+it('rejects non-image file types', function (): void {
     Storage::fake('s3');
 
     $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
     expect(fn () => test()->profileService->updateAvatar(test()->user, $file))
-        ->toThrow(\InvalidArgumentException::class, 'invalid_file_type');
+        ->toThrow(InvalidArgumentException::class, 'invalid_file_type');
 });
 
-it('updates avatar path when uploading new avatar', function () {
+it('updates avatar path when uploading new avatar', function (): void {
     Storage::fake('s3');
 
     // Upload first avatar
@@ -141,7 +141,7 @@ it('updates avatar path when uploading new avatar', function () {
 // Update Census Data
 // ───────────────────────────────────────────────
 
-it('converts arrays to comma-separated strings for census data', function () {
+it('converts arrays to comma-separated strings for census data', function (): void {
     test()->profileService->updateCensusData(test()->user, [
         'languages' => ['arabic', 'english'],
         'other_nationalities' => ['TR', 'US'],
@@ -158,7 +158,7 @@ it('converts arrays to comma-separated strings for census data', function () {
 // Update Address
 // ───────────────────────────────────────────────
 
-it('updates address and records profile change with IP', function () {
+it('updates address and records profile change with IP', function (): void {
     test()->profileService->updateAddress(test()->user, [
         'country' => 'TR',
         'city_inside_syria' => null,
@@ -181,7 +181,7 @@ it('updates address and records profile change with IP', function () {
 // Change Email
 // ───────────────────────────────────────────────
 
-it('changes email and resets verification status', function () {
+it('changes email and resets verification status', function (): void {
     test()->user->update(['email_verified_at' => now()]);
 
     test()->profileService->changeEmail(test()->user, 'new-email@example.com');
@@ -195,7 +195,7 @@ it('changes email and resets verification status', function () {
 // Update Notifications
 // ───────────────────────────────────────────────
 
-it('updates notification preferences', function () {
+it('updates notification preferences', function (): void {
     test()->profileService->updateNotifications(test()->user, [
         'received_verification_email' => true,
         'account_verified_email' => false,
@@ -210,7 +210,7 @@ it('updates notification preferences', function () {
 // Update Language
 // ───────────────────────────────────────────────
 
-it('updates preferred language', function () {
+it('updates preferred language', function (): void {
     test()->profileService->updateLanguage(test()->user, 'ar');
 
     expect(test()->user->fresh()->language)->toBe('ar');

@@ -6,6 +6,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PollOption extends Model
 {
@@ -19,7 +21,7 @@ class PollOption extends Model
     /**
      * Get the poll that the poll option belongs to.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function poll()
     {
@@ -29,7 +31,7 @@ class PollOption extends Model
     /**
      * Get the votes for the poll option.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function votes()
     {
@@ -40,7 +42,7 @@ class PollOption extends Model
      * Get the latest 3 voters for the poll option.
      * Only selects the minimum user fields needed for display (privacy).
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function latestVoters()
     {
@@ -50,7 +52,7 @@ class PollOption extends Model
     /**
      * Get the user that created the poll option.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function user()
     {

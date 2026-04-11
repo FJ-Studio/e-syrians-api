@@ -6,17 +6,18 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Enums\ProfileChangeTypeEnum;
-use App\Services\StrService;
-use Carbon\Carbon;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use App\Services\StrService;
 use Laravel\Sanctum\HasApiTokens;
+use App\Enums\ProfileChangeTypeEnum;
+use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -33,7 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         parent::boot();
 
-        static::creating(function ($user) {
+        static::creating(function ($user): void {
             $user->uuid = Str::uuid();
             $user->handleHashing([
                 'national_id' => 'national_id_hashed',
@@ -41,7 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
                 'phone' => 'phone_hashed',
             ]);
         });
-        static::updating(function ($user) {
+        static::updating(function ($user): void {
             $user->handleHashing([
                 'national_id' => 'national_id_hashed',
                 'email' => 'email_hashed',
@@ -178,7 +179,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the verifications that this user has received
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function verifiers()
     {
@@ -193,7 +194,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the verifications that this user has made
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function verifications()
     {
@@ -203,7 +204,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the polls that this user has created
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function polls()
     {
@@ -213,7 +214,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the votes that this user has cast
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function votes()
     {
@@ -223,7 +224,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the reactions that this user has made
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function reactions()
     {
@@ -233,7 +234,7 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Get the profile update that this user has made
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function profileUpdates()
     {
@@ -348,7 +349,7 @@ class User extends Authenticatable implements MustVerifyEmail
             if (! $this->birth_date) {
                 $failures[] = 'birth_date_missing';
             } else {
-                $age = Carbon::parse($this->birth_date)->diffInYears(now());
+                $age = Date::parse($this->birth_date)->diffInYears(now());
 
                 if (isset($audience['age_range']['min']) && $audience['age_range']['min'] !== '' && $age < $audience['age_range']['min']) {
                     $failures[] = 'age_min';

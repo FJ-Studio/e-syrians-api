@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Contracts\VerificationServiceContract;
-use App\Http\Requests\User\VerifyUserRequest;
+use Exception;
+use DomainException;
 use App\Services\ApiService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use App\Http\Requests\User\VerifyUserRequest;
+use App\Contracts\VerificationServiceContract;
 
 class VerificationController extends Controller
 {
     public function __construct(
         private readonly VerificationServiceContract $verificationService,
-    ) {}
+    ) {
+    }
 
     public function verify(VerifyUserRequest $request): JsonResponse
     {
@@ -28,9 +31,9 @@ class VerificationController extends Controller
             );
 
             return ApiService::success([]);
-        } catch (\DomainException $e) {
+        } catch (DomainException $e) {
             return ApiService::error(403, $e->getMessage());
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Verification failed: ' . $e->getMessage(), [
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),

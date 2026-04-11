@@ -1,0 +1,39 @@
+grumphp:
+    process_timeout: 120
+    extensions:
+        - YieldStudio\GrumPHPLaravelPint\ExtensionLoader
+    tasks:
+        laravel_pint:
+            config: pint.json
+            preset: psr12
+            auto_fix: false
+            auto_stage: 'pre_commit'
+            triggered_by: [php]
+        rector: ~
+        phpstan:
+            configuration: ./phpstan.neon
+            use_grumphp_paths: false
+            triggered_by: [php]
+            memory_limit: "-1"
+        git_blacklist:
+            match_word: true
+            keywords:
+                - " die("
+                - " dump("
+                - " dd("
+                - " var_dump("
+                - " exit;"
+        paratest: ~
+        git_commit_message:
+            enforce_capitalized_subject: false
+            max_body_width: 100
+            max_subject_width: 100
+            type_scope_conventions:
+                types:
+                    - feat
+                    - fix
+                    - refactor
+                    - chore
+                    - style
+                    - docs
+                    - test
