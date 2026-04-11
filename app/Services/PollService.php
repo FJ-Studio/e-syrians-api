@@ -38,17 +38,27 @@ class PollService implements PollServiceContract
     public function createPoll(array $data, int $userId): Poll
     {
         return DB::transaction(function () use ($data, $userId) {
-            $audience = [
-                'gender' => $data['gender'] ?? [],
-                'age_range' => [
-                    'min' => $data['min_age'] ?? 13,
-                    'max' => $data['max_age'] ?? 120,
-                ],
-                'country' => $data['country'] ?? [],
-                'religious_affiliation' => $data['religious_affiliation'] ?? [],
-                'hometown' => $data['hometown'] ?? [],
-                'ethnicity' => $data['ethnicity'] ?? [],
-            ];
+            $allowedVoters = $data['allowed_voters'] ?? [];
+
+            // If allowed_voters is specified, skip criteria-based audience
+            if (count($allowedVoters) > 0) {
+                $audience = [
+                    'allowed_voters' => $allowedVoters,
+                ];
+            } else {
+                $audience = [
+                    'gender' => $data['gender'] ?? [],
+                    'age_range' => [
+                        'min' => $data['min_age'] ?? 13,
+                        'max' => $data['max_age'] ?? 120,
+                    ],
+                    'country' => $data['country'] ?? [],
+                    'religious_affiliation' => $data['religious_affiliation'] ?? [],
+                    'hometown' => $data['hometown'] ?? [],
+                    'ethnicity' => $data['ethnicity'] ?? [],
+                    'city_inside_syria' => $data['city_inside_syria'] ?? [],
+                ];
+            }
 
             $poll = new Poll([
                 'question' => $data['question'],

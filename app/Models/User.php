@@ -330,6 +330,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $failures = [];
 
+        // Allowed voters check — if specified, only match by email or national_id
+        if (isset($audience['allowed_voters']) && count($audience['allowed_voters']) > 0) {
+            $allowed = array_map('strtolower', $audience['allowed_voters']);
+            $emailMatch = $this->email && in_array(strtolower($this->email), $allowed);
+            $nationalIdMatch = $this->national_id && in_array(strtolower($this->national_id), $allowed);
+
+            if (! $emailMatch && ! $nationalIdMatch) {
+                return [false, ['not_in_allowed_voters']];
+            }
+
+            return [true, []];
+        }
+
         // Age check
         if (isset($audience['age_range'])) {
             if (! $this->birth_date) {
@@ -356,6 +369,15 @@ class User extends Authenticatable implements MustVerifyEmail
                 } elseif (! in_array($this->{$criterion}, $audience[$criterion])) {
                     $failures[] = $criterion;
                 }
+            }
+        }
+
+        // City inside Syria check (uses same province values as hometown)
+        if (isset($audience['city_inside_syria']) && count($audience['city_inside_syria']) > 0) {
+            if (! $this->city_inside_syria) {
+                $failures[] = 'city_inside_syria_missing';
+            } elseif (! in_array($this->city_inside_syria, $audience['city_inside_syria'])) {
+                $failures[] = 'city_inside_syria';
             }
         }
 
