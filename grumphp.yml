@@ -14,6 +14,9 @@ grumphp:
             use_grumphp_paths: false
             triggered_by: [php]
             memory_limit: "-1"
+        composer_script:
+            script: test
+            triggered_by: [php]
         git_blacklist:
             match_word: true
             keywords:
