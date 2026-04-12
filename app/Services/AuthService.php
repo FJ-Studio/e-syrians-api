@@ -27,7 +27,7 @@ class AuthService implements AuthServiceContract
 
         if (! $user) {
             $user = User::create([
-                $provider . '_id' => $socialUser->getId(),
+                $provider.'_id' => $socialUser->getId(),
                 'name' => $name[0],
                 'surname' => $name[1] ?? '',
                 'email' => $socialUser->getEmail(),

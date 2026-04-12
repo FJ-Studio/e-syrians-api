@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use App\Services\StrService;
 use Laravel\Sanctum\HasApiTokens;
+use Database\Factories\UserFactory;
 use App\Enums\ProfileChangeTypeEnum;
-use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,7 +22,7 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory;
 
     use HasRoles;
@@ -349,7 +348,7 @@ class User extends Authenticatable implements MustVerifyEmail
             if (! $this->birth_date) {
                 $failures[] = 'birth_date_missing';
             } else {
-                $age = Date::parse($this->birth_date)->diffInYears(now());
+                $age = Carbon::parse($this->birth_date)->diffInYears(now());
 
                 if (isset($audience['age_range']['min']) && $audience['age_range']['min'] !== '' && $age < $audience['age_range']['min']) {
                     $failures[] = 'age_min';
@@ -366,7 +365,7 @@ class User extends Authenticatable implements MustVerifyEmail
         foreach ($criteria as $criterion) {
             if (isset($audience[$criterion]) && count($audience[$criterion]) > 0) {
                 if (! $this->{$criterion}) {
-                    $failures[] = $criterion . '_missing';
+                    $failures[] = $criterion.'_missing';
                 } elseif (! in_array($this->{$criterion}, $audience[$criterion])) {
                     $failures[] = $criterion;
                 }

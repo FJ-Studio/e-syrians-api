@@ -34,7 +34,7 @@ class VerificationController extends Controller
         } catch (DomainException $e) {
             return ApiService::error(403, $e->getMessage());
         } catch (Exception $e) {
-            Log::error('Verification failed: ' . $e->getMessage(), [
+            Log::error('Verification failed: '.$e->getMessage(), [
                 'line' => $e->getLine(),
                 'file' => $e->getFile(),
                 'trace' => $e->getTraceAsString(),

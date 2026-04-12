@@ -112,7 +112,7 @@ class PollController extends Controller
                 (int) $request->input('poll_option_id'),
             );
 
-            $fileService = resolve(FileUploadServiceContract::class);
+            $fileService = app(FileUploadServiceContract::class);
 
             $data = collect($voters->items())->map(function ($vote) use ($fileService) {
                 $user = $vote->user;

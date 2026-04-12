@@ -1,0 +1,793 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Offset ''code'' does not exist on array\{success\: false, message\: string\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 3
+			path: app/Http/Controllers/PasswordController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/PollController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/TwoFactorController.php
+
+		-
+			message: '#^Property App\\Http\\Controllers\\TwoFactorController\:\:\$authService is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Http/Controllers/TwoFactorController.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollOptionResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollOptionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollOptionResource\:\:\$latestVoters\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollOptionResource\:\:\$option_text\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollOptionResource\:\:\$percentage\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollOptionResource\:\:\$poll_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollOptionResource\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\PollOptionResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/PollOptionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollReactionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollReactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollReactionResource\:\:\$poll_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollReactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollReactionResource\:\:\$reaction\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollReactionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$audience\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$audience_can_add_options\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$deletion_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$downs_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$end_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$max_selections\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$options\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$question\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$reactions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$reveal_results\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$start_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$ups_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$voters_are_visible\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$votes\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\PollResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Parameter \#2 \$user of method App\\Services\\PollService\:\:shouldRevealResults\(\) expects App\\Models\\User\|null, Illuminate\\Contracts\\Auth\\Authenticatable\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollVoteResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollVoteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollVoteResource\:\:\$poll_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollVoteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollVoteResource\:\:\$poll_option_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollVoteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollVoteResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollVoteResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$account_verified_email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$avatar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$birth_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$city\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$city_inside_syria\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$communication\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$country\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$easy_access_to_healthcare_services\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$education_level\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$email_verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$estimated_monthly_income\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$ethnicity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$facebook_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$gender\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$github_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$health_insurance\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$health_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$hometown\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$instagram_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$language\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$languages\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$linkedin_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$marital_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$marked_as_fake_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$middle_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$more_info\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$national_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$number_of_dependents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$other_nationalities\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$phone_verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$pinterest_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$received_verification_email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$record_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$religious_affiliation\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$shelter\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$skills\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$snapchat_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$source_of_income\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$surname\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$tiktok_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$twitch_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$twitter_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$uuid\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$verification_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$website\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$youtube_link\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\UserResource\:\:getAllPermissions\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\UserResource\:\:getRoleNames\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\UserResource\:\:getTotalUpdatesCount\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Method App\\Http\\Resources\\UserResource\:\:toArray\(\) should return array\<string, mixed\> but returns array\<int\|string, mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$cancelation_payload\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$cancelled_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$user\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$verifier\.$#'
+			identifier: property.notFound
+			count: 5
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserVerificationResource\:\:\$verifier_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserVerificationResource.php
+
+		-
+			message: '#^Property App\\Models\\User\:\:\$verified_at \(string\|null\) does not accept Illuminate\\Support\\Carbon\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: app/Listeners/CheckUserVerificationStatus.php
+
+		-
+			message: '#^Parameter \$event of method App\\Listeners\\UpdateStatistics\:\:handle\(\) has invalid type App\\Events\\Registered\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Listeners/UpdateStatistics.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 1
+			path: app/Mail/UserAccountVerified.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 1
+			path: app/Mail/UserReceivedVerification.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Mail/UserReceivedVerification.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\PollVote model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Models/PollOption.php
+
+		-
+			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
+			identifier: larastan.noEnvCallsOutsideOfConfig
+			count: 2
+			path: app/Providers/AppServiceProvider.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Socialite\\Contracts\\Provider\:\:userFromToken\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/AuthService.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Services/AuthService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$voters_are_visible\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PollService.php
+
+		-
+			message: '#^Method App\\Services\\PollService\:\:getPollById\(\) should return App\\Models\\Poll but returns Illuminate\\Database\\Eloquent\\Model\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/PollService.php
+
+		-
+			message: '#^Relation ''options'' is not found in App\\Models\\Poll model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/PollService.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\Poll model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/PollService.php
+
+		-
+			message: '#^Relation ''user'' is not found in App\\Models\\PollVote model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/PollService.php
+
+		-
+			message: '#^Relation ''votes'' is not found in App\\Models\\Poll model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/PollService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ProfileService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_agent\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/ProfileService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/StatsService.php
+
+		-
+			message: '#^Parameter \#1 \$array of function uasort contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/StatsService.php
+
+		-
+			message: '#^Parameter \#2 \$callback of function uasort contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/StatsService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between false and false will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/Services/TwoFactorService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/TwoFactorService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/UserPollService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:withTrashed\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/UserPollService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/UserPollService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/VerificationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_agent\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/VerificationService.php

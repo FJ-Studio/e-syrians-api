@@ -9,7 +9,6 @@ grumphp:
             auto_fix: false
             auto_stage: 'pre_commit'
             triggered_by: [php]
-        rector: ~
         phpstan:
             configuration: ./phpstan.neon
             use_grumphp_paths: false
@@ -23,7 +22,6 @@ grumphp:
                 - " dd("
                 - " var_dump("
                 - " exit;"
-        paratest: ~
         git_commit_message:
             enforce_capitalized_subject: false
             max_body_width: 100

@@ -120,7 +120,7 @@ class ProfileController extends Controller
     public function updateLanguage(Request $request): JsonResponse
     {
         $request->validate([
-            'language' => 'required|in:' . implode(',', array_map(
+            'language' => 'required|in:'.implode(',', array_map(
                 fn ($lang) => $lang->value,
                 SysLanguageEnum::cases()
             )),

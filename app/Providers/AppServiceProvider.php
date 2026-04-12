@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         ResetPassword::createUrlUsing(function (User $user, string $token) {
-            return env('FRONTEND_URL') . '/auth/reset-password?token=' . $token;
+            return env('FRONTEND_URL').'/auth/reset-password?token='.$token;
         });
 
         VerifyEmail::createUrlUsing(function ($notifiable) {
@@ -83,7 +83,7 @@ class AppServiceProvider extends ServiceProvider
                 false
             );
 
-            return $frontendUrl . $verifyUrl;
+            return $frontendUrl.$verifyUrl;
         });
     }
 }
