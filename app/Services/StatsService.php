@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\StatsServiceContract;
 use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Cache;
+use App\Contracts\StatsServiceContract;
 
 class StatsService implements StatsServiceContract
 {
@@ -50,7 +50,7 @@ class StatsService implements StatsServiceContract
     public static function calculateDailyUsersStats()
     {
         // Get the current date
-        $dateKey = Carbon::now()->toDateString();
+        $dateKey = Date::now()->toDateString();
         // Get the cache key
         $usersKey = config('e-syrians.cache.daily_registrants');
         // Get the statistics from the cache
@@ -125,7 +125,7 @@ class StatsService implements StatsServiceContract
     public static function calculateEthnicityStats()
     {
         $ethnicityKey = config('e-syrians.cache.ethnicity');
-        $ethnicityStats = (new self)->groupUsersByField('ethnicity', true);
+        $ethnicityStats = (new self())->groupUsersByField('ethnicity', true);
         Cache::forever($ethnicityKey, $ethnicityStats);
 
         return $ethnicityStats;
@@ -135,7 +135,7 @@ class StatsService implements StatsServiceContract
     {
         // Get the cache key
         $religionKey = config('e-syrians.cache.religion');
-        $religionStatistics = (new self)->groupUsersByField('religious_affiliation', true);
+        $religionStatistics = (new self())->groupUsersByField('religious_affiliation', true);
         Cache::forever($religionKey, $religionStatistics);
 
         return $religionStatistics;
@@ -144,7 +144,7 @@ class StatsService implements StatsServiceContract
     public static function calculateCountryStats()
     {
         $countryKey = config('e-syrians.cache.country');
-        $countryStatistics = (new self)->groupUsersByField('country', true);
+        $countryStatistics = (new self())->groupUsersByField('country', true);
         Cache::forever($countryKey, $countryStatistics);
 
         return $countryStatistics;
@@ -153,7 +153,7 @@ class StatsService implements StatsServiceContract
     public static function calculateHometownStats()
     {
         $hometownKey = config('e-syrians.cache.hometown');
-        $hometownStatistics = (new self)->groupUsersByField('hometown', true);
+        $hometownStatistics = (new self())->groupUsersByField('hometown', true);
         Cache::forever($hometownKey, $hometownStatistics);
 
         return $hometownStatistics;

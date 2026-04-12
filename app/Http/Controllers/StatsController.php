@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Contracts\StatsServiceContract;
 use App\Services\ApiService;
 use Illuminate\Http\JsonResponse;
+use App\Contracts\StatsServiceContract;
 
 class StatsController extends Controller
 {
     public function __construct(
         private readonly StatsServiceContract $statsService,
-    ) {}
+    ) {
+    }
 
     /**
      * Display a listing of the resource.

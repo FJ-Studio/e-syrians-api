@@ -4,15 +4,15 @@ use App\Models\User;
 use App\Services\PasswordService;
 use Illuminate\Support\Facades\Hash;
 
-beforeEach(function () {
-    test()->passwordService = app(PasswordService::class);
+beforeEach(function (): void {
+    test()->passwordService = resolve(PasswordService::class);
 });
 
 // ───────────────────────────────────────────────
 // Change Password
 // ───────────────────────────────────────────────
 
-it('changes password when current password is correct', function () {
+it('changes password when current password is correct', function (): void {
     $user = User::factory()->create([
         'password' => Hash::make('old_password'),
     ]);
@@ -24,7 +24,7 @@ it('changes password when current password is correct', function () {
     expect(Hash::check('new_password123', $user->fresh()->password))->toBeTrue();
 });
 
-it('rejects change when current password is wrong', function () {
+it('rejects change when current password is wrong', function (): void {
     $user = User::factory()->create([
         'password' => Hash::make('correct_password'),
     ]);
@@ -40,7 +40,7 @@ it('rejects change when current password is wrong', function () {
 // Forgot Password
 // ───────────────────────────────────────────────
 
-it('returns success even for non-existent email (privacy)', function () {
+it('returns success even for non-existent email (privacy)', function (): void {
     $result = test()->passwordService->sendResetLink('nobody@example.com');
 
     expect($result['success'])->toBeTrue();

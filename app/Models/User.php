@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
-use App\Enums\ProfileChangeTypeEnum;
-use App\Services\StrService;
 use Carbon\Carbon;
-use Database\Factories\UserFactory;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use App\Services\StrService;
 use Laravel\Sanctum\HasApiTokens;
+use Database\Factories\UserFactory;
+use App\Enums\ProfileChangeTypeEnum;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -35,7 +33,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         parent::boot();
 
-        static::creating(function ($user) {
+        static::creating(function ($user): void {
             $user->uuid = Str::uuid();
             $user->handleHashing([
                 'national_id' => 'national_id_hashed',
@@ -43,7 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail
                 'phone' => 'phone_hashed',
             ]);
         });
-        static::updating(function ($user) {
+        static::updating(function ($user): void {
             $user->handleHashing([
                 'national_id' => 'national_id_hashed',
                 'email' => 'email_hashed',
@@ -116,6 +114,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'account_verified_email',
         'city_inside_syria',
         'language',
+        // Two-factor authentication
+        'two_factor_secret',
+        'two_factor_enabled',
+        'two_factor_confirmed_at',
+        'recovery_codes',
     ];
 
     public function getRouteKeyName()
@@ -131,6 +134,8 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'recovery_codes',
     ];
 
     /**
@@ -146,6 +151,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'address' => 'encrypted',
             'national_id' => 'encrypted',
+            'recovery_codes' => 'array',
+            'two_factor_enabled' => 'boolean',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
@@ -261,6 +269,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->count();
     }
 
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_enabled && $this->two_factor_confirmed_at !== null;
+    }
+
     public function isVerified(): bool
     {
         return (bool) $this->verified_at;
@@ -317,6 +330,19 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $failures = [];
 
+        // Allowed voters check — if specified, only match by email or national_id
+        if (isset($audience['allowed_voters']) && count($audience['allowed_voters']) > 0) {
+            $allowed = array_map('strtolower', $audience['allowed_voters']);
+            $emailMatch = $this->email && in_array(strtolower($this->email), $allowed);
+            $nationalIdMatch = $this->national_id && in_array(strtolower($this->national_id), $allowed);
+
+            if (! $emailMatch && ! $nationalIdMatch) {
+                return [false, ['not_in_allowed_voters']];
+            }
+
+            return [true, []];
+        }
+
         // Age check
         if (isset($audience['age_range'])) {
             if (! $this->birth_date) {
@@ -343,6 +369,15 @@ class User extends Authenticatable implements MustVerifyEmail
                 } elseif (! in_array($this->{$criterion}, $audience[$criterion])) {
                     $failures[] = $criterion;
                 }
+            }
+        }
+
+        // City inside Syria check (uses same province values as hometown)
+        if (isset($audience['city_inside_syria']) && count($audience['city_inside_syria']) > 0) {
+            if (! $this->city_inside_syria) {
+                $failures[] = 'city_inside_syria_missing';
+            } elseif (! in_array($this->city_inside_syria, $audience['city_inside_syria'])) {
+                $failures[] = 'city_inside_syria';
             }
         }
 

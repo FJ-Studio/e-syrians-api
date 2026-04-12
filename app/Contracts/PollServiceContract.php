@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
-use App\Exceptions\PollReactionException;
-use App\Exceptions\PollVotingException;
 use App\Models\Poll;
 use App\Models\User;
+use App\Exceptions\PollVotingException;
+use App\Exceptions\PollReactionException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface PollServiceContract

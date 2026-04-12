@@ -4,17 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Contracts\VerificationServiceContract;
-use App\Services\ApiService;
 use Closure;
+use App\Services\ApiService;
 use Illuminate\Http\Request;
+use App\Contracts\VerificationServiceContract;
 use Symfony\Component\HttpFoundation\Response;
 
 class CanVerify
 {
     public function __construct(
         private readonly VerificationServiceContract $verificationService,
-    ) {}
+    ) {
+    }
 
     /**
      * Handle an incoming request.

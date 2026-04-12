@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\User;
 
-use App\Enums\EthnicityEnum;
 use App\Enums\GenderEnum;
 use App\Enums\HometownEnum;
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Enums\EthnicityEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class UpdateUserBasicInfoRequest extends FormRequest
 {
@@ -31,9 +31,9 @@ class UpdateUserBasicInfoRequest extends FormRequest
             'name' => ['required', 'string', 'max:255', 'min:2'],
             'surname' => ['required', 'string', 'max:255', 'min:2'],
             'birth_date' => ['required', 'date'],
-            'gender' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, GenderEnum::cases()))],
-            'ethnicity' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, EthnicityEnum::cases()))],
-            'hometown' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
+            'gender' => ['required', 'in:' . implode(',', array_map(fn ($case) => $case->value, GenderEnum::cases()))],
+            'ethnicity' => ['required', 'in:' . implode(',', array_map(fn ($case) => $case->value, EthnicityEnum::cases()))],
+            'hometown' => ['required', 'in:' . implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
             'national_id' => ['nullable', 'string', 'max:20', 'min:5'],
             'record_id' => ['nullable', 'string', 'max:255'],
         ];

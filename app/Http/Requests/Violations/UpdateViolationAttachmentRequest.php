@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Violations;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class UpdateViolationAttachmentRequest extends FormRequest
 {

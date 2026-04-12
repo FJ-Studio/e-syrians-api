@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\User;
 use App\Enums\CountryEnum;
 use App\Enums\HometownEnum;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Storage;
 // Setup
 // ───────────────────────────────────────────────
 
-beforeEach(function () {
+beforeEach(function (): void {
     $user = User::factory()->create([
         'name' => 'Unverified',
         'surname' => 'User',
@@ -27,7 +27,7 @@ beforeEach(function () {
 // User gets his profile data
 // ───────────────────────────────────────────────
 
-it('User gets profile data', function () {
+it('User gets profile data', function (): void {
     $result = $this->getJson(route('users.me'), authHeader(test()->user));
     $result->assertOk();
     $result->assertJsonStructure([
@@ -109,7 +109,7 @@ it('User gets profile data', function () {
 // User updates his profile
 // ───────────────────────────────────────────────
 
-it('User updates his profile correctly', function () {
+it('User updates his profile correctly', function (): void {
     $result = $this->postJson(
         route('users.update.basic-info'),
         [
@@ -120,7 +120,8 @@ it('User updates his profile correctly', function () {
             'ethnicity' => 'assyrian',
             'hometown' => 'homs',
         ],
-        authHeader(test()->user));
+        authHeader(test()->user)
+    );
 
     // Check the response status
     $result->assertOk();
@@ -137,7 +138,7 @@ it('User updates his profile correctly', function () {
 
 });
 
-it('User updates his profile for limited times', function () {
+it('User updates his profile for limited times', function (): void {
     $limit = config('e-syrians.verification.basic_info_updates_limit');
     // consume the limit
     for ($i = 0; $i < $limit; $i++) {
@@ -151,7 +152,8 @@ it('User updates his profile for limited times', function () {
                 'ethnicity' => 'assyrian',
                 'hometown' => 'homs',
             ],
-            authHeader(test()->user));
+            authHeader(test()->user)
+        );
 
         $result->assertOk();
     }
@@ -166,13 +168,14 @@ it('User updates his profile for limited times', function () {
             'ethnicity' => 'assyrian',
             'hometown' => 'homs',
         ],
-        authHeader(test()->user));
+        authHeader(test()->user)
+    );
     // Check the response status and messages
     $result->assertStatus(403);
     expect($result['messages'])->toContain('basic_info_updates_limit_reached');
 });
 
-it('User can update his social media links', function () {
+it('User can update his social media links', function (): void {
     $result = $this->postJson(
         route('users.update.social'),
         [
@@ -207,7 +210,7 @@ it('User can update his social media links', function () {
     ]);
 });
 
-it('updates the user avatar and stores it in S3', function () {
+it('updates the user avatar and stores it in S3', function (): void {
     Storage::fake('s3'); // Fakes S3 so nothing is actually uploaded
 
     $file = UploadedFile::fake()->image('avatar.jpg');
@@ -227,13 +230,13 @@ it('updates the user avatar and stores it in S3', function () {
     expect(test()->user->fresh()->avatar)->toBe($fileName);
 });
 
-it('fails when avatar is missing', function () {
+it('fails when avatar is missing', function (): void {
     $response = $this->actingAs(test()->user)->postJson(route('users.update.avatar'), []);
     $response->assertStatus(422);
     expect($response['messages'])->toHaveKey('avatar');
 });
 
-it('fails when avatar is not an image', function () {
+it('fails when avatar is not an image', function (): void {
 
     $file = UploadedFile::fake()->create('document.pdf', 100);
 
@@ -245,7 +248,7 @@ it('fails when avatar is not an image', function () {
     expect($response['messages'])->toHaveKey('avatar');
 });
 
-it('fails when avatar exceeds 1MB', function () {
+it('fails when avatar exceeds 1MB', function (): void {
     $file = UploadedFile::fake()->image('big-avatar.jpg')->size(1100);
     $response = $this->actingAs(test()->user)->postJson(route('users.update.avatar'), [
         'avatar' => $file,
@@ -254,7 +257,7 @@ it('fails when avatar exceeds 1MB', function () {
     expect($response['messages'])->toHaveKey('avatar');
 });
 
-it('fails when avatar image exceeds max dimensions', function () {
+it('fails when avatar image exceeds max dimensions', function (): void {
     $file = UploadedFile::fake()->image('large.jpg', 2000, 2000); // Exceeds 1600x1600
 
     $response = $this->actingAs(test()->user)->postJson(route('users.update.avatar'), [
@@ -265,7 +268,7 @@ it('fails when avatar image exceeds max dimensions', function () {
     expect($response['messages'])->toHaveKey('avatar');
 });
 
-it('allows user to update to another country', function () {
+it('allows user to update to another country', function (): void {
     $response = $this->postJson(
         route('users.update.address'),
         [
@@ -283,7 +286,7 @@ it('allows user to update to another country', function () {
 });
 
 // ✅ 2. Can update to SY with valid hometown
-it('allows update to SY with valid hometown', function () {
+it('allows update to SY with valid hometown', function (): void {
     $response = $this->postJson(
         route('users.update.address'),
         [
@@ -302,7 +305,7 @@ it('allows update to SY with valid hometown', function () {
 });
 
 // ❌ 3. Missing city_inside_syria when country is SY
-it('fails when updating to SY without hometown', function () {
+it('fails when updating to SY without hometown', function (): void {
     $response = $this->postJson(
         route('users.update.address'),
         [
@@ -316,7 +319,7 @@ it('fails when updating to SY without hometown', function () {
 });
 
 // ❌ 4. Fails when update count is exceeded
-it('prevents update when country update limit is reached', function () {
+it('prevents update when country update limit is reached', function (): void {
     $limit = config('e-syrians.verification.country_updates_limit');
 
     // Consume the limit
@@ -346,7 +349,7 @@ it('prevents update when country update limit is reached', function () {
 });
 
 // ❌ 5. Invalid country / city
-it('fails with invalid country or city', function () {
+it('fails with invalid country or city', function (): void {
     $response = $this->postJson(
         route('users.update.address'),
         [
@@ -363,7 +366,7 @@ it('fails with invalid country or city', function () {
 
 // Census Data being updated correctly
 
-it('a user can update the rest of census data', function () {
+it('a user can update the rest of census data', function (): void {
     $response = $this->postJson(
         route('users.update.census'),
         [

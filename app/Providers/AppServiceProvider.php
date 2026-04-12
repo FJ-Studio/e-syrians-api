@@ -4,31 +4,31 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Contracts\AuthServiceContract;
-use App\Contracts\FileUploadServiceContract;
-use App\Contracts\PasswordServiceContract;
-use App\Contracts\PollServiceContract;
-use App\Contracts\ProfileServiceContract;
-use App\Contracts\StatsServiceContract;
-use App\Contracts\UserPollServiceContract;
-use App\Contracts\VerificationServiceContract;
 use App\Models\User;
 use App\Services\AuthService;
-use App\Services\FileUploadService;
-use App\Services\PasswordService;
 use App\Services\PollService;
-use App\Services\ProfileService;
 use App\Services\StatsService;
+use App\Services\ProfileService;
+use App\Services\PasswordService;
 use App\Services\UserPollService;
-use App\Services\VerificationService;
-use Carbon\Carbon;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Event;
+use App\Services\FileUploadService;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Date;
+use App\Services\VerificationService;
+use Illuminate\Support\Facades\Event;
+use App\Contracts\AuthServiceContract;
+use App\Contracts\PollServiceContract;
+use Illuminate\Support\Facades\Config;
+use App\Contracts\StatsServiceContract;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Google\Provider;
+use App\Contracts\ProfileServiceContract;
+use App\Contracts\PasswordServiceContract;
+use App\Contracts\UserPollServiceContract;
+use App\Contracts\FileUploadServiceContract;
+use App\Contracts\VerificationServiceContract;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Auth\Notifications\ResetPassword;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
 class AppServiceProvider extends ServiceProvider
@@ -62,7 +62,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Event::listen(function (SocialiteWasCalled $event) {
+        Event::listen(function (SocialiteWasCalled $event): void {
             $event->extendSocialite('google', Provider::class);
         });
 
@@ -74,7 +74,7 @@ class AppServiceProvider extends ServiceProvider
             $frontendUrl = env('FRONTEND_URL');
             $verifyUrl = URL::temporarySignedRoute(
                 'verification.verify',
-                Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+                Date::now()->addMinutes(Config::get('auth.verification.expire', 60)),
                 [
                     'id' => $notifiable->getKey(),
                     'hash' => sha1($notifiable->getEmailForVerification()),

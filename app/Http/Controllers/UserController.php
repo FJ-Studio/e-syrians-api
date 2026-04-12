@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\ApiService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Cache;
 
 class UserController extends Controller
@@ -45,7 +45,7 @@ class UserController extends Controller
                 ->whereNotNull('verified_at')
                 ->where('verification_reason', 'first_registrant')
                 ->whereNotNull('avatar')
-                ->where(function ($query) use ($socials) {
+                ->where(function ($query) use ($socials): void {
                     $first = array_shift($socials);
                     $query->whereNotNull($first);
                     foreach ($socials as $column) {

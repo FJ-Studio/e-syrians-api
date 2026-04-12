@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Violations;
 
-use App\Enums\ViolationCategoryEnum;
 use App\Enums\ViolationStatusEnum;
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Enums\ViolationCategoryEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class StoreViolationRequest extends FormRequest
 {

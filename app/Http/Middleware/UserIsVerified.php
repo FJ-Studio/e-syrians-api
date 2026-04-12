@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Services\ApiService;
 use Closure;
+use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 

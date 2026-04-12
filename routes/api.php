@@ -1,17 +1,19 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PasswordController;
-use App\Http\Controllers\PollController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\StatsController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\UserPollController;
-use App\Http\Controllers\VerificationController;
-use App\Http\Controllers\ViolationController;
 use App\Http\Middleware\CanVerify;
-use App\Http\Middleware\UserIsVerified;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\UserIsVerified;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PollController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\StatsController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\UserPollController;
+use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\ViolationController;
+use App\Http\Controllers\RecoveryCodeController;
+use App\Http\Controllers\VerificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,12 +30,15 @@ Route::get('/ping', function () {
 | Auth Routes (guest only)
 |--------------------------------------------------------------------------
 */
-Route::prefix('users')->group(function () {
+Route::prefix('users')->group(function (): void {
     Route::middleware(['guest', 'throttle:6,1,register'])->post('/register', [AuthController::class, 'register'])->name('users.register');
     Route::middleware(['guest', 'throttle:6,1,login'])->post('/login', [AuthController::class, 'login']);
     Route::middleware(['guest', 'throttle:6,1,social_login'])->post('/login/social', [AuthController::class, 'socialLogin']);
     Route::middleware(['guest', 'throttle:2,1,forgot_password'])->post('/forgot-password', [PasswordController::class, 'forgot']);
     Route::middleware(['guest', 'throttle:2,1,reset_password'])->post('/reset-password', [PasswordController::class, 'reset']);
+
+    // 2FA verification during login (no auth required, uses challenge token)
+    Route::middleware(['guest', 'throttle:6,1'])->post('/2fa/verify', [TwoFactorController::class, 'verify']);
 });
 
 /*
@@ -41,7 +46,7 @@ Route::prefix('users')->group(function () {
 | Public User Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('users')->group(function () {
+Route::prefix('users')->group(function (): void {
     Route::get('/first', [UserController::class, 'first']);
     Route::get('/verify/{user:uuid}', [UserController::class, 'show']);
 });
@@ -51,7 +56,7 @@ Route::prefix('users')->group(function () {
 | Authenticated User Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('users')->middleware(['auth:sanctum'])->group(function () {
+Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
     // Current user
     Route::get('/me', [UserController::class, 'me'])->name('users.me');
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -65,6 +70,18 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function () {
 
     // Notification preferences
     Route::middleware(['throttle:1,1,change-notifications'])->post('/change-notifications', [ProfileController::class, 'changeNotifications']);
+
+    // Two-Factor Authentication
+    Route::prefix('2fa')->group(function (): void {
+        Route::get('/status', [TwoFactorController::class, 'status']);
+        Route::post('/setup', [TwoFactorController::class, 'setup']);
+        Route::post('/confirm', [TwoFactorController::class, 'confirm']);
+        Route::post('/disable', [TwoFactorController::class, 'disable']);
+    });
+
+    // Recovery codes
+    Route::get('/recovery-codes', [RecoveryCodeController::class, 'index']);
+    Route::post('/recovery-codes/regenerate', [RecoveryCodeController::class, 'regenerate']);
 
     // User verification
     Route::post('/verify', [VerificationController::class, 'verify'])->middleware(CanVerify::class)->name('users.verify');
@@ -92,9 +109,9 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function () {
 | Poll Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('polls')->group(function () {
+Route::prefix('polls')->group(function (): void {
     Route::get('/', [PollController::class, 'index']);
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::get('/option-voters', [PollController::class, 'optionVoters']);
         Route::post('/', [PollController::class, 'store']);
         Route::post('/status/{poll}', [PollController::class, 'status']);
@@ -109,10 +126,10 @@ Route::prefix('polls')->group(function () {
 | Violation Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('violations')->group(function () {
+Route::prefix('violations')->group(function (): void {
     Route::get('/', [ViolationController::class, 'index']);
     Route::get('/{violation}', [ViolationController::class, 'show']);
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::post('/', [ViolationController::class, 'store']);
         Route::post('/react', [ViolationController::class, 'react'])->middleware(UserIsVerified::class);
         Route::post('/attachments', [ViolationController::class, 'attachments']);

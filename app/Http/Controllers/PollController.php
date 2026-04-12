@@ -4,24 +4,27 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Contracts\FileUploadServiceContract;
-use App\Contracts\PollServiceContract;
-use App\Exceptions\PollReactionException;
-use App\Exceptions\PollVotingException;
-use App\Http\Requests\Polls\StorePollReaction;
-use App\Http\Requests\Polls\StorePollRequest;
-use App\Http\Requests\Polls\StorePollVoteRequest;
-use App\Http\Resources\PollResource;
+use Exception;
+use Throwable;
 use App\Services\ApiService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use App\Http\Resources\PollResource;
+use App\Contracts\PollServiceContract;
+use App\Exceptions\PollVotingException;
+use App\Exceptions\PollReactionException;
+use App\Contracts\FileUploadServiceContract;
+use App\Http\Requests\Polls\StorePollRequest;
+use App\Http\Requests\Polls\StorePollReaction;
+use App\Http\Requests\Polls\StorePollVoteRequest;
 
 class PollController extends Controller
 {
     public function __construct(
         private readonly PollServiceContract $pollService,
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -60,7 +63,7 @@ class PollController extends Controller
             );
 
             return ApiService::success(new PollResource($poll));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Poll creation failed', [
                 'error' => $e->getMessage(),
                 'user_id' => $request->user()->id,
@@ -76,7 +79,7 @@ class PollController extends Controller
             $this->pollService->toggleStatus($pollId);
 
             return ApiService::success([]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }
     }
@@ -101,7 +104,7 @@ class PollController extends Controller
     public function optionVoters(Request $request): JsonResponse
     {
         $request->validate([
-            'poll_option_id' => 'required|integer|exists:poll_options,id',
+            'poll_option_id' => ['required', 'integer', 'exists:poll_options,id'],
         ]);
 
         try {
@@ -120,7 +123,7 @@ class PollController extends Controller
                             $user->avatar,
                             (int) config('e-syrians.files.avatar.ttl', 60),
                         );
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $avatarUrl = null;
                     }
                 }
@@ -139,7 +142,7 @@ class PollController extends Controller
                 'last_page' => $voters->lastPage(),
                 'total' => $voters->total(),
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return ApiService::error(403, $e->getMessage());
         }
     }

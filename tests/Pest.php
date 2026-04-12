@@ -11,9 +11,9 @@
 |
 */
 
+use Tests\TestCase;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
-use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->in('Feature', 'Unit');
@@ -40,7 +40,7 @@ pest()->extend(TestCase::class)
 |
 */
 
-beforeAll(function () {
+beforeAll(function (): void {
     // Optionally seed the DB once
     Artisan::call('migrate:fresh');
     Artisan::call('db:seed --class=RolesPermissionsSeeder');

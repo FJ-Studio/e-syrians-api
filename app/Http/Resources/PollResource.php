@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use App\Contracts\PollServiceContract;
 use Illuminate\Http\Request;
+use App\Contracts\PollServiceContract;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class PollResource extends JsonResource
@@ -20,7 +20,7 @@ class PollResource extends JsonResource
         $user = auth('sanctum')->check() ? auth('sanctum')->user() : null;
         $userId = $user?->id;
 
-        $pollService = app(PollServiceContract::class);
+        $pollService = resolve(PollServiceContract::class);
         $revealResults = $pollService->shouldRevealResults($this->resource, $user);
 
         return [

@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\User;
 
-use App\Enums\CountryEnum;
-use App\Enums\EducationLevelEnum;
-use App\Enums\EthnicityEnum;
 use App\Enums\GenderEnum;
-use App\Enums\HealthStatusEnum;
+use App\Enums\CountryEnum;
 use App\Enums\HometownEnum;
-use App\Enums\IncomeSourceEnum;
 use App\Enums\LanguageEnum;
+use App\Enums\EthnicityEnum;
+use App\Enums\HealthStatusEnum;
+use App\Enums\IncomeSourceEnum;
 use App\Enums\MaritalStatusEnum;
+use App\Enums\EducationLevelEnum;
 use App\Enums\ReligiousAffiliationEnum;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class UserStoreRequest extends FormRequest
 {

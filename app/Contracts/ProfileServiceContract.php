@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
-use App\Exceptions\UpdateLimitReachedException;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use App\Exceptions\UpdateLimitReachedException;
 
 interface ProfileServiceContract
 {

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Poll extends Model
 {
@@ -41,19 +41,19 @@ class Poll extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope('public_polls', function (Builder $builder) {
+        static::addGlobalScope('public_polls', function (Builder $builder): void {
             $builder->where('is_private', false);
         });
     }
 
-    public function getUpsCountAttribute()
+    protected function getUpsCountAttribute()
     {
         return Cache::remember("poll_{$this->id}_ups_count", 60, function () {
             return $this->ups()->count();
         });
     }
 
-    public function getDownsCountAttribute()
+    protected function getDownsCountAttribute()
     {
         return Cache::remember("poll_{$this->id}_downs_count", 60, function () {
             return $this->downs()->count();

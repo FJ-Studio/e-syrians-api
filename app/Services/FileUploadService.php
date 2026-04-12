@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\FileUploadServiceContract;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use App\Contracts\FileUploadServiceContract;
 
 class FileUploadService implements FileUploadServiceContract
 {

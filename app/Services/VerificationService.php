@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\VerificationServiceContract;
-use App\Events\VerificationReceived;
-use App\Http\Resources\UserVerificationResource;
 use App\Models\User;
+use DomainException;
+use App\Events\VerificationReceived;
+use App\Contracts\VerificationServiceContract;
+use App\Http\Resources\UserVerificationResource;
 
 class VerificationService implements VerificationServiceContract
 {
@@ -63,7 +64,7 @@ class VerificationService implements VerificationServiceContract
             empty($targetUser->hometown) ||
             empty($targetUser->country)
         ) {
-            throw new \DomainException('target_user_data_not_filled');
+            throw new DomainException('target_user_data_not_filled');
         }
 
         $verification = $targetUser->verifiers()->make([

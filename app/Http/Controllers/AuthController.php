@@ -4,21 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\ApiService;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use App\Http\Resources\UserResource;
 use App\Contracts\AuthServiceContract;
-use App\Http\Requests\User\CredentialsLoginRequest;
+use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UserEmailVerification;
-use App\Http\Requests\User\UserStoreRequest;
-use App\Http\Resources\UserResource;
-use App\Services\ApiService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use App\Http\Requests\User\CredentialsLoginRequest;
 
 class AuthController extends Controller
 {
     public function __construct(
         private readonly AuthServiceContract $authService,
-    ) {}
+    ) {
+    }
 
     public function register(UserStoreRequest $request): JsonResponse
     {
@@ -36,6 +37,15 @@ class AuthController extends Controller
 
         if (! $result) {
             return ApiService::error(401);
+        }
+
+        // If 2FA is required, return the challenge instead of the full login response
+        if (! empty($result['requires_2fa'])) {
+            return ApiService::success([
+                'requires_2fa' => true,
+                'challenge_token' => $result['challenge_token'],
+                'expires_at' => $result['expires_at'],
+            ]);
         }
 
         return ApiService::success([

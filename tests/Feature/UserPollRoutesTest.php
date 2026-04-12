@@ -1,10 +1,10 @@
 <?php
 
 use App\Models\Poll;
-use App\Models\PollOption;
 use App\Models\User;
+use App\Models\PollOption;
 
-beforeEach(function () {
+beforeEach(function (): void {
     test()->user = User::factory()->create([
         'email' => 'userpoll_feat@example.com',
         'verified_at' => now(),
@@ -22,7 +22,7 @@ beforeEach(function () {
 // My Polls
 // ───────────────────────────────────────────────
 
-it('returns polls created by the authenticated user', function () {
+it('returns polls created by the authenticated user', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'My poll?',
         'start_date' => now()->subDays(1),
@@ -42,13 +42,13 @@ it('returns polls created by the authenticated user', function () {
     $response->assertJsonStructure(['data' => ['polls', 'total', 'per_page', 'current_page', 'last_page']]);
 });
 
-it('returns 401 for my-polls without authentication', function () {
+it('returns 401 for my-polls without authentication', function (): void {
     $response = $this->getJson('/users/my-polls');
 
     $response->assertStatus(401);
 });
 
-it('includes soft-deleted polls in my-polls', function () {
+it('includes soft-deleted polls in my-polls', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'Deleted poll?',
         'start_date' => now()->subDays(1),
@@ -73,7 +73,7 @@ it('includes soft-deleted polls in my-polls', function () {
 // My Reactions
 // ───────────────────────────────────────────────
 
-it('returns reactions made by the authenticated user', function () {
+it('returns reactions made by the authenticated user', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'React poll?',
         'start_date' => now()->subDays(1),
@@ -98,7 +98,7 @@ it('returns reactions made by the authenticated user', function () {
     $response->assertJsonStructure(['data' => ['reactions', 'total']]);
 });
 
-it('returns 401 for my-reactions without authentication', function () {
+it('returns 401 for my-reactions without authentication', function (): void {
     $response = $this->getJson('/users/my-reactions');
 
     $response->assertStatus(401);
@@ -108,7 +108,7 @@ it('returns 401 for my-reactions without authentication', function () {
 // My Votes
 // ───────────────────────────────────────────────
 
-it('returns votes grouped by poll for authenticated user', function () {
+it('returns votes grouped by poll for authenticated user', function (): void {
     $poll = Poll::forceCreate([
         'question' => 'Vote poll?',
         'start_date' => now()->subDays(1),
@@ -139,13 +139,13 @@ it('returns votes grouped by poll for authenticated user', function () {
     $response->assertOk();
 });
 
-it('returns 401 for my-votes without authentication', function () {
+it('returns 401 for my-votes without authentication', function (): void {
     $response = $this->getJson('/users/my-votes');
 
     $response->assertStatus(401);
 });
 
-it('returns empty data when user has no votes', function () {
+it('returns empty data when user has no votes', function (): void {
     $response = $this->getJson('/users/my-votes', authHeader(test()->user));
 
     $response->assertOk();
@@ -155,25 +155,25 @@ it('returns empty data when user has no votes', function () {
 // My Verifications & My Verifiers
 // ───────────────────────────────────────────────
 
-it('returns verifications for authenticated user', function () {
+it('returns verifications for authenticated user', function (): void {
     $response = $this->getJson('/users/my-verifications', authHeader(test()->user));
 
     $response->assertOk();
 });
 
-it('returns verifiers for authenticated user', function () {
+it('returns verifiers for authenticated user', function (): void {
     $response = $this->getJson('/users/my-verifiers', authHeader(test()->user));
 
     $response->assertOk();
 });
 
-it('returns 401 for my-verifications without authentication', function () {
+it('returns 401 for my-verifications without authentication', function (): void {
     $response = $this->getJson('/users/my-verifications');
 
     $response->assertStatus(401);
 });
 
-it('returns 401 for my-verifiers without authentication', function () {
+it('returns 401 for my-verifiers without authentication', function (): void {
     $response = $this->getJson('/users/my-verifiers');
 
     $response->assertStatus(401);

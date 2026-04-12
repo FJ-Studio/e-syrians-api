@@ -1,15 +1,15 @@
 <?php
 
-use App\Contracts\VerificationServiceContract;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
+use App\Contracts\VerificationServiceContract;
 
 // ───────────────────────────────────────────────
 // Setup
 // ───────────────────────────────────────────────
 
-beforeEach(function () {
-    test()->verificationService = app(VerificationServiceContract::class);
+beforeEach(function (): void {
+    test()->verificationService = resolve(VerificationServiceContract::class);
 
     $verifiedUser = User::factory()->create([
         'name' => 'Verified',
@@ -37,7 +37,7 @@ beforeEach(function () {
 // Service-level Tests (via contract)
 // ───────────────────────────────────────────────
 
-it('allows a first registrant user to verify a new user', function () {
+it('allows a first registrant user to verify a new user', function (): void {
     $result = test()->verificationService->canUserVerify(test()->verifiedUser, test()->unverifiedUser);
 
     expect($result)->toBeArray();
@@ -45,7 +45,7 @@ it('allows a first registrant user to verify a new user', function () {
     expect($result[1])->toBe('');
 });
 
-it('prevents unverified users from verifying others', function () {
+it('prevents unverified users from verifying others', function (): void {
     $result = test()->verificationService->canUserVerify(test()->unverifiedUser, test()->verifiedUser);
 
     expect($result)->toBeArray();
@@ -53,7 +53,7 @@ it('prevents unverified users from verifying others', function () {
     expect($result[1])->toBe('you_are_not_verified');
 });
 
-it('prevents users from verifying themselves', function () {
+it('prevents users from verifying themselves', function (): void {
     $result = test()->verificationService->canUserVerify(test()->verifiedUser, test()->verifiedUser);
 
     expect($result)->toBeArray();
@@ -65,7 +65,7 @@ it('prevents users from verifying themselves', function () {
 // API Tests
 // ───────────────────────────────────────────────
 
-it('returns an error if target user has incomplete data', function () {
+it('returns an error if target user has incomplete data', function (): void {
     $response = $this->postJson(
         route('users.verify'),
         ['uuid' => test()->unverifiedUser->uuid],
@@ -76,7 +76,7 @@ it('returns an error if target user has incomplete data', function () {
     expect($response['messages'])->toContain('target_user_data_not_filled');
 });
 
-it('allows a user to verify another user once only', function () {
+it('allows a user to verify another user once only', function (): void {
     // $this->withoutExceptionHandling();
     Event::fake();
     // Create a fresh unverified user with complete profile data

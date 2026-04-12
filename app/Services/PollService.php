@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\PollServiceContract;
-use App\Enums\RevealResultsEnum;
-use App\Exceptions\PollReactionException;
-use App\Exceptions\PollVotingException;
 use App\Models\Poll;
-use App\Models\PollOption;
-use App\Models\PollVote;
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\PollVote;
+use App\Models\PollOption;
+use App\Enums\RevealResultsEnum;
 use Illuminate\Support\Facades\DB;
+use App\Contracts\PollServiceContract;
+use App\Exceptions\PollVotingException;
+use App\Exceptions\PollReactionException;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PollService implements PollServiceContract
 {
@@ -37,17 +37,27 @@ class PollService implements PollServiceContract
     public function createPoll(array $data, int $userId): Poll
     {
         return DB::transaction(function () use ($data, $userId) {
-            $audience = [
-                'gender' => $data['gender'] ?? [],
-                'age_range' => [
-                    'min' => $data['min_age'] ?? 13,
-                    'max' => $data['max_age'] ?? 120,
-                ],
-                'country' => $data['country'] ?? [],
-                'religious_affiliation' => $data['religious_affiliation'] ?? [],
-                'hometown' => $data['hometown'] ?? [],
-                'ethnicity' => $data['ethnicity'] ?? [],
-            ];
+            $allowedVoters = $data['allowed_voters'] ?? [];
+
+            // If allowed_voters is specified, skip criteria-based audience
+            if (count($allowedVoters) > 0) {
+                $audience = [
+                    'allowed_voters' => $allowedVoters,
+                ];
+            } else {
+                $audience = [
+                    'gender' => $data['gender'] ?? [],
+                    'age_range' => [
+                        'min' => $data['min_age'] ?? 13,
+                        'max' => $data['max_age'] ?? 120,
+                    ],
+                    'country' => $data['country'] ?? [],
+                    'religious_affiliation' => $data['religious_affiliation'] ?? [],
+                    'hometown' => $data['hometown'] ?? [],
+                    'ethnicity' => $data['ethnicity'] ?? [],
+                    'city_inside_syria' => $data['city_inside_syria'] ?? [],
+                ];
+            }
 
             $poll = new Poll([
                 'question' => $data['question'],
@@ -70,7 +80,7 @@ class PollService implements PollServiceContract
                 'updated_at' => now(),
             ]);
 
-            PollOption::insert($options->toArray());
+            PollOption::insert($options->all());
 
             return $poll;
         });
@@ -129,7 +139,7 @@ class PollService implements PollServiceContract
                 'poll_option_id' => $optionId,
                 'created_at' => now(),
                 'updated_at' => now(),
-            ])->toArray()
+            ])->all()
         );
     }
 
@@ -208,7 +218,7 @@ class PollService implements PollServiceContract
                     ->whereColumn('poll_id', 'polls.id'),
                 'unique_voters_count'
             )
-            ->when((bool) $userId, function ($query) use ($userId) {
+            ->when((bool) $userId, function ($query) use ($userId): void {
                 $query->withExists([
                     'votes as has_voted' => fn ($q) => $q->where('user_id', $userId),
                     'ups as has_upvoted' => fn ($q) => $q->where('user_id', $userId),

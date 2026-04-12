@@ -6,8 +6,8 @@ namespace App\Http\Requests\User;
 
 use App\Enums\CountryEnum;
 use App\Enums\HometownEnum;
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class UpdateUserAddressRequest extends FormRequest
 {

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Contracts\AuthServiceContract;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Hash;
+use App\Contracts\AuthServiceContract;
+use Illuminate\Auth\Events\Registered;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthService implements AuthServiceContract
@@ -53,16 +53,28 @@ class AuthService implements AuthServiceContract
         $hashedIdentifier = StrService::hash($identifier);
 
         $user = User::whereNotNull('email_hashed')->where('email_hashed', $hashedIdentifier)
-            ->orWhere(function ($query) use ($hashedIdentifier) {
+            ->orWhere(function ($query) use ($hashedIdentifier): void {
                 $query->whereNotNull('phone_hashed')->where('phone_hashed', $hashedIdentifier);
             })
-            ->orWhere(function ($query) use ($hashedIdentifier) {
+            ->orWhere(function ($query) use ($hashedIdentifier): void {
                 $query->whereNotNull('national_id_hashed')->where('national_id_hashed', $hashedIdentifier);
             })
             ->first();
 
         if (! $user || ! Hash::check($password, $user->password)) {
             return null;
+        }
+
+        // Check if 2FA is enabled — return a challenge instead of a token
+        if ($user->hasTwoFactorEnabled()) {
+            $challenge = TwoFactorChallengeService::createChallenge($user->id);
+
+            return [
+                'user' => $user,
+                'requires_2fa' => true,
+                'challenge_token' => $challenge['challenge_token'],
+                'expires_at' => $challenge['expires_at'],
+            ];
         }
 
         $plainToken = $user->createToken(date('Y-m-d-H:i:s'))->plainTextToken;
