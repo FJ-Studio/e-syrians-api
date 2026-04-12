@@ -1,6 +1,6 @@
 [![Laravel Forge Site Deployment Status](https://img.shields.io/endpoint?url=https%3A%2F%2Fforge.laravel.com%2Fsite-badges%2Fd55f69ee-1ca4-4496-b87d-a710397231fc%3Fdate%3D1%26commit%3D1&style=plastic)](https://forge.laravel.com/feras-jobeir/e-syrians/2627744)
 
-# e-Syrians API
+# E-SYRIANS API
 
 The backend API for e-Syrians, a community platform and census tool for Syrian citizens. It powers peer-to-peer identity verification, demographic polling with audience targeting, violation reporting, and census data collection.
 
