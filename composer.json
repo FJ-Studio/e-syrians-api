@@ -9,16 +9,17 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
+        "bacon/bacon-qr-code": "^3.0",
         "laravel/framework": "^13.0",
+        "laravel/nightwatch": "^1.26",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
+        "pragmarx/google2fa-laravel": "^3.0",
         "resend/resend-php": "^0.15.0",
         "socialiteproviders/google": "^4.1",
-        "pragmarx/google2fa-laravel": "^2.3",
-        "bacon/bacon-qr-code": "^3.0",
         "spatie/laravel-permission": "^6.10",
         "spatie/laravel-translatable": "^6.9"
     },
@@ -71,6 +72,9 @@
         ],
         "test": [
             "@php vendor/bin/pest --no-coverage"
+        ],
+        "check-env": [
+            "@php scripts/compare-env.php"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
