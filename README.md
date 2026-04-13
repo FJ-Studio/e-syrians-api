@@ -8,7 +8,7 @@ The API serves a Next.js web app and a React Native mobile app.
 
 ## Tech Stack
 
-Built with PHP 8.3+ and Laravel 13, using Sanctum for API authentication, Socialite for Google OAuth, Spatie Permission for role management, and Spatie Translatable for multilingual support (Arabic, English, Kurdish). Files are stored on AWS S3 and emails are sent via Resend.
+Built with PHP 8.4+ and Laravel 13, using Sanctum for API authentication, Socialite for Google OAuth, Spatie Permission for role management, and Spatie Translatable for multilingual support (Arabic, English, Kurdish). Files are stored on AWS S3 and emails are sent via Resend.
 
 ## Features
 
@@ -26,7 +26,7 @@ Built with PHP 8.3+ and Laravel 13, using Sanctum for API authentication, Social
 
 ### Prerequisites
 
-- PHP 8.3+
+- PHP 8.4+
 - Composer
 - SQLite (for local development and testing)
 

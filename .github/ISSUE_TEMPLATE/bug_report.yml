@@ -48,7 +48,7 @@ body:
     id: php-version
     attributes:
       label: PHP Version
-      placeholder: "8.3"
+      placeholder: "8.4"
 
   - type: input
     id: laravel-version

@@ -6,7 +6,7 @@ Thank you for your interest in contributing! This guide will help you get set up
 
 ### Prerequisites
 
-- PHP 8.3+
+- PHP 8.4+
 - Composer
 - Node.js 22+ and npm
 - SQLite (for testing)
