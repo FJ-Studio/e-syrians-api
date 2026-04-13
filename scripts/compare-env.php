@@ -10,7 +10,7 @@ function parseEnvFile($filePath): array
     $env = [];
 
     foreach ($lines as $line) {
-        $line = mb_trim($line);
+        $line = trim($line);
 
         // Skip comments and invalid lines
         if ($line === '' || str_starts_with($line, '#') || ! str_contains($line, '=')) {
@@ -18,15 +18,28 @@ function parseEnvFile($filePath): array
         }
 
         [$key, $value] = explode('=', $line, 2);
-        $env[mb_trim($key)] = mb_trim($value);
+        $env[trim($key)] = trim($value);
     }
 
     return $env;
 }
 
 try {
-    $envExample = parseEnvFile(__DIR__ . '/../.env.example');
-    $env = parseEnvFile(__DIR__ . '/../.env');
+    $envPath = __DIR__ . '/../.env';
+    $envExamplePath = __DIR__ . '/../.env.example';
+
+    if (! file_exists($envPath)) {
+        echo "⏭️  .env not found — skipping consistency check.\n";
+        exit(0);
+    }
+
+    if (! file_exists($envExamplePath)) {
+        echo "⏭️  .env.example not found — skipping consistency check.\n";
+        exit(0);
+    }
+
+    $envExample = parseEnvFile($envExamplePath);
+    $env = parseEnvFile($envPath);
 
     $missingInEnv = array_diff_key($envExample, $env);
     $extraInEnv = array_diff_key($env, $envExample);
