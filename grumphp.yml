@@ -17,6 +17,10 @@ grumphp:
         composer_script:
             script: test
             triggered_by: [php]
+        check_env:
+            script: check-env
+            metadata:
+                task: composer_script
         git_blacklist:
             match_word: true
             keywords:
