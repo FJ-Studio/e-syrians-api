@@ -391,7 +391,6 @@ function createActivePollForFeature(User $user): Poll
         'created_by' => $user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
 

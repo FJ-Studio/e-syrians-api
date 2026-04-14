@@ -13,9 +13,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 interface PollServiceContract
 {
     /**
-     * Get paginated polls with user interaction data
+     * Get paginated polls with user interaction data, filtering audience-only polls.
+     *
+     * @return array{polls: LengthAwarePaginator, audience_only_count: int}
      */
-    public function getPaginatedPolls(int $year, int $month, ?int $userId): LengthAwarePaginator;
+    public function getPaginatedPolls(int $year, int $month, ?int $userId): array;
 
     /**
      * Get a single poll with full details

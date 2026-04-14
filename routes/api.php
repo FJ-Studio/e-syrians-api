@@ -14,6 +14,7 @@ use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\FeatureRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -134,6 +135,37 @@ Route::prefix('violations')->group(function (): void {
         Route::post('/react', [ViolationController::class, 'react'])->middleware(UserIsVerified::class);
         Route::post('/attachments', [ViolationController::class, 'attachments']);
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Feature Request Routes
+|--------------------------------------------------------------------------
+*/
+Route::prefix('feature-requests')->group(function (): void {
+    Route::get('/', [FeatureRequestController::class, 'index']);
+    Route::middleware(['auth:sanctum'])->group(function (): void {
+        Route::post('/', [FeatureRequestController::class, 'store'])
+            ->middleware([UserIsVerified::class, 'throttle:5,10,feature_request_store']);
+        Route::post('/vote', [FeatureRequestController::class, 'vote'])
+            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote']);
+        Route::delete('/vote/{id}', [FeatureRequestController::class, 'unvote'])
+            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote'])
+            ->whereNumber('id');
+
+        // Admin-only moderation + timeline transitions. Gated by Spatie's
+        // role middleware (registered automatically by spatie/laravel-permission).
+        Route::middleware(['role:admin'])->group(function (): void {
+            Route::post('/{id}/timeline', [FeatureRequestController::class, 'timeline'])
+                ->whereNumber('id');
+            Route::delete('/{id}', [FeatureRequestController::class, 'destroy'])
+                ->whereNumber('id');
+            Route::post('/{id}/restore', [FeatureRequestController::class, 'restore'])
+                ->whereNumber('id');
+        });
+    });
+    Route::get('/{featureRequest}', [FeatureRequestController::class, 'show'])
+        ->whereNumber('featureRequest');
 });
 
 /*

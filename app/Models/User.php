@@ -326,13 +326,19 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->votes()->where('poll_id', $pollId)->exists();
     }
 
-    public function isInAudience(array $audience): array
+    public function isInAudience(Poll $poll): array
     {
+        if (! $poll->relationLoaded('audienceRules')) {
+            $poll->load('audienceRules');
+        }
+
+        $rules = $poll->audienceRules;
         $failures = [];
 
         // Allowed voters check — if specified, only match by email or national_id
-        if (isset($audience['allowed_voters']) && count($audience['allowed_voters']) > 0) {
-            $allowed = array_map('strtolower', $audience['allowed_voters']);
+        $allowedVoters = $rules->where('criterion', 'allowed_voter')->pluck('value')->all();
+        if (count($allowedVoters) > 0) {
+            $allowed = array_map('strtolower', $allowedVoters);
             $emailMatch = $this->email && in_array(strtolower($this->email), $allowed);
             $nationalIdMatch = $this->national_id && in_array(strtolower($this->national_id), $allowed);
 
@@ -344,40 +350,35 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         // Age check
-        if (isset($audience['age_range'])) {
+        $ageMin = $rules->where('criterion', 'age_min')->first()?->value;
+        $ageMax = $rules->where('criterion', 'age_max')->first()?->value;
+
+        if ($ageMin !== null || $ageMax !== null) {
             if (! $this->birth_date) {
                 $failures[] = 'birth_date_missing';
             } else {
                 $age = Carbon::parse($this->birth_date)->diffInYears(now());
 
-                if (isset($audience['age_range']['min']) && $audience['age_range']['min'] !== '' && $age < $audience['age_range']['min']) {
+                if ($ageMin !== null && $age < (int) $ageMin) {
                     $failures[] = 'age_min';
                 }
 
-                if (isset($audience['age_range']['max']) && $audience['age_range']['max'] !== '' && $age > $audience['age_range']['max']) {
+                if ($ageMax !== null && $age > (int) $ageMax) {
                     $failures[] = 'age_max';
                 }
             }
         }
 
         // Criteria checks
-        $criteria = ['country', 'religious_affiliation', 'hometown', 'gender', 'ethnicity'];
+        $criteria = ['country', 'religious_affiliation', 'hometown', 'gender', 'ethnicity', 'city_inside_syria'];
         foreach ($criteria as $criterion) {
-            if (isset($audience[$criterion]) && count($audience[$criterion]) > 0) {
+            $values = $rules->where('criterion', $criterion)->pluck('value')->all();
+            if (count($values) > 0) {
                 if (! $this->{$criterion}) {
                     $failures[] = $criterion.'_missing';
-                } elseif (! in_array($this->{$criterion}, $audience[$criterion])) {
+                } elseif (! in_array($this->{$criterion}, $values)) {
                     $failures[] = $criterion;
                 }
-            }
-        }
-
-        // City inside Syria check (uses same province values as hometown)
-        if (isset($audience['city_inside_syria']) && count($audience['city_inside_syria']) > 0) {
-            if (! $this->city_inside_syria) {
-                $failures[] = 'city_inside_syria_missing';
-            } elseif (! in_array($this->city_inside_syria, $audience['city_inside_syria'])) {
-                $failures[] = 'city_inside_syria';
             }
         }
 

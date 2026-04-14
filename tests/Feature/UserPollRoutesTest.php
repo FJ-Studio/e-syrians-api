@@ -32,7 +32,6 @@ it('returns polls created by the authenticated user', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
 
@@ -58,7 +57,6 @@ it('includes soft-deleted polls in my-polls', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
     $poll->delete();
@@ -83,7 +81,6 @@ it('returns reactions made by the authenticated user', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
 
@@ -118,7 +115,6 @@ it('returns votes grouped by poll for authenticated user', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
 

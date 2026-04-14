@@ -60,6 +60,7 @@ class StorePollRequest extends FormRequest
             'audience_can_add_options' => ['required', 'boolean'],
             'reveal_results' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, RevealResultsEnum::cases()))],
             'voters_are_visible' => ['required', 'boolean'],
+            'audience_only' => ['nullable', 'boolean'],
             // options
             'options' => ['required', 'array', 'min:2', 'max:100'],
             'options.*' => ['required', 'string', 'max:255'],

@@ -19,9 +19,12 @@ class PollResource extends JsonResource
     {
         $user = auth('sanctum')->check() ? auth('sanctum')->user() : null;
         $userId = $user?->id;
+        $isCreator = $userId !== null && $userId === $this->created_by;
 
         $pollService = resolve(PollServiceContract::class);
         $revealResults = $pollService->shouldRevealResults($this->resource, $user);
+
+        [$isInAudience, $audienceFailures] = $this->resource->audienceCheckFor($user);
 
         return [
             'id' => $this->id,
@@ -30,7 +33,12 @@ class PollResource extends JsonResource
             'end_date' => $this->end_date->toISOString(),
             'max_selections' => $this->max_selections,
             'audience_can_add_options' => $this->audience_can_add_options,
-            'audience' => $this->audience,
+            'is_in_audience' => $isInAudience,
+            'audience_failures' => $audienceFailures,
+            // Full audience details are only exposed to the poll's creator
+            // (needed to pre-fill the dashboard edit form). Non-creators don't
+            // need the criteria themselves — only whether they qualify.
+            'audience' => $this->when($isCreator, fn () => $this->resource->audience),
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn () => $this->deleted_at->toISOString()),
@@ -38,6 +46,7 @@ class PollResource extends JsonResource
             'ups_count' => $this->ups_count,
             'downs_count' => $this->downs_count,
             'voters_are_visible' => $this->voters_are_visible,
+            'audience_only' => $this->audience_only,
             'unique_voters_count' => $this->unique_voters_count ?? 0,
 
             'user' => $this->relationLoaded('user')

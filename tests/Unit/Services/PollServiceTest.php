@@ -3,6 +3,7 @@
 use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollOption;
+use App\Models\PollAudienceRule;
 use App\Services\PollService;
 use App\Exceptions\PollVotingException;
 use App\Exceptions\PollReactionException;
@@ -61,8 +62,9 @@ it('sets audience correctly', function (): void {
         'max_age' => 65,
     ], test()->user->id);
 
+    $poll->load('audienceRules');
     expect($poll->audience['gender'])->toBe(['m']);
-    expect($poll->audience['country'])->toBe(['TR', 'US']);
+    expect($poll->audience['country'])->toContain('TR')->toContain('US');
     expect($poll->audience['age_range']['min'])->toBe(18);
     expect($poll->audience['age_range']['max'])->toBe(65);
 });
@@ -96,7 +98,6 @@ it('prevents voting on a poll that has not started yet', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
     $option = PollOption::forceCreate([
@@ -119,7 +120,6 @@ it('prevents voting on an expired poll', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
     $option = PollOption::forceCreate([
@@ -197,7 +197,6 @@ it('prevents reacting to an expired poll', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
 
@@ -246,7 +245,6 @@ it('reveals results after expiration', function (): void {
         'created_by' => test()->user->id,
         'reveal_results' => 'after-expiration',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
 
@@ -290,8 +288,9 @@ it('stores allowed_voters in audience when provided', function (): void {
         'allowed_voters' => ['user1@example.com', '12345678'],
     ], test()->user->id);
 
+    $poll->load('audienceRules');
     expect($poll->audience)->toHaveKey('allowed_voters');
-    expect($poll->audience['allowed_voters'])->toBe(['user1@example.com', '12345678']);
+    expect($poll->audience['allowed_voters'])->toContain('user1@example.com')->toContain('12345678');
     expect($poll->audience)->not->toHaveKey('gender');
     expect($poll->audience)->not->toHaveKey('country');
 });
@@ -311,6 +310,7 @@ it('stores criteria-based audience when allowed_voters is empty', function (): v
         'country' => ['SY'],
     ], test()->user->id);
 
+    $poll->load('audienceRules');
     expect($poll->audience)->not->toHaveKey('allowed_voters');
     expect($poll->audience['gender'])->toBe(['m']);
     expect($poll->audience['country'])->toBe(['SY']);
@@ -329,6 +329,7 @@ it('stores criteria-based audience when allowed_voters is not provided', functio
         'gender' => ['f'],
     ], test()->user->id);
 
+    $poll->load('audienceRules');
     expect($poll->audience)->not->toHaveKey('allowed_voters');
     expect($poll->audience['gender'])->toBe(['f']);
 });
@@ -349,6 +350,7 @@ it('ignores criteria fields when allowed_voters is provided', function (): void 
         'hometown' => ['damascus'],
     ], test()->user->id);
 
+    $poll->load('audienceRules');
     expect($poll->audience)->toHaveKey('allowed_voters');
     expect($poll->audience)->not->toHaveKey('gender');
     expect($poll->audience)->not->toHaveKey('country');
@@ -373,7 +375,8 @@ it('stores city_inside_syria in audience', function (): void {
         'city_inside_syria' => ['daraa', 'damascus'],
     ], test()->user->id);
 
-    expect($poll->audience['city_inside_syria'])->toBe(['daraa', 'damascus']);
+    $poll->load('audienceRules');
+    expect($poll->audience['city_inside_syria'])->toContain('daraa')->toContain('damascus');
     expect($poll->audience['country'])->toBe(['SY']);
 });
 
@@ -389,6 +392,7 @@ it('stores empty city_inside_syria when not provided', function (): void {
         'options' => ['Yes', 'No'],
     ], test()->user->id);
 
+    $poll->load('audienceRules');
     expect($poll->audience['city_inside_syria'])->toBe([]);
 });
 
@@ -407,8 +411,8 @@ function createActivePoll(User $user, int $maxSelections = 2, string $revealResu
         'created_by' => $user->id,
         'reveal_results' => $revealResults,
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
+        'audience_only' => false,
     ]);
 
     PollOption::insert([

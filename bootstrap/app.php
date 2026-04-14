@@ -4,6 +4,9 @@ use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\SetAppLocalization;
+use Spatie\Permission\Middleware\RoleMiddleware;
+use Spatie\Permission\Middleware\PermissionMiddleware;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->append(SetAppLocalization::class);
+
+        // Spatie Permission v6 no longer auto-registers these aliases in
+        // Laravel 11's bootstrap structure — register them explicitly so
+        // `role:admin` / `permission:…` can be used in route middleware.
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (AuthenticationException $e, Request $request) {

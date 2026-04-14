@@ -18,6 +18,7 @@ use App\Services\VerificationService;
 use Illuminate\Support\Facades\Event;
 use App\Contracts\AuthServiceContract;
 use App\Contracts\PollServiceContract;
+use App\Services\FeatureRequestService;
 use Illuminate\Support\Facades\Config;
 use App\Contracts\StatsServiceContract;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +28,7 @@ use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
 use App\Contracts\FileUploadServiceContract;
 use App\Contracts\VerificationServiceContract;
+use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Auth\Notifications\ResetPassword;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public array $bindings = [
         AuthServiceContract::class => AuthService::class,
+        FeatureRequestServiceContract::class => FeatureRequestService::class,
         FileUploadServiceContract::class => FileUploadService::class,
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,
