@@ -7,14 +7,14 @@ use App\Models\FeatureRequest;
 
 beforeEach(function (): void {
     test()->verified = User::factory()->create([
-        'email' => 'verified_feature@example.com',
+        'email' => 'verified_feature@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
     ]);
     test()->verified->assignRole('citizen');
 
     test()->unverified = User::factory()->create([
-        'email' => 'unverified_feature@example.com',
+        'email' => 'unverified_feature@gmail.com',
         'verified_at' => null,
     ]);
 });

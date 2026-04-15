@@ -32,11 +32,11 @@ Route::get('/ping', function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('users')->group(function (): void {
-    Route::middleware(['guest', 'throttle:6,1,register'])->post('/register', [AuthController::class, 'register'])->name('users.register');
+    Route::middleware(['guest', 'throttle:6,1,register', 'recaptcha'])->post('/register', [AuthController::class, 'register'])->name('users.register');
     Route::middleware(['guest', 'throttle:6,1,login'])->post('/login', [AuthController::class, 'login']);
     Route::middleware(['guest', 'throttle:6,1,social_login'])->post('/login/social', [AuthController::class, 'socialLogin']);
-    Route::middleware(['guest', 'throttle:2,1,forgot_password'])->post('/forgot-password', [PasswordController::class, 'forgot']);
-    Route::middleware(['guest', 'throttle:2,1,reset_password'])->post('/reset-password', [PasswordController::class, 'reset']);
+    Route::middleware(['guest', 'throttle:2,1,forgot_password', 'recaptcha'])->post('/forgot-password', [PasswordController::class, 'forgot']);
+    Route::middleware(['guest', 'throttle:2,1,reset_password', 'recaptcha'])->post('/reset-password', [PasswordController::class, 'reset']);
 
     // 2FA verification during login (no auth required, uses challenge token)
     Route::middleware(['guest', 'throttle:6,1'])->post('/2fa/verify', [TwoFactorController::class, 'verify']);
@@ -63,14 +63,14 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Password management
-    Route::middleware(['throttle:1,1,change-password'])->post('/change-password', [PasswordController::class, 'change']);
+    Route::middleware(['throttle:1,1,change-password', 'recaptcha'])->post('/change-password', [PasswordController::class, 'change']);
 
     // Email & verification
-    Route::middleware(['throttle:1,1,change-email'])->post('/change-email', [ProfileController::class, 'changeEmail']);
-    Route::middleware(['throttle:1,1,get_verification_email'])->post('/get-email-verification-link', [AuthController::class, 'getEmailVerificationLink']);
+    Route::middleware(['throttle:1,1,change-email', 'recaptcha'])->post('/change-email', [ProfileController::class, 'changeEmail']);
+    Route::middleware(['throttle:1,1,get_verification_email', 'recaptcha'])->post('/get-email-verification-link', [AuthController::class, 'getEmailVerificationLink']);
 
     // Notification preferences
-    Route::middleware(['throttle:1,1,change-notifications'])->post('/change-notifications', [ProfileController::class, 'changeNotifications']);
+    Route::middleware(['throttle:1,1,change-notifications', 'recaptcha'])->post('/change-notifications', [ProfileController::class, 'changeNotifications']);
 
     // Two-Factor Authentication
     Route::prefix('2fa')->group(function (): void {
@@ -85,7 +85,7 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
     Route::post('/recovery-codes/regenerate', [RecoveryCodeController::class, 'regenerate']);
 
     // User verification
-    Route::post('/verify', [VerificationController::class, 'verify'])->middleware(CanVerify::class)->name('users.verify');
+    Route::post('/verify', [VerificationController::class, 'verify'])->middleware([CanVerify::class, 'recaptcha'])->name('users.verify');
 
     // User's polls, votes, reactions
     Route::get('/my-polls', [UserPollController::class, 'myPolls']);
@@ -96,13 +96,16 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
     Route::get('/my-verifications', [VerificationController::class, 'myVerifications']);
     Route::get('/my-verifiers', [VerificationController::class, 'myVerifiers']);
 
-    // Profile updates
-    Route::post('/update/basic-info', [ProfileController::class, 'updateBasicInfo'])->name('users.update.basic-info');
-    Route::post('/update/social', [ProfileController::class, 'updateSocialLinks'])->name('users.update.social');
-    Route::post('/update/avatar', [ProfileController::class, 'updateAvatar'])->name('users.update.avatar');
-    Route::post('/update/address', [ProfileController::class, 'updateAddress'])->name('users.update.address');
+    // Profile updates — all protected by reCAPTCHA except language (silent
+    // preference toggle with no user-visible form).
+    Route::middleware(['recaptcha'])->group(function (): void {
+        Route::post('/update/basic-info', [ProfileController::class, 'updateBasicInfo'])->name('users.update.basic-info');
+        Route::post('/update/social', [ProfileController::class, 'updateSocialLinks'])->name('users.update.social');
+        Route::post('/update/avatar', [ProfileController::class, 'updateAvatar'])->name('users.update.avatar');
+        Route::post('/update/address', [ProfileController::class, 'updateAddress'])->name('users.update.address');
+        Route::post('/update/census', [ProfileController::class, 'updateCensus'])->name('users.update.census');
+    });
     Route::post('/update/language', [ProfileController::class, 'updateLanguage'])->middleware(['throttle:4,1,change-language']);
-    Route::post('/update/census', [ProfileController::class, 'updateCensus'])->name('users.update.census');
 });
 
 /*
@@ -114,10 +117,10 @@ Route::prefix('polls')->group(function (): void {
     Route::get('/', [PollController::class, 'index']);
     Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::get('/option-voters', [PollController::class, 'optionVoters']);
-        Route::post('/', [PollController::class, 'store']);
-        Route::post('/status/{poll}', [PollController::class, 'status']);
-        Route::post('/vote', [PollController::class, 'vote'])->middleware(UserIsVerified::class);
-        Route::post('/react', [PollController::class, 'react'])->middleware(UserIsVerified::class);
+        Route::post('/', [PollController::class, 'store'])->middleware('recaptcha');
+        Route::post('/status/{poll}', [PollController::class, 'status'])->middleware('recaptcha');
+        Route::post('/vote', [PollController::class, 'vote'])->middleware([UserIsVerified::class, 'recaptcha']);
+        Route::post('/react', [PollController::class, 'react'])->middleware([UserIsVerified::class, 'recaptcha']);
     });
     Route::get('/{poll}', [PollController::class, 'show']);
 });
@@ -146,11 +149,11 @@ Route::prefix('feature-requests')->group(function (): void {
     Route::get('/', [FeatureRequestController::class, 'index']);
     Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::post('/', [FeatureRequestController::class, 'store'])
-            ->middleware([UserIsVerified::class, 'throttle:5,10,feature_request_store']);
+            ->middleware([UserIsVerified::class, 'throttle:5,10,feature_request_store', 'recaptcha']);
         Route::post('/vote', [FeatureRequestController::class, 'vote'])
-            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote']);
+            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote', 'recaptcha']);
         Route::delete('/vote/{id}', [FeatureRequestController::class, 'unvote'])
-            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote'])
+            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote', 'recaptcha'])
             ->whereNumber('id');
 
         // Admin-only moderation + timeline transitions. Gated by Spatie's

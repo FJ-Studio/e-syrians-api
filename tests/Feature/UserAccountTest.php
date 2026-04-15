@@ -14,7 +14,7 @@ beforeEach(function (): void {
     $user = User::factory()->create([
         'name' => 'Unverified',
         'surname' => 'User',
-        'email' => 'unverified_user@example.com',
+        'email' => 'unverified_user@gmail.com',
         'uuid' => '6e0544ad-cd47-480f-9e33-d4fe047b6ab4',
         'verified_at' => null,
         'verification_reason' => null,
@@ -135,7 +135,6 @@ it('User updates his profile correctly', function (): void {
         'ethnicity' => 'assyrian',
         'hometown' => 'homs',
     ]);
-
 });
 
 it('User updates his profile for limited times', function (): void {
@@ -220,7 +219,7 @@ it('updates the user avatar and stores it in S3', function (): void {
         ['avatar' => $file]
     );
 
-    $fileName = 'avatars/'.test()->user->uuid.'.'.$file->getClientOriginalExtension();
+    $fileName = 'avatars/' . test()->user->uuid . '.' . $file->getClientOriginalExtension();
 
     $response->assertOk();
     $response->assertJsonPath('data.url', Storage::disk('s3')->url($fileName));

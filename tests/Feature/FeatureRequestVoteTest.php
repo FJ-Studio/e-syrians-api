@@ -8,21 +8,21 @@ use App\Models\FeatureRequestVote;
 
 beforeEach(function (): void {
     test()->verified = User::factory()->create([
-        'email' => 'verified_vote@example.com',
+        'email' => 'verified_vote@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
     ]);
     test()->verified->assignRole('citizen');
 
     test()->otherVerified = User::factory()->create([
-        'email' => 'verified_vote_other@example.com',
+        'email' => 'verified_vote_other@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
     ]);
     test()->otherVerified->assignRole('citizen');
 
     test()->unverified = User::factory()->create([
-        'email' => 'unverified_vote@example.com',
+        'email' => 'unverified_vote@gmail.com',
         'verified_at' => null,
     ]);
 
@@ -114,7 +114,7 @@ it('counts ups_count = 1 on show after a single upvote', function (): void {
         'vote' => 'up',
     ], authHeader(test()->verified));
 
-    $response = $this->getJson('/feature-requests/'.test()->feature->id);
+    $response = $this->getJson('/feature-requests/' . test()->feature->id);
 
     $response->assertOk();
     $response->assertJsonPath('data.ups_count', 1);
@@ -190,7 +190,7 @@ it('independently tracks multiple users voting on the same feature', function ()
 
     app('auth')->forgetGuards();
 
-    $response = $this->getJson('/feature-requests/'.test()->feature->id);
+    $response = $this->getJson('/feature-requests/' . test()->feature->id);
     $response->assertJsonPath('data.ups_count', 1);
     $response->assertJsonPath('data.downs_count', 1);
     $response->assertJsonPath('data.score', 0);
@@ -208,7 +208,7 @@ it('reflects has_upvoted/has_downvoted for the authenticated caller', function (
     ]);
 
     $asVoter = $this->getJson(
-        '/feature-requests/'.test()->feature->id,
+        '/feature-requests/' . test()->feature->id,
         authHeader(test()->verified),
     );
     $asVoter->assertJsonPath('data.has_upvoted', true);
@@ -221,7 +221,7 @@ it('reflects has_upvoted/has_downvoted for the authenticated caller', function (
     app('auth')->forgetGuards();
 
     $asOther = $this->getJson(
-        '/feature-requests/'.test()->feature->id,
+        '/feature-requests/' . test()->feature->id,
         authHeader(test()->otherVerified),
     );
     $asOther->assertJsonPath('data.has_upvoted', false);
@@ -230,7 +230,7 @@ it('reflects has_upvoted/has_downvoted for the authenticated caller', function (
     app('auth')->forgetGuards();
 
     // Guests should see false/false regardless of actual votes.
-    $asGuest = $this->getJson('/feature-requests/'.test()->feature->id);
+    $asGuest = $this->getJson('/feature-requests/' . test()->feature->id);
     $asGuest->assertJsonPath('data.has_upvoted', false);
     $asGuest->assertJsonPath('data.has_downvoted', false);
 });
@@ -247,7 +247,7 @@ it('removes the current user vote via DELETE', function (): void {
     ]);
 
     $response = $this->deleteJson(
-        '/feature-requests/vote/'.test()->feature->id,
+        '/feature-requests/vote/' . test()->feature->id,
         [],
         authHeader(test()->verified),
     );
@@ -258,7 +258,7 @@ it('removes the current user vote via DELETE', function (): void {
 
 it('DELETE /vote is idempotent when there is no existing vote', function (): void {
     $response = $this->deleteJson(
-        '/feature-requests/vote/'.test()->feature->id,
+        '/feature-requests/vote/' . test()->feature->id,
         [],
         authHeader(test()->verified),
     );
@@ -267,7 +267,7 @@ it('DELETE /vote is idempotent when there is no existing vote', function (): voi
 });
 
 it('rejects unauthenticated DELETE /vote with 401', function (): void {
-    $response = $this->deleteJson('/feature-requests/vote/'.test()->feature->id);
+    $response = $this->deleteJson('/feature-requests/vote/' . test()->feature->id);
 
     $response->assertStatus(401);
 });

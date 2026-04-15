@@ -7,14 +7,14 @@ use App\Models\FeatureRequest;
 
 beforeEach(function (): void {
     test()->admin = User::factory()->create([
-        'email' => 'admin_feature@example.com',
+        'email' => 'admin_feature@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
     ]);
     test()->admin->assignRole('admin');
 
     test()->verified = User::factory()->create([
-        'email' => 'verified_admin_scenario@example.com',
+        'email' => 'verified_admin_scenario@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
     ]);
@@ -32,7 +32,7 @@ beforeEach(function (): void {
 // ───────────────────────────────────────────────
 
 it('rejects guest setting a timeline with 401', function (): void {
-    $response = $this->postJson('/feature-requests/'.test()->feature->id.'/timeline', [
+    $response = $this->postJson('/feature-requests/' . test()->feature->id . '/timeline', [
         'coded_at' => now()->toISOString(),
     ]);
 
@@ -41,7 +41,7 @@ it('rejects guest setting a timeline with 401', function (): void {
 
 it('rejects non-admin setting a timeline with 403', function (): void {
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/timeline',
+        '/feature-requests/' . test()->feature->id . '/timeline',
         ['coded_at' => now()->toISOString()],
         authHeader(test()->verified),
     );
@@ -59,7 +59,7 @@ it('allows admin to set all three timeline stamps atomically', function (): void
     $deployed = now()->subDay()->startOfSecond();
 
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/timeline',
+        '/feature-requests/' . test()->feature->id . '/timeline',
         [
             'coded_at' => $coded->toISOString(),
             'tested_at' => $tested->toISOString(),
@@ -79,7 +79,7 @@ it('accepts a partial timeline update', function (): void {
     $coded = now()->subDay()->startOfSecond();
 
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/timeline',
+        '/feature-requests/' . test()->feature->id . '/timeline',
         ['coded_at' => $coded->toISOString()],
         authHeader(test()->admin),
     );
@@ -99,7 +99,7 @@ it('clears a previously-set stamp when null is passed', function (): void {
     ])->save();
 
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/timeline',
+        '/feature-requests/' . test()->feature->id . '/timeline',
         ['tested_at' => null],
         authHeader(test()->admin),
     );
@@ -117,7 +117,7 @@ it('omitted keys leave existing stamps untouched', function (): void {
     // Submit only deployed_at; coded_at should survive untouched.
     $deployed = now()->startOfSecond();
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/timeline',
+        '/feature-requests/' . test()->feature->id . '/timeline',
         ['deployed_at' => $deployed->toISOString()],
         authHeader(test()->admin),
     );
@@ -130,7 +130,7 @@ it('omitted keys leave existing stamps untouched', function (): void {
 
 it('rejects timeline update with non-date value', function (): void {
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/timeline',
+        '/feature-requests/' . test()->feature->id . '/timeline',
         ['coded_at' => 'not-a-date'],
         authHeader(test()->admin),
     );
@@ -144,7 +144,7 @@ it('returns 404 when setting timeline on a soft-deleted feature', function (): v
     test()->feature->delete();
 
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/timeline',
+        '/feature-requests/' . test()->feature->id . '/timeline',
         ['coded_at' => now()->toISOString()],
         authHeader(test()->admin),
     );
@@ -157,7 +157,7 @@ it('returns 404 when setting timeline on a soft-deleted feature', function (): v
 // ───────────────────────────────────────────────
 
 it('rejects guest destroy with 401', function (): void {
-    $response = $this->deleteJson('/feature-requests/'.test()->feature->id, [
+    $response = $this->deleteJson('/feature-requests/' . test()->feature->id, [
         'deletion_reason' => 'obvious spam',
     ]);
 
@@ -166,7 +166,7 @@ it('rejects guest destroy with 401', function (): void {
 
 it('rejects non-admin destroy with 403', function (): void {
     $response = $this->deleteJson(
-        '/feature-requests/'.test()->feature->id,
+        '/feature-requests/' . test()->feature->id,
         ['deletion_reason' => 'obvious spam'],
         authHeader(test()->verified),
     );
@@ -176,7 +176,7 @@ it('rejects non-admin destroy with 403', function (): void {
 
 it('requires a deletion_reason', function (): void {
     $response = $this->deleteJson(
-        '/feature-requests/'.test()->feature->id,
+        '/feature-requests/' . test()->feature->id,
         [],
         authHeader(test()->admin),
     );
@@ -187,7 +187,7 @@ it('requires a deletion_reason', function (): void {
 
 it('allows admin to soft-delete with a reason', function (): void {
     $response = $this->deleteJson(
-        '/feature-requests/'.test()->feature->id,
+        '/feature-requests/' . test()->feature->id,
         ['deletion_reason' => 'off-topic'],
         authHeader(test()->admin),
     );
@@ -211,7 +211,7 @@ it('returns 404 when showing a soft-deleted feature', function (): void {
     test()->feature->forceFill(['deletion_reason' => 'off-topic'])->save();
     test()->feature->delete();
 
-    $response = $this->getJson('/feature-requests/'.test()->feature->id);
+    $response = $this->getJson('/feature-requests/' . test()->feature->id);
 
     $response->assertStatus(404);
 });
@@ -221,14 +221,14 @@ it('returns 404 when showing a soft-deleted feature', function (): void {
 // ───────────────────────────────────────────────
 
 it('rejects guest restore with 401', function (): void {
-    $response = $this->postJson('/feature-requests/'.test()->feature->id.'/restore');
+    $response = $this->postJson('/feature-requests/' . test()->feature->id . '/restore');
 
     $response->assertStatus(401);
 });
 
 it('rejects non-admin restore with 403', function (): void {
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/restore',
+        '/feature-requests/' . test()->feature->id . '/restore',
         [],
         authHeader(test()->verified),
     );
@@ -241,7 +241,7 @@ it('allows admin to restore a soft-deleted feature and clear the reason', functi
     test()->feature->delete();
 
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/restore',
+        '/feature-requests/' . test()->feature->id . '/restore',
         [],
         authHeader(test()->admin),
     );
@@ -261,7 +261,7 @@ it('allows admin to restore a soft-deleted feature and clear the reason', functi
 
 it('restore on a non-deleted feature is a no-op', function (): void {
     $response = $this->postJson(
-        '/feature-requests/'.test()->feature->id.'/restore',
+        '/feature-requests/' . test()->feature->id . '/restore',
         [],
         authHeader(test()->admin),
     );

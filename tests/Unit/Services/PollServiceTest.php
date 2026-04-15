@@ -12,7 +12,7 @@ beforeEach(function (): void {
     test()->pollService = resolve(PollService::class);
 
     test()->user = User::factory()->create([
-        'email' => 'poll_test@example.com',
+        'email' => 'poll_test@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',
@@ -106,7 +106,7 @@ it('prevents voting on a poll that has not started yet', function (): void {
         'created_by' => test()->user->id,
     ]);
 
-    expect(fn () => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
+    expect(fn() => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
         ->toThrow(PollVotingException::class, 'poll_has_not_started_yet');
 });
 
@@ -128,7 +128,7 @@ it('prevents voting on an expired poll', function (): void {
         'created_by' => test()->user->id,
     ]);
 
-    expect(fn () => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
+    expect(fn() => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
         ->toThrow(PollVotingException::class, 'poll_has_expired');
 });
 
@@ -138,7 +138,7 @@ it('prevents double voting', function (): void {
 
     test()->pollService->vote($poll->id, [$optionId], test()->user->id);
 
-    expect(fn () => test()->pollService->vote($poll->id, [$optionId], test()->user->id))
+    expect(fn() => test()->pollService->vote($poll->id, [$optionId], test()->user->id))
         ->toThrow(PollVotingException::class, 'you_have_already_voted');
 });
 
@@ -146,14 +146,14 @@ it('prevents selecting more options than max_selections', function (): void {
     $poll = createActivePoll(test()->user, maxSelections: 1);
     $optionIds = $poll->options->pluck('id')->toArray();
 
-    expect(fn () => test()->pollService->vote($poll->id, $optionIds, test()->user->id))
+    expect(fn() => test()->pollService->vote($poll->id, $optionIds, test()->user->id))
         ->toThrow(PollVotingException::class, 'user_has_reached_the_max_selections');
 });
 
 it('rejects invalid option IDs', function (): void {
     $poll = createActivePoll(test()->user);
 
-    expect(fn () => test()->pollService->vote($poll->id, [99999], test()->user->id))
+    expect(fn() => test()->pollService->vote($poll->id, [99999], test()->user->id))
         ->toThrow(PollVotingException::class, 'invalid_options');
 });
 
@@ -200,7 +200,7 @@ it('prevents reacting to an expired poll', function (): void {
         'is_private' => false,
     ]);
 
-    expect(fn () => test()->pollService->react($poll->id, 'up', test()->user->id))
+    expect(fn() => test()->pollService->react($poll->id, 'up', test()->user->id))
         ->toThrow(PollReactionException::class, 'poll_has_expired');
 });
 
@@ -285,12 +285,12 @@ it('stores allowed_voters in audience when provided', function (): void {
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'allowed_voters' => ['user1@example.com', '12345678'],
+        'allowed_voters' => ['user1@gmail.com', '12345678'],
     ], test()->user->id);
 
     $poll->load('audienceRules');
     expect($poll->audience)->toHaveKey('allowed_voters');
-    expect($poll->audience['allowed_voters'])->toContain('user1@example.com')->toContain('12345678');
+    expect($poll->audience['allowed_voters'])->toContain('user1@gmail.com')->toContain('12345678');
     expect($poll->audience)->not->toHaveKey('gender');
     expect($poll->audience)->not->toHaveKey('country');
 });
@@ -344,7 +344,7 @@ it('ignores criteria fields when allowed_voters is provided', function (): void 
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'allowed_voters' => ['specific@example.com'],
+        'allowed_voters' => ['specific@gmail.com'],
         'gender' => ['m'],
         'country' => ['SY'],
         'hometown' => ['damascus'],

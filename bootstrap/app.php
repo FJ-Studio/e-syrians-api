@@ -3,6 +3,7 @@
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Application;
+use App\Http\Middleware\Recaptcha;
 use App\Http\Middleware\SetAppLocalization;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'recaptcha' => Recaptcha::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

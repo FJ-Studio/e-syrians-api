@@ -41,7 +41,7 @@ it('rejects change when current password is wrong', function (): void {
 // ───────────────────────────────────────────────
 
 it('returns success even for non-existent email (privacy)', function (): void {
-    $result = test()->passwordService->sendResetLink('nobody@example.com');
+    $result = test()->passwordService->sendResetLink('nobody@gmail.com');
 
     expect($result['success'])->toBeTrue();
     expect($result['message'])->toBe('reset_link_sent');

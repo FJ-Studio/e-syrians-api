@@ -6,7 +6,7 @@ use App\Models\PollAudienceRule;
 
 beforeEach(function (): void {
     test()->user = User::factory()->create([
-        'email' => 'audience_test@example.com',
+        'email' => 'audience_test@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',
@@ -116,8 +116,8 @@ it('fails city_inside_syria alongside other criteria when city does not match', 
 
 it('passes when user email is in allowed_voters', function (): void {
     $poll = createPollWithRules([
-        ['criterion' => 'allowed_voter', 'value' => 'audience_test@example.com'],
-        ['criterion' => 'allowed_voter', 'value' => 'other@example.com'],
+        ['criterion' => 'allowed_voter', 'value' => 'audience_test@gmail.com'],
+        ['criterion' => 'allowed_voter', 'value' => 'other@gmail.com'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
@@ -140,7 +140,7 @@ it('passes when user national_id is in allowed_voters', function (): void {
 
 it('passes with case-insensitive email match in allowed_voters', function (): void {
     $poll = createPollWithRules([
-        ['criterion' => 'allowed_voter', 'value' => 'AUDIENCE_TEST@EXAMPLE.COM'],
+        ['criterion' => 'allowed_voter', 'value' => 'AUDIENCE_TEST@gmail.com'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
@@ -151,7 +151,7 @@ it('passes with case-insensitive email match in allowed_voters', function (): vo
 
 it('fails when user is not in allowed_voters', function (): void {
     $poll = createPollWithRules([
-        ['criterion' => 'allowed_voter', 'value' => 'unknown@example.com'],
+        ['criterion' => 'allowed_voter', 'value' => 'unknown@gmail.com'],
         ['criterion' => 'allowed_voter', 'value' => '99999999'],
     ]);
 
@@ -165,7 +165,7 @@ it('skips all other criteria when allowed_voters is specified', function (): voi
     // User is male, but poll has gender=f and country=US rules too.
     // However, allowed_voter rules are present and user's email matches — should pass.
     $poll = createPollWithRules([
-        ['criterion' => 'allowed_voter', 'value' => 'audience_test@example.com'],
+        ['criterion' => 'allowed_voter', 'value' => 'audience_test@gmail.com'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
