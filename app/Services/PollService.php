@@ -250,11 +250,16 @@ class PollService implements PollServiceContract
             ];
 
             foreach ($arrayCriteria as $criterion) {
-                foreach ($data[$criterion] ?? [] as $value) {
+                $values = array_values(array_unique(array_filter(
+                    array_map('strval', $data[$criterion] ?? []),
+                    fn (string $v): bool => $v !== '',
+                )));
+
+                foreach ($values as $value) {
                     $rules[] = [
                         'poll_id' => $poll->id,
                         'criterion' => $criterion,
-                        'value' => (string) $value,
+                        'value' => $value,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
