@@ -231,11 +231,16 @@ class PollService implements PollServiceContract
         $allowedVoters = $data['allowed_voters'] ?? [];
 
         if (count($allowedVoters) > 0) {
+            $allowedVoters = array_values(array_unique(array_filter(
+                array_map('strval', $allowedVoters),
+                fn (string $v): bool => $v !== '',
+            )));
+
             foreach ($allowedVoters as $voter) {
                 $rules[] = [
                     'poll_id' => $poll->id,
                     'criterion' => 'allowed_voter',
-                    'value' => (string) $voter,
+                    'value' => $voter,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
@@ -251,11 +256,16 @@ class PollService implements PollServiceContract
             ];
 
             foreach ($arrayCriteria as $criterion) {
-                foreach ($data[$criterion] ?? [] as $value) {
+                $values = array_values(array_unique(array_filter(
+                    array_map('strval', $data[$criterion] ?? []),
+                    fn (string $v): bool => $v !== '',
+                )));
+
+                foreach ($values as $value) {
                     $rules[] = [
                         'poll_id' => $poll->id,
                         'criterion' => $criterion,
-                        'value' => (string) $value,
+                        'value' => $value,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];

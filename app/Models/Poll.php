@@ -267,7 +267,9 @@ class Poll extends Model
                         });
                     }
 
-                    // Handle age_min
+                    // Handle age rules.
+                    // When the user has no birth_date we cannot verify age,
+                    // so exclude polls that define any age criterion.
                     if ($userAge !== null) {
                         $q->where(function (Builder $q) use ($userAge): void {
                             $q->whereDoesntHave('audienceRules', fn ($r) => $r->where('criterion', 'age_min'))
@@ -280,6 +282,8 @@ class Poll extends Model
                                 ->orWhereDoesntHave('audienceRules', fn ($r) => $r->where('criterion', 'age_max')
                                     ->where(DB::raw('CAST(value AS UNSIGNED)'), '<', $userAge));
                         });
+                    } else {
+                        $q->whereDoesntHave('audienceRules', fn ($r) => $r->whereIn('criterion', ['age_min', 'age_max']));
                     }
                 });
         });
