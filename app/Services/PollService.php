@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\PollVote;
 use App\Models\PollOption;
 use App\Enums\RevealResultsEnum;
+use App\Models\PollAudienceRule;
 use Illuminate\Support\Facades\DB;
 use App\Contracts\PollServiceContract;
 use App\Exceptions\PollVotingException;
@@ -18,47 +19,63 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PollService implements PollServiceContract
 {
-    public function getPaginatedPolls(int $year, int $month, ?int $userId): LengthAwarePaginator
+    /**
+     * Get paginated polls, filtering audience-only polls via SQL scope.
+     *
+     * @return array{polls: LengthAwarePaginator, audience_only_count: int}
+     */
+    public function getPaginatedPolls(int $year, int $month, ?int $userId): array
     {
-        return $this->buildPollQuery($userId)
+        $user = $userId ? User::find($userId) : null;
+
+        // Count audience-only polls hidden from this user in this period
+        $totalAudienceOnly = Poll::where('audience_only', true)
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->count();
+
+        $visibleAudienceOnly = Poll::where('audience_only', true)
+            ->whereYear('created_at', $year)
+            ->whereMonth('created_at', $month)
+            ->visibleTo($user)
+            ->count();
+
+        $audienceOnlyCount = max(0, $totalAudienceOnly - $visibleAudienceOnly);
+
+        $polls = $this->buildPollQuery($userId)
+            ->visibleTo($user)
             ->whereYear('created_at', $year)
             ->whereMonth('created_at', $month)
             ->orderByRaw('(ups_count - downs_count) DESC')
             ->paginate(50);
+
+        return [
+            'polls' => $polls,
+            'audience_only_count' => $audienceOnlyCount,
+        ];
     }
 
+    /**
+     * Get a poll by ID. Returns the poll with an `is_restricted` flag
+     * if the user is not in the audience of an audience-only poll.
+     */
     public function getPollById(int $id, ?int $userId): Poll
     {
-        return $this->buildPollQuery($userId)
+        /** @var Poll $poll */
+        $poll = $this->buildPollQuery($userId)
+            ->with('audienceRules')
             ->withoutGlobalScope('public_polls')
             ->findOrFail($id);
+
+        $user = $userId ? User::find($userId) : null;
+        $poll->is_restricted = $poll->audience_only && ! $poll->isVisibleTo($user);
+
+        return $poll;
     }
 
     public function createPoll(array $data, int $userId): Poll
     {
         return DB::transaction(function () use ($data, $userId) {
-            $allowedVoters = $data['allowed_voters'] ?? [];
-
-            // If allowed_voters is specified, skip criteria-based audience
-            if (count($allowedVoters) > 0) {
-                $audience = [
-                    'allowed_voters' => $allowedVoters,
-                ];
-            } else {
-                $audience = [
-                    'gender' => $data['gender'] ?? [],
-                    'age_range' => [
-                        'min' => $data['min_age'] ?? 13,
-                        'max' => $data['max_age'] ?? 120,
-                    ],
-                    'country' => $data['country'] ?? [],
-                    'religious_affiliation' => $data['religious_affiliation'] ?? [],
-                    'hometown' => $data['hometown'] ?? [],
-                    'ethnicity' => $data['ethnicity'] ?? [],
-                    'city_inside_syria' => $data['city_inside_syria'] ?? [],
-                ];
-            }
-
             $poll = new Poll([
                 'question' => $data['question'],
                 'start_date' => $data['start_date'],
@@ -67,10 +84,13 @@ class PollService implements PollServiceContract
                 'audience_can_add_options' => $data['audience_can_add_options'],
                 'reveal_results' => $data['reveal_results'],
                 'voters_are_visible' => $data['voters_are_visible'],
-                'audience' => $audience,
+                'audience_only' => $data['audience_only'] ?? false,
             ]);
             $poll->created_by = $userId;
             $poll->save();
+
+            // Insert audience rules into normalized table
+            $this->insertAudienceRules($poll, $data);
 
             $options = collect($data['options'])->map(fn ($option) => [
                 'poll_id' => $poll->id,
@@ -99,7 +119,7 @@ class PollService implements PollServiceContract
 
     public function vote(int $pollId, array $optionIds, int $userId): void
     {
-        $poll = Poll::findOrFail($pollId);
+        $poll = Poll::with('audienceRules')->findOrFail($pollId);
 
         if ($poll->start_date->isFuture()) {
             throw new PollVotingException('poll_has_not_started_yet');
@@ -115,7 +135,7 @@ class PollService implements PollServiceContract
 
         // Audience eligibility check
         $user = User::findOrFail($userId);
-        [$eligible, $failures] = $user->isInAudience($poll->audience);
+        [$eligible, $failures] = $user->isInAudience($poll);
         if (! $eligible) {
             throw new PollVotingException('user_is_not_in_poll_audience', 400, $failures);
         }
@@ -202,12 +222,94 @@ class PollService implements PollServiceContract
     }
 
     /**
-     * Build the common poll query with user interaction data
-     * (Eliminates the duplication between index() and show())
+     * Insert audience rules into the normalized table.
+     */
+    private function insertAudienceRules(Poll $poll, array $data): void
+    {
+        $rules = [];
+        $now = now();
+        $allowedVoters = $data['allowed_voters'] ?? [];
+
+        if (count($allowedVoters) > 0) {
+            $allowedVoters = array_values(array_unique(array_filter(
+                array_map(fn ($v): string => strtolower(trim((string) $v)), $allowedVoters),
+                fn (string $v): bool => $v !== '',
+            )));
+
+            foreach ($allowedVoters as $voter) {
+                $rules[] = [
+                    'poll_id' => $poll->id,
+                    'criterion' => 'allowed_voter',
+                    'value' => $voter,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        } else {
+            $arrayCriteria = [
+                'gender',
+                'country',
+                'religious_affiliation',
+                'hometown',
+                'ethnicity',
+                'city_inside_syria',
+            ];
+
+            foreach ($arrayCriteria as $criterion) {
+                $values = array_values(array_unique(array_filter(
+                    array_map('strval', $data[$criterion] ?? []),
+                    fn (string $v): bool => $v !== '',
+                )));
+
+                foreach ($values as $value) {
+                    $rules[] = [
+                        'poll_id' => $poll->id,
+                        'criterion' => $criterion,
+                        'value' => $value,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
+
+            // Age range — only store if not default
+            $minAge = $data['min_age'] ?? null;
+            $maxAge = $data['max_age'] ?? null;
+
+            if ($minAge !== null && (int) $minAge !== 13) {
+                $rules[] = [
+                    'poll_id' => $poll->id,
+                    'criterion' => 'age_min',
+                    'value' => (string) $minAge,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if ($maxAge !== null && (int) $maxAge !== 120) {
+                $rules[] = [
+                    'poll_id' => $poll->id,
+                    'criterion' => 'age_max',
+                    'value' => (string) $maxAge,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        if (count($rules) > 0) {
+            PollAudienceRule::insert($rules);
+        }
+    }
+
+    /**
+     * Build the common poll query with user interaction data.
+     *
+     * @return Builder<Poll>
      */
     private function buildPollQuery(?int $userId): Builder
     {
-        return Poll::with(['user', 'options' => fn ($q) => $q->withCount('votes')])
+        return Poll::with(['user', 'audienceRules', 'options' => fn ($q) => $q->withCount('votes')])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',

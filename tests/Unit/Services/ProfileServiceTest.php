@@ -12,7 +12,7 @@ beforeEach(function (): void {
     test()->user = User::factory()->create([
         'name' => 'Original',
         'surname' => 'Name',
-        'email' => 'ps_user@example.com',
+        'email' => 'ps_user@gmail.com',
     ]);
 });
 
@@ -184,10 +184,10 @@ it('updates address and records profile change with IP', function (): void {
 it('changes email and resets verification status', function (): void {
     test()->user->update(['email_verified_at' => now()]);
 
-    test()->profileService->changeEmail(test()->user, 'new-email@example.com');
+    test()->profileService->changeEmail(test()->user, 'new-email@gmail.com');
 
     $user = test()->user->fresh();
-    expect($user->email)->toBe('new-email@example.com');
+    expect($user->email)->toBe('new-email@gmail.com');
     expect($user->email_verified_at)->toBeNull();
 });
 

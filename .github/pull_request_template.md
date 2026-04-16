@@ -12,7 +12,7 @@
 - [ ] test: Adding or updating tests
 - [ ] chore: Build process, dependencies, CI changes
 
-## Related Issue
+## Related Issue / Requested Feature
 
 <!-- Link the issue this PR addresses, e.g. Closes #123 -->
 
