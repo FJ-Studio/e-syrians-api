@@ -6,7 +6,7 @@ use App\Models\PollOption;
 
 beforeEach(function (): void {
     test()->user = User::factory()->create([
-        'email' => 'poll_feat@example.com',
+        'email' => 'poll_feat@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',
@@ -130,7 +130,7 @@ it('creates a poll with valid allowed_voters emails', function (): void {
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'allowed_voters' => ['user1@example.com', 'user2@test.org'],
+        'allowed_voters' => ['user1@gmail.com', 'user2@test.org'],
     ], authHeader(test()->user));
 
     $response->assertOk();
@@ -163,7 +163,7 @@ it('creates a poll with mixed emails and national IDs in allowed_voters', functi
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'allowed_voters' => ['user@example.com', '12345678'],
+        'allowed_voters' => ['user@gmail.com', '12345678'],
     ], authHeader(test()->user));
 
     $response->assertOk();
@@ -202,7 +202,7 @@ it('rejects allowed_voters with short national IDs', function (): void {
 });
 
 it('rejects allowed_voters exceeding max 500 entries', function (): void {
-    $voters = array_map(fn ($i) => "user{$i}@example.com", range(1, 501));
+    $voters = array_map(fn ($i) => "user{$i}@gmail.com", range(1, 501));
 
     $response = $this->postJson('/polls', [
         'question' => 'Too many voters poll?',
@@ -220,7 +220,7 @@ it('rejects allowed_voters exceeding max 500 entries', function (): void {
 });
 
 it('accepts allowed_voters with exactly 500 entries', function (): void {
-    $voters = array_map(fn ($i) => "user{$i}@example.com", range(1, 500));
+    $voters = array_map(fn ($i) => "user{$i}@gmail.com", range(1, 500));
 
     $response = $this->postJson('/polls', [
         'question' => 'Max voters poll?',
@@ -391,7 +391,6 @@ function createActivePollForFeature(User $user): Poll
         'created_by' => $user->id,
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
-        'audience' => [],
         'is_private' => false,
     ]);
 

@@ -30,11 +30,13 @@ class PollController extends Controller
     {
         $userId = auth('sanctum')->check() ? auth('sanctum')->user()->id : null;
 
-        $polls = $this->pollService->getPaginatedPolls(
+        $result = $this->pollService->getPaginatedPolls(
             (int) $request->input('year', now()->year),
             (int) $request->input('month', now()->month),
             $userId,
         );
+
+        $polls = $result['polls'];
 
         return ApiService::success([
             'polls' => PollResource::collection($polls->items()),
@@ -42,6 +44,7 @@ class PollController extends Controller
             'last_page' => $polls->lastPage(),
             'per_page' => $polls->perPage(),
             'total' => $polls->total(),
+            'audience_only_count' => $result['audience_only_count'],
         ]);
     }
 
@@ -50,6 +53,10 @@ class PollController extends Controller
         $userId = auth('sanctum')->user()?->id;
 
         $poll = $this->pollService->getPollById($id, $userId);
+
+        if ($poll->is_restricted) {
+            return ApiService::error(403, 'poll_visible_to_targeted_audience_only');
+        }
 
         return ApiService::success(new PollResource($poll));
     }

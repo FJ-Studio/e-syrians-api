@@ -20,6 +20,7 @@ use App\Contracts\AuthServiceContract;
 use App\Contracts\PollServiceContract;
 use Illuminate\Support\Facades\Config;
 use App\Contracts\StatsServiceContract;
+use App\Services\FeatureRequestService;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Google\Provider;
 use App\Contracts\ProfileServiceContract;
@@ -28,6 +29,7 @@ use App\Contracts\UserPollServiceContract;
 use App\Contracts\FileUploadServiceContract;
 use App\Contracts\VerificationServiceContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public array $bindings = [
         AuthServiceContract::class => AuthService::class,
+        FeatureRequestServiceContract::class => FeatureRequestService::class,
         FileUploadServiceContract::class => FileUploadService::class,
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,

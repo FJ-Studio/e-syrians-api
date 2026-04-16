@@ -14,7 +14,7 @@ beforeEach(function (): void {
     $verifiedUser = User::factory()->create([
         'name' => 'Verified',
         'surname' => 'User',
-        'email' => 'verified_user@example.com',
+        'email' => 'verified_user@gmail.com',
         'uuid' => '2d9b73f0-13d1-4d16-9914-8f0f21af6eec',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
@@ -23,7 +23,7 @@ beforeEach(function (): void {
     $unverifiedUser = User::factory()->create([
         'name' => 'Unverified',
         'surname' => 'User',
-        'email' => 'unverified_user@example.com',
+        'email' => 'unverified_user@gmail.com',
         'uuid' => '6e0544ad-cd47-480f-9e33-d4fe047b6ab4',
         'verified_at' => null,
         'verification_reason' => null,
@@ -83,7 +83,7 @@ it('allows a user to verify another user once only', function (): void {
     $unverifiedUser = User::factory()->create([
         'name' => 'Unverified',
         'surname' => 'User',
-        'email' => 'unverified_onceonly@example.com',
+        'email' => 'unverified_onceonly@gmail.com',
         'uuid' => '26f19555-1111-4aab-a7d2-78ff7e78e890',
         'verified_at' => null,
         'verification_reason' => null,

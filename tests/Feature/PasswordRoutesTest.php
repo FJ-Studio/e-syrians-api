@@ -78,10 +78,10 @@ it('returns 401 when changing password without authentication', function (): voi
 // ───────────────────────────────────────────────
 
 it('returns success for forgot password with existing email', function (): void {
-    User::factory()->create(['email' => 'feat_forgot@example.com']);
+    User::factory()->create(['email' => 'feat_forgot@gmail.com']);
 
     $response = $this->postJson('/users/forgot-password', [
-        'email' => 'feat_forgot@example.com',
+        'email' => 'feat_forgot@gmail.com',
     ]);
 
     $response->assertOk();
@@ -89,7 +89,7 @@ it('returns success for forgot password with existing email', function (): void 
 
 it('returns success for forgot password with non-existent email (privacy)', function (): void {
     $response = $this->postJson('/users/forgot-password', [
-        'email' => 'nonexistent@example.com',
+        'email' => 'nonexistent@gmail.com',
     ]);
 
     $response->assertOk();
@@ -116,7 +116,7 @@ it('returns 422 for reset password with missing fields', function (): void {
 it('returns 422 for reset password without confirmation', function (): void {
     $response = $this->postJson('/users/reset-password', [
         'token' => 'some-token',
-        'email' => 'test@example.com',
+        'email' => 'test@gmail.com',
         'password' => 'new_password123',
     ]);
 

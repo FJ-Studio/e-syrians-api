@@ -15,7 +15,7 @@ it('maps mixed Arabic and Latin numbers', function (): void {
 });
 
 it('preserves non-numeric characters', function (): void {
-    expect(StrService::mapArabicNumbers('test@example.com'))->toBe('test@example.com');
+    expect(StrService::mapArabicNumbers('test@gmail.com'))->toBe('test@gmail.com');
 });
 
 it('maps Arabic numbers within an email-like string', function (): void {
