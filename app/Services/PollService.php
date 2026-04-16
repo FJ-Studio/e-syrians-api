@@ -232,7 +232,7 @@ class PollService implements PollServiceContract
 
         if (count($allowedVoters) > 0) {
             $allowedVoters = array_values(array_unique(array_filter(
-                array_map('strval', $allowedVoters),
+                array_map(fn ($v): string => strtolower(trim((string) $v)), $allowedVoters),
                 fn (string $v): bool => $v !== '',
             )));
 

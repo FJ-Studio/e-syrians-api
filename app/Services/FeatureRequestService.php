@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Builder;
 use App\Exceptions\FeatureRequestException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -68,33 +69,17 @@ class FeatureRequestService implements FeatureRequestServiceContract
 
         // Wrap in a transaction so the read-then-write is atomic against
         // concurrent double-clicks. The unique (feature_request_id, user_id)
-        // index provides a last-resort safety net.
-        $result = DB::transaction(function () use ($feature, $direction, $userId): string {
-            $existing = FeatureRequestVote::where('feature_request_id', $feature->id)
-                ->where('user_id', $userId)
-                ->lockForUpdate()
-                ->first();
-
-            if ($existing === null) {
-                FeatureRequestVote::create([
-                    'feature_request_id' => $feature->id,
-                    'user_id' => $userId,
-                    'vote' => $direction,
-                ]);
-
-                return 'added';
-            }
-
-            if ($existing->vote === $direction) {
-                $existing->delete();
-
-                return 'removed';
-            }
-
-            $existing->update(['vote' => $direction]);
-
-            return 'switched';
-        });
+        // index provides a last-resort safety net. If two concurrent requests
+        // both see null and race to insert, the loser hits the unique
+        // constraint — we catch that and retry once, which will then find
+        // the winning row via lockForUpdate and proceed normally.
+        try {
+            $result = $this->executeVote($feature, $direction, $userId);
+        } catch (UniqueConstraintViolationException) {
+            // Retry once — the second attempt will find the row inserted
+            // by the concurrent winner and handle it as an existing vote.
+            $result = $this->executeVote($feature, $direction, $userId);
+        }
 
         $this->forgetVoteCaches($feature->id);
 
@@ -179,6 +164,40 @@ class FeatureRequestService implements FeatureRequestServiceContract
         $feature->forceFill(['deletion_reason' => null])->save();
 
         $this->forgetVoteCaches($feature->id);
+    }
+
+    /**
+     * Execute the vote transaction. Extracted so the caller can retry on
+     * unique-constraint races.
+     */
+    private function executeVote(FeatureRequest $feature, string $direction, int $userId): string
+    {
+        return DB::transaction(function () use ($feature, $direction, $userId): string {
+            $existing = FeatureRequestVote::where('feature_request_id', $feature->id)
+                ->where('user_id', $userId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing === null) {
+                FeatureRequestVote::create([
+                    'feature_request_id' => $feature->id,
+                    'user_id' => $userId,
+                    'vote' => $direction,
+                ]);
+
+                return 'added';
+            }
+
+            if ($existing->vote === $direction) {
+                $existing->delete();
+
+                return 'removed';
+            }
+
+            $existing->update(['vote' => $direction]);
+
+            return 'switched';
+        });
     }
 
     /**

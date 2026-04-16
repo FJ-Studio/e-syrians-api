@@ -274,13 +274,13 @@ class Poll extends Model
                         $q->where(function (Builder $q) use ($userAge): void {
                             $q->whereDoesntHave('audienceRules', fn ($r) => $r->where('criterion', 'age_min'))
                                 ->orWhereDoesntHave('audienceRules', fn ($r) => $r->where('criterion', 'age_min')
-                                    ->where(DB::raw('CAST(value AS UNSIGNED)'), '>', $userAge));
+                                    ->where(DB::raw('CAST(value AS INTEGER)'), '>', $userAge));
                         });
 
                         $q->where(function (Builder $q) use ($userAge): void {
                             $q->whereDoesntHave('audienceRules', fn ($r) => $r->where('criterion', 'age_max'))
                                 ->orWhereDoesntHave('audienceRules', fn ($r) => $r->where('criterion', 'age_max')
-                                    ->where(DB::raw('CAST(value AS UNSIGNED)'), '<', $userAge));
+                                    ->where(DB::raw('CAST(value AS INTEGER)'), '<', $userAge));
                         });
                     } else {
                         $q->whereDoesntHave('audienceRules', fn ($r) => $r->whereIn('criterion', ['age_min', 'age_max']));

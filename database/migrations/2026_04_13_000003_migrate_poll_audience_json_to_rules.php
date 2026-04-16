@@ -70,13 +70,20 @@ return new class () extends Migration {
                         }
                     }
 
-                    // Allowed voters — stored as criterion "allowed_voter" (singular) per row
+                    // Allowed voters — stored as criterion "allowed_voter" (singular) per row.
+                    // Normalize (lowercase + trim) before dedup to avoid unique-constraint
+                    // violations on case-insensitive collations.
                     if (isset($audience['allowed_voters']) && is_array($audience['allowed_voters'])) {
-                        foreach (array_unique($audience['allowed_voters']) as $voter) {
+                        $voters = array_values(array_unique(array_filter(
+                            array_map(fn ($v): string => strtolower(trim((string) $v)), $audience['allowed_voters']),
+                            fn (string $v): bool => $v !== '',
+                        )));
+
+                        foreach ($voters as $voter) {
                             $rules[] = [
                                 'poll_id' => $poll->id,
                                 'criterion' => 'allowed_voter',
-                                'value' => (string) $voter,
+                                'value' => $voter,
                                 'created_at' => $now,
                                 'updated_at' => $now,
                             ];
