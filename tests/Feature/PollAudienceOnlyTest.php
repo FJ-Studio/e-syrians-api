@@ -264,14 +264,10 @@ it('exposes audience details only to the creator', function (): void {
     $audienceResponse->assertOk();
     expect($audienceResponse->json('data'))->not->toHaveKey('audience');
 
-    // Creator — audience should be present
+    // Creator — poll is visible but audience details are not exposed in the response
     $creatorResponse = $this->getJson("/polls/{$poll->id}", authHeader(test()->creator));
     $creatorResponse->assertOk();
-
-    // poll no longer returns audience details in the response
-    // expect($creatorResponse->json('data'))->toHaveKey('audience');
-    // expect($creatorResponse->json('data.audience.gender'))->toContain('m');
-    // expect($creatorResponse->json('data.audience.country'))->toContain('TR');
+    expect($creatorResponse->json('data'))->not->toHaveKey('audience');
 });
 
 it('does not expose audience details to guests', function (): void {
