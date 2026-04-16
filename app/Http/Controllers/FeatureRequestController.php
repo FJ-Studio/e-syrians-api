@@ -13,8 +13,8 @@ use App\Exceptions\FeatureRequestException;
 use App\Http\Resources\FeatureRequestResource;
 use App\Contracts\FeatureRequestServiceContract;
 use App\Http\Requests\FeatureRequests\StoreFeatureRequest;
-use App\Http\Requests\FeatureRequests\StoreFeatureRequestVote;
 use App\Http\Requests\FeatureRequests\DestroyFeatureRequest;
+use App\Http\Requests\FeatureRequests\StoreFeatureRequestVote;
 use App\Http\Requests\FeatureRequests\UpdateFeatureRequestTimeline;
 
 class FeatureRequestController extends Controller

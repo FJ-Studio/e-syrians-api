@@ -202,7 +202,7 @@ it('rejects allowed_voters with short national IDs', function (): void {
 });
 
 it('rejects allowed_voters exceeding max 500 entries', function (): void {
-    $voters = array_map(fn($i) => "user{$i}@gmail.com", range(1, 501));
+    $voters = array_map(fn ($i) => "user{$i}@gmail.com", range(1, 501));
 
     $response = $this->postJson('/polls', [
         'question' => 'Too many voters poll?',
@@ -220,7 +220,7 @@ it('rejects allowed_voters exceeding max 500 entries', function (): void {
 });
 
 it('accepts allowed_voters with exactly 500 entries', function (): void {
-    $voters = array_map(fn($i) => "user{$i}@gmail.com", range(1, 500));
+    $voters = array_map(fn ($i) => "user{$i}@gmail.com", range(1, 500));
 
     $response = $this->postJson('/polls', [
         'question' => 'Max voters poll?',

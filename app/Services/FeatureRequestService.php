@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\FeatureRequest;
-use Illuminate\Support\Facades\DB;
 use App\Models\FeatureRequestVote;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Builder;
 use App\Exceptions\FeatureRequestException;

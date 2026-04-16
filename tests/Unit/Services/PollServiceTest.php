@@ -3,7 +3,6 @@
 use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollOption;
-use App\Models\PollAudienceRule;
 use App\Services\PollService;
 use App\Exceptions\PollVotingException;
 use App\Exceptions\PollReactionException;
@@ -106,7 +105,7 @@ it('prevents voting on a poll that has not started yet', function (): void {
         'created_by' => test()->user->id,
     ]);
 
-    expect(fn() => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
+    expect(fn () => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
         ->toThrow(PollVotingException::class, 'poll_has_not_started_yet');
 });
 
@@ -128,7 +127,7 @@ it('prevents voting on an expired poll', function (): void {
         'created_by' => test()->user->id,
     ]);
 
-    expect(fn() => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
+    expect(fn () => test()->pollService->vote($poll->id, [$option->id], test()->user->id))
         ->toThrow(PollVotingException::class, 'poll_has_expired');
 });
 
@@ -138,7 +137,7 @@ it('prevents double voting', function (): void {
 
     test()->pollService->vote($poll->id, [$optionId], test()->user->id);
 
-    expect(fn() => test()->pollService->vote($poll->id, [$optionId], test()->user->id))
+    expect(fn () => test()->pollService->vote($poll->id, [$optionId], test()->user->id))
         ->toThrow(PollVotingException::class, 'you_have_already_voted');
 });
 
@@ -146,14 +145,14 @@ it('prevents selecting more options than max_selections', function (): void {
     $poll = createActivePoll(test()->user, maxSelections: 1);
     $optionIds = $poll->options->pluck('id')->toArray();
 
-    expect(fn() => test()->pollService->vote($poll->id, $optionIds, test()->user->id))
+    expect(fn () => test()->pollService->vote($poll->id, $optionIds, test()->user->id))
         ->toThrow(PollVotingException::class, 'user_has_reached_the_max_selections');
 });
 
 it('rejects invalid option IDs', function (): void {
     $poll = createActivePoll(test()->user);
 
-    expect(fn() => test()->pollService->vote($poll->id, [99999], test()->user->id))
+    expect(fn () => test()->pollService->vote($poll->id, [99999], test()->user->id))
         ->toThrow(PollVotingException::class, 'invalid_options');
 });
 
@@ -200,7 +199,7 @@ it('prevents reacting to an expired poll', function (): void {
         'is_private' => false,
     ]);
 
-    expect(fn() => test()->pollService->react($poll->id, 'up', test()->user->id))
+    expect(fn () => test()->pollService->react($poll->id, 'up', test()->user->id))
         ->toThrow(PollReactionException::class, 'poll_has_expired');
 });
 

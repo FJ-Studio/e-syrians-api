@@ -98,7 +98,7 @@ it('returns error for non-existent target', function (): void {
 // ───────────────────────────────────────────────
 
 it('throws when target user has incomplete data', function (): void {
-    expect(fn() => test()->verificationService->verifyUser(
+    expect(fn () => test()->verificationService->verifyUser(
         test()->verifiedUser,
         test()->unverifiedUser->uuid,
         '127.0.0.1',

@@ -110,7 +110,7 @@ it('rejects non-image file types', function (): void {
 
     $file = UploadedFile::fake()->create('document.pdf', 100, 'application/pdf');
 
-    expect(fn() => test()->profileService->updateAvatar(test()->user, $file))
+    expect(fn () => test()->profileService->updateAvatar(test()->user, $file))
         ->toThrow(InvalidArgumentException::class, 'invalid_file_type');
 });
 

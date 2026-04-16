@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\Recaptcha;
 use App\Models\User;
-use Illuminate\Routing\Middleware\ThrottleRequests;
+use App\Http\Middleware\Recaptcha;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Testing\TestResponse;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 
 /**
  * Wiring-level tests — confirm the `recaptcha` route middleware is actually
@@ -33,7 +34,7 @@ beforeEach(function (): void {
  *   Route::middleware(['guest', 'throttle:..', 'recaptcha'])->post('/forgot-password', ...)
  * inside the `Route::prefix('users')` group.
  */
-function callForgotPassword(array $payload): \Illuminate\Testing\TestResponse
+function callForgotPassword(array $payload): TestResponse
 {
     return test()->postJson('/users/forgot-password', $payload);
 }

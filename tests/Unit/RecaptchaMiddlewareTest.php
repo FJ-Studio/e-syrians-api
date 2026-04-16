@@ -2,19 +2,20 @@
 
 declare(strict_types=1);
 
-use App\Http\Middleware\Recaptcha;
 use Illuminate\Http\Request;
+use App\Http\Middleware\Recaptcha;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpFoundation\Response;
 
 beforeEach(function (): void {
     config()->set('services.recaptcha.secret', 'test-secret');
 });
 
-function runRecaptchaMiddleware(array $input): \Symfony\Component\HttpFoundation\Response
+function runRecaptchaMiddleware(array $input): Response
 {
     $request = Request::create('/test', 'POST', $input);
 
-    return (new Recaptcha)->handle($request, fn ($req) => response()->json(['ok' => true]));
+    return (new Recaptcha())->handle($request, fn ($req) => response()->json(['ok' => true]));
 }
 
 test('rejects requests without a recaptcha_token', function (): void {

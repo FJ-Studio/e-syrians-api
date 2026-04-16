@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
+use DateTimeInterface;
 use App\Models\FeatureRequest;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -56,7 +57,7 @@ interface FeatureRequestServiceContract
      * no-op. Passing `null` for a key clears the stamp. Valid keys:
      * `coded_at`, `tested_at`, `deployed_at`.
      *
-     * @param  array<string, string|\DateTimeInterface|null>  $stamps
+     * @param  array<string, string|DateTimeInterface|null>  $stamps
      */
     public function setTimeline(int $featureId, array $stamps): FeatureRequest;
 
