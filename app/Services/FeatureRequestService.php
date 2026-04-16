@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Builder;
 use App\Exceptions\FeatureRequestException;
-use Illuminate\Database\UniqueConstraintViolationException;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class FeatureRequestService implements FeatureRequestServiceContract
 {
