@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use Throwable;
+use App\Models\User;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -13,8 +14,8 @@ use App\Exceptions\FeatureRequestException;
 use App\Http\Resources\FeatureRequestResource;
 use App\Contracts\FeatureRequestServiceContract;
 use App\Http\Requests\FeatureRequests\StoreFeatureRequest;
-use App\Http\Requests\FeatureRequests\StoreFeatureRequestVote;
 use App\Http\Requests\FeatureRequests\DestroyFeatureRequest;
+use App\Http\Requests\FeatureRequests\StoreFeatureRequestVote;
 use App\Http\Requests\FeatureRequests\UpdateFeatureRequestTimeline;
 
 class FeatureRequestController extends Controller
@@ -26,7 +27,9 @@ class FeatureRequestController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $userId = auth('sanctum')->check() ? auth('sanctum')->user()->id : null;
+        /** @var User|null $authUser */
+        $authUser = auth('sanctum')->user();
+        $userId = $authUser?->id;
 
         $features = $this->service->getPaginatedFeatureRequests(
             (string) $request->input('sort', 'newest'),
@@ -45,7 +48,9 @@ class FeatureRequestController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $userId = auth('sanctum')->user()?->id;
+        /** @var User|null $authUser */
+        $authUser = auth('sanctum')->user();
+        $userId = $authUser?->id;
 
         $feature = $this->service->getFeatureRequestById($id, $userId);
 

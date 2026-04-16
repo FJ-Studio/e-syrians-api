@@ -8,8 +8,8 @@ use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollVote;
 use App\Models\PollOption;
-use App\Models\PollAudienceRule;
 use App\Enums\RevealResultsEnum;
+use App\Models\PollAudienceRule;
 use Illuminate\Support\Facades\DB;
 use App\Contracts\PollServiceContract;
 use App\Exceptions\PollVotingException;
@@ -61,6 +61,7 @@ class PollService implements PollServiceContract
      */
     public function getPollById(int $id, ?int $userId): Poll
     {
+        /** @var Poll $poll */
         $poll = $this->buildPollQuery($userId)
             ->with('audienceRules')
             ->withoutGlobalScope('public_polls')
@@ -298,6 +299,8 @@ class PollService implements PollServiceContract
 
     /**
      * Build the common poll query with user interaction data.
+     *
+     * @return Builder<Poll>
      */
     private function buildPollQuery(?int $userId): Builder
     {

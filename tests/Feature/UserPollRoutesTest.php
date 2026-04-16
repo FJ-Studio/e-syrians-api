@@ -6,7 +6,7 @@ use App\Models\PollOption;
 
 beforeEach(function (): void {
     test()->user = User::factory()->create([
-        'email' => 'userpoll_feat@example.com',
+        'email' => 'userpoll_feat@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',

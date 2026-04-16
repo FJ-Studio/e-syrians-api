@@ -20,7 +20,7 @@ it('registers a new user via API and returns 201', function (): void {
         'email' => 'feat_register@gmail.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'national_id' => '998877660'.rand(1, 999),
+        'national_id' => '998877660' . rand(1, 999),
         'gender' => 'm',
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
@@ -49,7 +49,7 @@ it('returns 422 when email is already taken', function (): void {
         'email' => 'dup_email@gmail.com',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'national_id' => '112233440'.rand(1, 999),
+        'national_id' => '112233440' . rand(1, 999),
         'gender' => 'm',
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
@@ -66,12 +66,12 @@ it('returns 422 when email is already taken', function (): void {
 
 it('logs in with valid credentials and returns token', function (): void {
     User::factory()->create([
-        'email' => 'feat_login@example.com',
+        'email' => 'feat_login@gmail.com',
         'password' => Hash::make('secret123'),
     ]);
 
     $response = $this->postJson('/users/login', [
-        'identifier' => 'feat_login@example.com',
+        'identifier' => 'feat_login@gmail.com',
         'password' => 'secret123',
     ]);
 
@@ -81,12 +81,12 @@ it('logs in with valid credentials and returns token', function (): void {
 
 it('returns 401 for wrong password', function (): void {
     User::factory()->create([
-        'email' => 'feat_wrongpw@example.com',
+        'email' => 'feat_wrongpw@gmail.com',
         'password' => Hash::make('correct'),
     ]);
 
     $response = $this->postJson('/users/login', [
-        'identifier' => 'feat_wrongpw@example.com',
+        'identifier' => 'feat_wrongpw@gmail.com',
         'password' => 'wrong',
     ]);
 
@@ -95,7 +95,7 @@ it('returns 401 for wrong password', function (): void {
 
 it('returns 401 for non-existent user login', function (): void {
     $response = $this->postJson('/users/login', [
-        'identifier' => 'ghost@example.com',
+        'identifier' => 'ghost@gmail.com',
         'password' => 'anything',
     ]);
 

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 beforeEach(function (): void {
     test()->user = User::factory()->create([
-        'email' => 'mig_test@example.com',
+        'email' => 'mig_test@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
     ]);
@@ -104,7 +104,7 @@ it('migrates only age_min when only min is non-default', function (): void {
 
 it('migrates allowed_voters as allowed_voter (singular) rows', function (): void {
     $pollId = insertLegacyPoll(test()->user->id, [
-        'allowed_voters' => ['a@example.com', 'b@example.com', '12345678'],
+        'allowed_voters' => ['a@gmail.com', 'b@gmail.com', '12345678'],
     ]);
 
     runAudienceJsonToRulesMigration();
@@ -116,7 +116,7 @@ it('migrates allowed_voters as allowed_voter (singular) rows', function (): void
         ->all();
 
     expect($rules)->toHaveCount(3);
-    expect($rules)->toContain('a@example.com')->toContain('b@example.com')->toContain('12345678');
+    expect($rules)->toContain('a@gmail.com')->toContain('b@gmail.com')->toContain('12345678');
 });
 
 it('deduplicates repeated values within the same criterion', function (): void {

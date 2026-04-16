@@ -9,7 +9,7 @@ beforeEach(function (): void {
     test()->verifiedUser = User::factory()->create([
         'name' => 'Verified',
         'surname' => 'User',
-        'email' => 'vs_verified@example.com',
+        'email' => 'vs_verified@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
     ]);
@@ -17,14 +17,14 @@ beforeEach(function (): void {
     test()->unverifiedUser = User::factory()->create([
         'name' => 'Unverified',
         'surname' => 'User',
-        'email' => 'vs_unverified@example.com',
+        'email' => 'vs_unverified@gmail.com',
         'verified_at' => null,
     ]);
 
     test()->bannedUser = User::factory()->create([
         'name' => 'Banned',
         'surname' => 'User',
-        'email' => 'vs_banned@example.com',
+        'email' => 'vs_banned@gmail.com',
         'marked_as_fake_at' => now(),
     ]);
 });
@@ -110,7 +110,7 @@ it('creates a verification record for complete target user', function (): void {
     $target = User::factory()->create([
         'name' => 'Complete',
         'surname' => 'Target',
-        'email' => 'vs_complete@example.com',
+        'email' => 'vs_complete@gmail.com',
         'verified_at' => null,
         'gender' => 'm',
         'birth_date' => '1990-01-01',
@@ -138,7 +138,7 @@ it('creates a verification record for complete target user', function (): void {
 it('prevents circular verification', function (): void {
     // Create 2 verified users
     $userA = User::factory()->create([
-        'email' => 'vs_circular_a@example.com',
+        'email' => 'vs_circular_a@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',
@@ -147,7 +147,7 @@ it('prevents circular verification', function (): void {
         'country' => 'US',
     ]);
     $userB = User::factory()->create([
-        'email' => 'vs_circular_b@example.com',
+        'email' => 'vs_circular_b@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'f',

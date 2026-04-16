@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\FeatureRequest;
-use Illuminate\Support\Facades\DB;
 use App\Models\FeatureRequestVote;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Builder;
 use App\Exceptions\FeatureRequestException;
@@ -37,6 +37,7 @@ class FeatureRequestService implements FeatureRequestServiceContract
 
     public function getFeatureRequestById(int $id, ?int $userId): FeatureRequest
     {
+        /** @var FeatureRequest */
         return $this->buildQuery($userId)->findOrFail($id);
     }
 
@@ -193,6 +194,8 @@ class FeatureRequestService implements FeatureRequestServiceContract
      * Base query with aggregate counts and — when authenticated — the
      * current user's vote direction pulled in a single round trip.
      * Mirrors PollService::buildPollQuery.
+     *
+     * @return Builder<FeatureRequest>
      */
     private function buildQuery(?int $userId): Builder
     {

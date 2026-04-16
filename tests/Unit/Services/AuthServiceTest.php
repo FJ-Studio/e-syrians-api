@@ -16,9 +16,9 @@ it('registers a new user with valid data', function (): void {
     $user = test()->authService->register([
         'name' => 'John',
         'surname' => 'Doe',
-        'email' => 'register-test@example.com',
+        'email' => 'register-test@gmail.com',
         'password' => 'password123',
-        'national_id' => '999888777'.rand(1, 999),
+        'national_id' => '999888777' . rand(1, 999),
         'gender' => 'm',
         'birth_date' => '1990-01-01',
         'hometown' => 'damascus',
@@ -30,16 +30,16 @@ it('registers a new user with valid data', function (): void {
     expect($user->name)->toBe('John');
     expect($user->surname)->toBe('Doe');
     expect($user->hasRole('citizen'))->toBeTrue();
-    $this->assertDatabaseHas('users', ['email' => 'register-test@example.com']);
+    $this->assertDatabaseHas('users', ['email' => 'register-test@gmail.com']);
 });
 
 it('converts array fields to comma-separated strings on registration', function (): void {
     $user = test()->authService->register([
         'name' => 'Jane',
         'surname' => 'Doe',
-        'email' => 'register-arrays@example.com',
+        'email' => 'register-arrays@gmail.com',
         'password' => 'password123',
-        'national_id' => '111222333'.rand(1, 999),
+        'national_id' => '111222333' . rand(1, 999),
         'gender' => 'f',
         'birth_date' => '1992-05-15',
         'hometown' => 'aleppo',
@@ -59,11 +59,11 @@ it('converts array fields to comma-separated strings on registration', function 
 
 it('authenticates a user with valid email credentials', function (): void {
     $user = User::factory()->create([
-        'email' => 'login-test@example.com',
+        'email' => 'login-test@gmail.com',
         'password' => Hash::make('secret123'),
     ]);
 
-    $result = test()->authService->authenticateViaCredentials('login-test@example.com', 'secret123');
+    $result = test()->authService->authenticateViaCredentials('login-test@gmail.com', 'secret123');
 
     expect($result)->not->toBeNull();
     expect($result['user']->id)->toBe($user->id);
@@ -72,17 +72,17 @@ it('authenticates a user with valid email credentials', function (): void {
 
 it('returns null for wrong password', function (): void {
     User::factory()->create([
-        'email' => 'wrong-pw@example.com',
+        'email' => 'wrong-pw@gmail.com',
         'password' => Hash::make('correct_password'),
     ]);
 
-    $result = test()->authService->authenticateViaCredentials('wrong-pw@example.com', 'wrong_password');
+    $result = test()->authService->authenticateViaCredentials('wrong-pw@gmail.com', 'wrong_password');
 
     expect($result)->toBeNull();
 });
 
 it('returns null for non-existent user', function (): void {
-    $result = test()->authService->authenticateViaCredentials('nonexistent@example.com', 'password');
+    $result = test()->authService->authenticateViaCredentials('nonexistent@gmail.com', 'password');
 
     expect($result)->toBeNull();
 });

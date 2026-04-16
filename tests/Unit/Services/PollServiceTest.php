@@ -3,7 +3,6 @@
 use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollOption;
-use App\Models\PollAudienceRule;
 use App\Services\PollService;
 use App\Exceptions\PollVotingException;
 use App\Exceptions\PollReactionException;
@@ -12,7 +11,7 @@ beforeEach(function (): void {
     test()->pollService = resolve(PollService::class);
 
     test()->user = User::factory()->create([
-        'email' => 'poll_test@example.com',
+        'email' => 'poll_test@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',
@@ -285,12 +284,12 @@ it('stores allowed_voters in audience when provided', function (): void {
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'allowed_voters' => ['user1@example.com', '12345678'],
+        'allowed_voters' => ['user1@gmail.com', '12345678'],
     ], test()->user->id);
 
     $poll->load('audienceRules');
     expect($poll->audience)->toHaveKey('allowed_voters');
-    expect($poll->audience['allowed_voters'])->toContain('user1@example.com')->toContain('12345678');
+    expect($poll->audience['allowed_voters'])->toContain('user1@gmail.com')->toContain('12345678');
     expect($poll->audience)->not->toHaveKey('gender');
     expect($poll->audience)->not->toHaveKey('country');
 });
@@ -344,7 +343,7 @@ it('ignores criteria fields when allowed_voters is provided', function (): void 
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'allowed_voters' => ['specific@example.com'],
+        'allowed_voters' => ['specific@gmail.com'],
         'gender' => ['m'],
         'country' => ['SY'],
         'hometown' => ['damascus'],

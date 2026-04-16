@@ -8,7 +8,7 @@ use App\Models\PollAudienceRule;
 beforeEach(function (): void {
     // Creator user — male, Syrian in Turkey
     test()->creator = User::factory()->create([
-        'email' => 'creator@example.com',
+        'email' => 'creator@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',
@@ -21,7 +21,7 @@ beforeEach(function (): void {
 
     // Audience-matching user — male, Syrian in Turkey
     test()->audienceUser = User::factory()->create([
-        'email' => 'audience@example.com',
+        'email' => 'audience@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'm',
@@ -34,7 +34,7 @@ beforeEach(function (): void {
 
     // Non-audience user — female, in Germany
     test()->outsider = User::factory()->create([
-        'email' => 'outsider@example.com',
+        'email' => 'outsider@gmail.com',
         'verified_at' => now(),
         'verification_reason' => 'first_registrant',
         'gender' => 'f',
