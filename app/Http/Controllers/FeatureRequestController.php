@@ -26,7 +26,9 @@ class FeatureRequestController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $userId = auth('sanctum')->check() ? auth('sanctum')->user()->id : null;
+        /** @var \App\Models\User|null $authUser */
+        $authUser = auth('sanctum')->user();
+        $userId = $authUser?->id;
 
         $features = $this->service->getPaginatedFeatureRequests(
             (string) $request->input('sort', 'newest'),
@@ -45,7 +47,9 @@ class FeatureRequestController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $userId = auth('sanctum')->user()?->id;
+        /** @var \App\Models\User|null $authUser */
+        $authUser = auth('sanctum')->user();
+        $userId = $authUser?->id;
 
         $feature = $this->service->getFeatureRequestById($id, $userId);
 

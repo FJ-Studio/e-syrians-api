@@ -91,13 +91,19 @@ parameters:
 			path: app/Http/Resources/PollReactionResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$audience\.$#'
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$audience_can_add_options\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/PollResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$audience_can_add_options\.$#'
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$audience_only\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PollResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PollResource\:\:\$created_by\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/PollResource.php

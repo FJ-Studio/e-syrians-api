@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\FeatureRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/** @mixin FeatureRequest */
 class FeatureRequestResource extends JsonResource
 {
     /**
@@ -14,7 +16,9 @@ class FeatureRequestResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $userId = auth('sanctum')->check() ? auth('sanctum')->user()->id : null;
+        /** @var \App\Models\User|null $authUser */
+        $authUser = auth('sanctum')->user();
+        $userId = $authUser?->id;
 
         return [
             'id' => $this->id,

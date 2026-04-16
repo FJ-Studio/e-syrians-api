@@ -61,6 +61,7 @@ class PollService implements PollServiceContract
      */
     public function getPollById(int $id, ?int $userId): Poll
     {
+        /** @var Poll $poll */
         $poll = $this->buildPollQuery($userId)
             ->with('audienceRules')
             ->withoutGlobalScope('public_polls')
@@ -293,6 +294,8 @@ class PollService implements PollServiceContract
 
     /**
      * Build the common poll query with user interaction data.
+     *
+     * @return Builder<Poll>
      */
     private function buildPollQuery(?int $userId): Builder
     {

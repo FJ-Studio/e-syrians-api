@@ -9,7 +9,15 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
+/**
+ * @property bool $is_restricted Dynamically set by PollService::getPollById()
+ *
+ * @method static Builder<static> visibleTo(?User $user)
+ */
 class Poll extends Model
 {
     use SoftDeletes;
@@ -64,39 +72,48 @@ class Poll extends Model
     /**
      * Get the user that created the poll.
      */
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
      * Get the audience rules for the poll.
+     *
+     * @return HasMany<PollAudienceRule, $this>
      */
-    public function audienceRules()
+    public function audienceRules(): HasMany
     {
         return $this->hasMany(PollAudienceRule::class);
     }
 
     /**
      * Get the options for the poll.
+     *
+     * @return HasMany<PollOption, $this>
      */
-    public function options()
+    public function options(): HasMany
     {
         return $this->hasMany(PollOption::class);
     }
 
     /**
      * Get the votes for the poll.
+     *
+     * @return HasMany<PollVote, $this>
      */
-    public function votes()
+    public function votes(): HasMany
     {
         return $this->hasMany(PollVote::class);
     }
 
     /**
      * Get the voters for the poll.
+     *
+     * @return HasManyThrough<User, PollVote, $this>
      */
-    public function voters()
+    public function voters(): HasManyThrough
     {
         return $this->hasManyThrough(User::class, PollVote::class, 'poll_id', 'id', 'id', 'user_id');
     }
@@ -108,8 +125,10 @@ class Poll extends Model
 
     /**
      * Get the reactions for the poll.
+     *
+     * @return HasMany<PollReaction, $this>
      */
-    public function reactions()
+    public function reactions(): HasMany
     {
         return $this->hasMany(PollReaction::class);
     }
@@ -133,8 +152,8 @@ class Poll extends Model
         return [
             'gender' => $rules->where('criterion', 'gender')->pluck('value')->all(),
             'age_range' => [
-                'min' => (int) ($rules->where('criterion', 'age_min')->first()?->value ?? 13),
-                'max' => (int) ($rules->where('criterion', 'age_max')->first()?->value ?? 120),
+                'min' => (int) ($rules->where('criterion', 'age_min')->first()?->value ?? 13), // @phpstan-ignore nullsafe.neverNull
+                'max' => (int) ($rules->where('criterion', 'age_max')->first()?->value ?? 120), // @phpstan-ignore nullsafe.neverNull
             ],
             'country' => $rules->where('criterion', 'country')->pluck('value')->all(),
             'religious_affiliation' => $rules->where('criterion', 'religious_affiliation')->pluck('value')->all(),
@@ -268,16 +287,20 @@ class Poll extends Model
 
     /**
      * Get the upvote reactions for the poll.
+     *
+     * @return HasMany<PollReaction, $this>
      */
-    public function ups()
+    public function ups(): HasMany
     {
         return $this->reactions()->where('reaction', 'up');
     }
 
     /**
      * Get the downvote reactions for the poll.
+     *
+     * @return HasMany<PollReaction, $this>
      */
-    public function downs()
+    public function downs(): HasMany
     {
         return $this->reactions()->where('reaction', 'down');
     }
