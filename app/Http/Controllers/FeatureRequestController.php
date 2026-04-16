@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use Throwable;
+use App\Models\User;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +27,7 @@ class FeatureRequestController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        /** @var \App\Models\User|null $authUser */
+        /** @var User|null $authUser */
         $authUser = auth('sanctum')->user();
         $userId = $authUser?->id;
 
@@ -47,7 +48,7 @@ class FeatureRequestController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        /** @var \App\Models\User|null $authUser */
+        /** @var User|null $authUser */
         $authUser = auth('sanctum')->user();
         $userId = $authUser?->id;
 

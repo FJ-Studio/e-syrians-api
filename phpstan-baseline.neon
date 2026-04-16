@@ -697,31 +697,7 @@ parameters:
 			path: app/Services/PollService.php
 
 		-
-			message: '#^Method App\\Services\\PollService\:\:getPollById\(\) should return App\\Models\\Poll but returns Illuminate\\Database\\Eloquent\\Model\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Services/PollService.php
-
-		-
-			message: '#^Relation ''options'' is not found in App\\Models\\Poll model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Services/PollService.php
-
-		-
-			message: '#^Relation ''user'' is not found in App\\Models\\Poll model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Services/PollService.php
-
-		-
 			message: '#^Relation ''user'' is not found in App\\Models\\PollVote model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Services/PollService.php
-
-		-
-			message: '#^Relation ''votes'' is not found in App\\Models\\Poll model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Services/PollService.php
