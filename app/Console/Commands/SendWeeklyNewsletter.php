@@ -10,7 +10,6 @@ use App\Mail\WeeklyNewsletter;
 use App\Models\FeatureRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 
 class SendWeeklyNewsletter extends Command
@@ -36,7 +35,6 @@ class SendWeeklyNewsletter extends Command
 
         // Fetch feature requests created in the past week
         $featureRequests = FeatureRequest::where('created_at', '>=', $since)
-            ->whereNull('deleted_at')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -48,31 +46,29 @@ class SendWeeklyNewsletter extends Command
             return self::SUCCESS;
         }
 
-        // Group users by their language preference
+        // Count recipients per locale for reporting
         $locales = ['en', 'ar', 'ku'];
-        $usersByLocale = [];
+        $countByLocale = [];
         foreach ($locales as $locale) {
-            $usersByLocale[$locale] = User::where('language', $locale)
+            $countByLocale[$locale] = User::where('language', $locale)
                 ->whereNotNull('email_verified_at')
-                ->pluck('email')
-                ->filter()
-                ->values();
+                ->whereNotNull('email')
+                ->count();
         }
 
         // Users without a language set default to Arabic
-        $defaultLocaleUsers = User::whereNull('language')
+        $defaultCount = User::whereNull('language')
             ->whereNotNull('email_verified_at')
-            ->pluck('email')
-            ->filter()
-            ->values();
-        $usersByLocale['ar'] = $usersByLocale['ar']->merge($defaultLocaleUsers)->unique()->values();
+            ->whereNotNull('email')
+            ->count();
+        $countByLocale['ar'] += $defaultCount;
 
-        $totalRecipients = collect($usersByLocale)->sum(fn (Collection $emails) => $emails->count());
+        $totalRecipients = array_sum($countByLocale);
         $this->info("Total recipients: {$totalRecipients}");
 
         if ($this->option('dry-run')) {
-            foreach ($usersByLocale as $locale => $emails) {
-                $this->line("  [{$locale}] {$emails->count()} users");
+            foreach ($countByLocale as $locale => $count) {
+                $this->line("  [{$locale}] {$count} users");
             }
             $this->info('Dry run — no emails sent.');
             return self::SUCCESS;
@@ -83,27 +79,31 @@ class SendWeeklyNewsletter extends Command
             return self::SUCCESS;
         }
 
+        // Send individual emails per user, processed in chunks to limit memory usage
         $sent = 0;
-        foreach ($usersByLocale as $locale => $emails) {
-            if ($emails->isEmpty()) {
-                continue;
+        foreach ($locales as $locale) {
+            $query = User::whereNotNull('email_verified_at')
+                ->whereNotNull('email');
+
+            if ($locale === 'ar') {
+                $query->where(fn ($q) => $q->where('language', 'ar')->orWhereNull('language'));
+            } else {
+                $query->where('language', $locale);
             }
 
-            $mailable = new WeeklyNewsletter(
-                polls: $polls,
-                featureRequests: $featureRequests,
-                userLocale: $locale,
-            );
+            $query->chunkById(100, function ($users) use ($polls, $featureRequests, $locale, &$sent) {
+                foreach ($users as $user) {
+                    Mail::to($user->email)
+                        ->queue(new WeeklyNewsletter(
+                            polls: $polls,
+                            featureRequests: $featureRequests,
+                            userLocale: $locale,
+                        ));
+                    $sent++;
+                }
+            });
 
-            // Send in chunks using BCC to avoid exposing addresses
-            foreach ($emails->chunk(50) as $chunk) {
-                Mail::to([])
-                    ->bcc($chunk->toArray())
-                    ->queue($mailable);
-                $sent += $chunk->count();
-            }
-
-            $this->info("Queued {$emails->count()} emails for [{$locale}]");
+            $this->info("Queued {$countByLocale[$locale]} emails for [{$locale}]");
         }
 
         $this->info("Done. {$sent} emails queued.");
