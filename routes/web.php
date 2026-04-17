@@ -35,7 +35,6 @@ Route::get('/newsletter/preview', function () {
         ->get();
 
     $featureRequests = FeatureRequest::where('created_at', '>=', $since)
-        ->whereNull('deleted_at')
         ->orderBy('created_at', 'desc')
         ->get();
 
