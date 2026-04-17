@@ -89,7 +89,7 @@
                                                             <td style="padding: 10px 14px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; color: #374151; line-height: 1.4;">
                                                                 <table cellpadding="0" cellspacing="0" role="presentation">
                                                                     <tr>
-                                                                        <td style="width: 24px; height: 24px; border-radius: 50%; background-color: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; text-align: center; line-height: 24px; vertical-align: middle;" width="24" height="24">{{ chr(65 + $index) }}</td>
+                                                                        <td style="width: 24px; height: 24px; border-radius: 50%; background-color: #eef2ff; color: #4f46e5; font-size: 11px; font-weight: 700; text-align: center; line-height: 24px; vertical-align: middle;" width="24" height="24">{{ $index < 26 ? chr(65 + $index) : $index + 1 }}</td>
                                                                         <td style="padding-{{ in_array($userLocale, ['ar', 'ku']) ? 'right' : 'left' }}: 10px; vertical-align: middle;">{{ $option->option_text }}</td>
                                                                     </tr>
                                                                 </table>
