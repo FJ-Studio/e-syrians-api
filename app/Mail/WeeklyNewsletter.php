@@ -30,7 +30,7 @@ class WeeklyNewsletter extends Mailable
         string $userLocale = 'ar',
     ) {
         $this->userLocale = $userLocale;
-        app()->setLocale($this->userLocale);
+        $this->locale($this->userLocale);
     }
 
     public function envelope(): Envelope
