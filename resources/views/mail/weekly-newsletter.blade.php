@@ -43,7 +43,7 @@
                     {{-- Header --}}
                     <tr>
                         <td style="padding: 25px 0; text-align: center;">
-                            <a href="{{ $frontendUrl }}" style="color: #3d4852; font-size: 19px; font-weight: bold; text-decoration: none;">
+                            <a href="{{ $frontendUrl }}" style="color: #3d4852; font-size: 19px; font-weight: bold; text-decoration: none;text-transform: uppercase;">
                                 {{ config('app.name') }}
                             </a>
                         </td>

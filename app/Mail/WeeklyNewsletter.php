@@ -6,11 +6,11 @@ namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Support\Collection;
 use Illuminate\Mail\Mailables\Content;
+use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Mail\Mailables\Attachment;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Collection;
 
 class WeeklyNewsletter extends Mailable
 {
@@ -42,7 +42,7 @@ class WeeklyNewsletter extends Mailable
 
     public function content(): Content
     {
-        $frontendUrl = env('FRONTEND_URL');
+        $frontendUrl = config('app.frontend_url');
 
         return new Content(
             view: 'mail.weekly-newsletter',

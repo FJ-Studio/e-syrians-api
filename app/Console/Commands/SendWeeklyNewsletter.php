@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Mail\WeeklyNewsletter;
-use App\Models\FeatureRequest;
 use App\Models\Poll;
 use App\Models\User;
-use Illuminate\Console\Command;
+use App\Mail\WeeklyNewsletter;
+use App\Models\FeatureRequest;
 use Illuminate\Support\Carbon;
+use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 

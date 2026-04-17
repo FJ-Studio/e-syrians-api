@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\Poll;
 use App\Mail\WeeklyNewsletter;
 use App\Models\FeatureRequest;
-use App\Models\Poll;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Route;
 
