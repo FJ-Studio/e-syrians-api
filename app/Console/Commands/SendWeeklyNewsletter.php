@@ -21,7 +21,7 @@ class SendWeeklyNewsletter extends Command
 
     public function handle(): int
     {
-        $since = \Illuminate\Support\Facades\Date::now()->subDays(7);
+        $since = Date::now()->subDays(7);
 
         // Fetch public polls created in the past week (with options eager-loaded)
         $polls = Poll::withoutGlobalScopes()
@@ -86,7 +86,7 @@ class SendWeeklyNewsletter extends Command
                 ->whereNotNull('email');
 
             if ($locale === 'ar') {
-                $query->where(fn($q) => $q->where('language', 'ar')->orWhereNull('language'));
+                $query->where(fn ($q) => $q->where('language', 'ar')->orWhereNull('language'));
             } else {
                 $query->where('language', $locale);
             }
