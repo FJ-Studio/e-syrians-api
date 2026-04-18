@@ -11,10 +11,12 @@ use App\Models\PollOption;
 use App\Enums\RevealResultsEnum;
 use App\Models\PollAudienceRule;
 use Illuminate\Support\Facades\DB;
+use App\Jobs\LogPollVoteToBigQuery;
 use App\Contracts\PollServiceContract;
 use App\Exceptions\PollVotingException;
 use App\Exceptions\PollReactionException;
 use Illuminate\Database\Eloquent\Builder;
+use App\Jobs\SyncPollAudienceRulesToBigQuery;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PollService implements PollServiceContract
@@ -102,6 +104,9 @@ class PollService implements PollServiceContract
 
             PollOption::insert($options->all());
 
+            // Sync audience rules to BigQuery for fraud detection
+            dispatch(new SyncPollAudienceRulesToBigQuery($poll->id));
+
             return $poll;
         });
     }
@@ -161,6 +166,10 @@ class PollService implements PollServiceContract
                 'updated_at' => now(),
             ])->all()
         );
+
+        // Mirror vote to BigQuery for fraud detection
+        $request = request();
+        dispatch(new LogPollVoteToBigQuery($userId, $pollId, $optionIds, $request->ip(), $request->userAgent()));
     }
 
     public function react(int $pollId, string $reaction, int $userId): void

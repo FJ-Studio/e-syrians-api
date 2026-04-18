@@ -23,3 +23,6 @@ yarn-error.log
 /.vscode
 /.zed
 /storage/rector/cache
+
+.DS_Store
+docs/audit-detection-plan.md

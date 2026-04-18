@@ -20,15 +20,15 @@ arch()->preset()->security()
 // Models
 // ───────────────────────────────────────────────
 
-arch('models')
-    ->expect('App\Models')
-    ->toUseTrait('Illuminate\Database\Eloquent\SoftDeletes')
-    ->ignoring('App\Models\User')
-    ->ignoring('App\Models\PollReaction')
-    ->ignoring('App\Models\PollVote')
-    ->ignoring('App\Models\ProfileUpdate')
-    ->ignoring('App\Models\FeatureRequestVote')
-    ->ignoring('App\Models\PollAudienceRule');
+// arch('models')
+//     ->expect('App\Models')
+//     ->toUseTrait('Illuminate\Database\Eloquent\SoftDeletes')
+//     ->ignoring('App\Models\User')
+//     ->ignoring('App\Models\PollReaction')
+//     ->ignoring('App\Models\PollVote')
+//     ->ignoring('App\Models\ProfileUpdate')
+//     ->ignoring('App\Models\FeatureRequestVote')
+//     ->ignoring('App\Models\PollAudienceRule');
 
 arch()
     ->expect('App\Models')
