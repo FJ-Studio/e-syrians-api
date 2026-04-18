@@ -136,7 +136,7 @@ class Poll extends Model
     /**
      * Build the audience array from normalized rules for API responses.
      */
-    public function getAudienceAttribute(): array
+    protected function getAudienceAttribute(): array
     {
         if (! $this->relationLoaded('audienceRules')) {
             $this->load('audienceRules');
@@ -218,7 +218,7 @@ class Poll extends Model
      * Scope: only polls visible to the given user.
      * Filters audience_only polls at the SQL level.
      */
-    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    protected function scopeVisibleTo(Builder $query, ?User $user): Builder
     {
         if (! $user) {
             return $query->where('audience_only', false);

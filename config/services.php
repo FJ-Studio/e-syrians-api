@@ -44,4 +44,18 @@ return [
         'secret' => env('RECAPTCHA_SECRET'),
     ],
 
+    'internal_api_key' => env('INTERNAL_API_KEY'),
+
+    'bigquery' => [
+        'enabled' => env('BIGQUERY_ENABLED', false),
+        'project_id' => env('BIGQUERY_PROJECT_ID'),
+        'dataset' => env('BIGQUERY_DATASET', 'e_syrians_audit'),
+        'credentials' => env('BIGQUERY_CREDENTIALS'),
+        'tables' => [
+            'profile_changes' => 'profile_changes',
+            'poll_votes' => 'poll_votes',
+            'poll_audience_rules' => 'poll_audience_rules',
+        ],
+    ],
+
 ];

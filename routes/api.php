@@ -15,6 +15,7 @@ use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\FeatureRequestController;
+use App\Http\Controllers\SuspiciousActivityController;
 
 /*
 |--------------------------------------------------------------------------
@@ -181,3 +182,12 @@ Route::get('/stats', [StatsController::class, 'index'])->middleware((['throttle:
 Route::middleware(['guest', 'throttle:6,1,verify_email'])
     ->get('/verify-email', [AuthController::class, 'verifyEmail'])
     ->name('verification.verify');
+
+/*
+|--------------------------------------------------------------------------
+| Internal API Routes (Cloud Function webhooks)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('internal')->middleware(['internal-api'])->group(function (): void {
+    Route::post('/suspicious-activity', [SuspiciousActivityController::class, 'store']);
+});
