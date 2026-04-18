@@ -3,7 +3,7 @@
 use App\Models\Poll;
 use App\Mail\WeeklyNewsletter;
 use App\Models\FeatureRequest;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (): void {

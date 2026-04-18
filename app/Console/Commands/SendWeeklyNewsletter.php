@@ -8,8 +8,8 @@ use App\Models\Poll;
 use App\Models\User;
 use App\Mail\WeeklyNewsletter;
 use App\Models\FeatureRequest;
-use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Mail;
 
 class SendWeeklyNewsletter extends Command
@@ -86,7 +86,7 @@ class SendWeeklyNewsletter extends Command
                 ->whereNotNull('email');
 
             if ($locale === 'ar') {
-                $query->where(fn ($q) => $q->where('language', 'ar')->orWhereNull('language'));
+                $query->where(fn($q) => $q->where('language', 'ar')->orWhereNull('language'));
             } else {
                 $query->where('language', $locale);
             }

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Support\Str;
 use App\Services\StrService;
 use Laravel\Sanctum\HasApiTokens;
 use Database\Factories\UserFactory;
 use App\Enums\ProfileChangeTypeEnum;
+use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -375,7 +375,7 @@ class User extends Authenticatable implements MustVerifyEmail
             $values = $rules->where('criterion', $criterion)->pluck('value')->all();
             if (count($values) > 0) {
                 if (! $this->{$criterion}) {
-                    $failures[] = $criterion.'_missing';
+                    $failures[] = $criterion . '_missing';
                 } elseif (! in_array($this->{$criterion}, $values)) {
                     $failures[] = $criterion;
                 }

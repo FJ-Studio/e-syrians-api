@@ -3,6 +3,7 @@
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use App\Http\Middleware\Recaptcha;
+use App\Http\Middleware\InternalApi;
 use Illuminate\Foundation\Application;
 use App\Http\Middleware\SetAppLocalization;
 use Illuminate\Auth\AuthenticationException;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'recaptcha' => Recaptcha::class,
+            'internal-api' => InternalApi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
