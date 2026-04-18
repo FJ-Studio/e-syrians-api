@@ -357,7 +357,7 @@ class User extends Authenticatable implements MustVerifyEmail
             if (! $this->birth_date) {
                 $failures[] = 'birth_date_missing';
             } else {
-                $age = Carbon::parse($this->birth_date)->diffInYears(now());
+                $age = \Illuminate\Support\Facades\Date::parse($this->birth_date)->diffInYears(now());
 
                 if ($ageMin !== null && $age < (int) $ageMin) {
                     $failures[] = 'age_min';

@@ -23,7 +23,7 @@ Route::get('/newsletter/preview', function () {
     }
 
     $locale = request()->query('locale', 'ar');
-    $since = Carbon::now()->subDays(7);
+    $since = \Illuminate\Support\Facades\Date::now()->subDays(7);
 
     $polls = Poll::withoutGlobalScopes()
         ->where('is_private', false)

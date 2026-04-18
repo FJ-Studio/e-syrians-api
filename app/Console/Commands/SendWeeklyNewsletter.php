@@ -21,7 +21,7 @@ class SendWeeklyNewsletter extends Command
 
     public function handle(): int
     {
-        $since = Carbon::now()->subDays(7);
+        $since = \Illuminate\Support\Facades\Date::now()->subDays(7);
 
         // Fetch public polls created in the past week (with options eager-loaded)
         $polls = Poll::withoutGlobalScopes()
@@ -91,7 +91,7 @@ class SendWeeklyNewsletter extends Command
                 $query->where('language', $locale);
             }
 
-            $query->chunkById(100, function ($users) use ($polls, $featureRequests, $locale, &$sent) {
+            $query->chunkById(100, function ($users) use ($polls, $featureRequests, $locale, &$sent): void {
                 foreach ($users as $user) {
                     Mail::to($user->email)
                         ->queue(new WeeklyNewsletter(
