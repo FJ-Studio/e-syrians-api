@@ -253,7 +253,7 @@ it('allows admin to restore a soft-deleted feature and clear the reason', functi
     expect($fresh->deletion_reason)->toBeNull();
 
     // And the public list now sees it again.
-    app('auth')->forgetGuards();
+    resolve('auth')->forgetGuards();
     $listResponse = $this->getJson('/feature-requests');
     $ids = array_column($listResponse->json('data.feature_requests'), 'id');
     expect($ids)->toContain(test()->feature->id);

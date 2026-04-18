@@ -3,7 +3,7 @@
 use App\Models\Poll;
 use App\Mail\WeeklyNewsletter;
 use App\Models\FeatureRequest;
-use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (): void {
@@ -23,7 +23,7 @@ Route::get('/newsletter/preview', function () {
     }
 
     $locale = request()->query('locale', 'ar');
-    $since = Carbon::now()->subDays(7);
+    $since = Date::now()->subDays(7);
 
     $polls = Poll::withoutGlobalScopes()
         ->where('is_private', false)
