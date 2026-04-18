@@ -256,13 +256,11 @@ class FeatureRequestService implements FeatureRequestServiceContract
         match ($sort) {
             'shipped' => $query
                 ->whereNotNull('deployed_at')
-                ->orderByDesc('deployed_at')
-                ->orderByDesc('created_at'),
+                ->latest('deployed_at')->latest(),
             'popular' => $query
-                ->orderByRaw('(ups_aggregate_count - downs_aggregate_count) DESC')
-                ->orderByDesc('created_at'),
+                ->orderByRaw('(ups_aggregate_count - downs_aggregate_count) DESC')->latest(),
             // 'newest' and any unknown value
-            default => $query->orderByDesc('created_at'),
+            default => $query->latest(),
         };
     }
 }

@@ -33,4 +33,5 @@ return [
             'ttl' => 10080, // 7 days
         ],
     ],
+    'admin_notification_email' => env('ADMIN_NOTIFICATION_EMAIL'),
 ];

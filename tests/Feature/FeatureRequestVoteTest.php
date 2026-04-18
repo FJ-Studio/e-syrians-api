@@ -179,7 +179,7 @@ it('independently tracks multiple users voting on the same feature', function ()
     // the first bearer token, subsequent requests in the same test reuse that
     // cached user and ignore the new bearer. Flushing the guards forces the
     // next request to re-resolve from its own Authorization header.
-    app('auth')->forgetGuards();
+    resolve('auth')->forgetGuards();
 
     $this->postJson('/feature-requests/vote', [
         'feature_request_id' => test()->feature->id,
@@ -188,7 +188,7 @@ it('independently tracks multiple users voting on the same feature', function ()
 
     $this->assertDatabaseCount('feature_request_votes', 2);
 
-    app('auth')->forgetGuards();
+    resolve('auth')->forgetGuards();
 
     $response = $this->getJson('/feature-requests/' . test()->feature->id);
     $response->assertJsonPath('data.ups_count', 1);
@@ -218,7 +218,7 @@ it('reflects has_upvoted/has_downvoted for the authenticated caller', function (
     // the first bearer token, subsequent requests in the same test reuse that
     // cached user and ignore the new bearer. Flushing the guards forces the
     // next request to re-resolve from its own Authorization header.
-    app('auth')->forgetGuards();
+    resolve('auth')->forgetGuards();
 
     $asOther = $this->getJson(
         '/feature-requests/' . test()->feature->id,
@@ -227,7 +227,7 @@ it('reflects has_upvoted/has_downvoted for the authenticated caller', function (
     $asOther->assertJsonPath('data.has_upvoted', false);
     $asOther->assertJsonPath('data.has_downvoted', false);
 
-    app('auth')->forgetGuards();
+    resolve('auth')->forgetGuards();
 
     // Guests should see false/false regardless of actual votes.
     $asGuest = $this->getJson('/feature-requests/' . test()->feature->id);
