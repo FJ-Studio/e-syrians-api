@@ -22,10 +22,7 @@ class UserReceivedVerification extends Mailable
      */
     public function __construct(public User $sender, public User $recipient)
     {
-        $this->sender = $sender;
-        $this->recipient = $recipient;
-        // Use Mailable's locale method instead of mutating app state
-        $this->locale($recipient?->language ?? config('app.locale'));
+        $this->locale($recipient->language ?? config('app.locale'));
     }
 
     /**
