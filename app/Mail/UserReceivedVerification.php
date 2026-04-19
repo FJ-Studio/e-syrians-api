@@ -22,10 +22,7 @@ class UserReceivedVerification extends Mailable
      */
     public function __construct(public User $sender, public User $recipient)
     {
-        $this->sender = $sender;
-        $this->recipient = $recipient;
-        // Set the application locale to the recipient's preferred locale
-        app()->setLocale($recipient?->language ?? config('app.locale'));
+        $this->locale($recipient->language ?? config('app.locale'));
     }
 
     /**
@@ -48,7 +45,7 @@ class UserReceivedVerification extends Mailable
             with: [
                 'sender' => $this->sender,
                 'recipient' => $this->recipient,
-                'url' => env('FRONTEND_URL').'/account/verifications/',
+                'url' => config('app.frontend_url').'/account/verifications/',
             ]
         );
     }
