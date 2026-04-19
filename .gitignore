@@ -26,3 +26,7 @@ yarn-error.log
 
 .DS_Store
 docs/audit-detection-plan.md
+
+**/caddy
+frankenphp
+frankenphp-worker.php

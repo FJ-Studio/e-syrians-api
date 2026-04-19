@@ -43,7 +43,7 @@ class UserAccountVerified extends Mailable
         return new Content(
             markdown: 'mail.user-account-verified',
             with: [
-                'url' => env('FRONTEND_URL').'/account',
+                'url' => config('app.frontend_url').'/account',
             ]
         );
     }
