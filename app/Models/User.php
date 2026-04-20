@@ -375,7 +375,7 @@ class User extends Authenticatable implements MustVerifyEmail
             $values = $rules->where('criterion', $criterion)->pluck('value')->all();
             if (count($values) > 0) {
                 if (! $this->{$criterion}) {
-                    $failures[] = $criterion.'_missing';
+                    $failures[] = $criterion . '_missing';
                 } elseif (! in_array($this->{$criterion}, $values)) {
                     $failures[] = $criterion;
                 }

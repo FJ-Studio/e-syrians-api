@@ -24,6 +24,8 @@ yarn-error.log
 /.zed
 /storage/rector/cache
 
-docs/audit-detection-plan.md
 .DS_Store
+docs/audit-detection-plan.md
 frankenphp
+**/caddy
+frankenphp-worker.php
