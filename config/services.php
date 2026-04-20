@@ -49,7 +49,7 @@ return [
     'bigquery' => [
         'enabled' => env('BIGQUERY_ENABLED', false),
         'project_id' => env('BIGQUERY_PROJECT_ID'),
-        'dataset' => env('BIGQUERY_DATASET', 'e_syrians_audit'),
+        'dataset' => env('BIGQUERY_DATASET'),
         'credentials' => env('BIGQUERY_CREDENTIALS'),
         'tables' => [
             'profile_changes' => 'profile_changes',

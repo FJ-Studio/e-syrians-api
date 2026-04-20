@@ -762,26 +762,3 @@ parameters:
 			count: 1
 			path: app/Services/VerificationService.php
 
-		-
-			message: '#^Property App\\Services\\BigQueryService\:\:\$client has unknown class Google\\Cloud\\BigQuery\\BigQueryClient as its type\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/BigQueryService.php
-
-		-
-			message: '#^Call to method dataset\(\) on an unknown class Google\\Cloud\\BigQuery\\BigQueryClient\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Services/BigQueryService.php
-
-		-
-			message: '#^Method App\\Services\\BigQueryService\:\:getClient\(\) has invalid return type Google\\Cloud\\BigQuery\\BigQueryClient\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/BigQueryService.php
-
-		-
-			message: '#^Instantiated class Google\\Cloud\\BigQuery\\BigQueryClient not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Services/BigQueryService.php
