@@ -649,24 +649,6 @@ parameters:
 			path: app/Listeners/UpdateStatistics.php
 
 		-
-			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 1
-			path: app/Mail/UserAccountVerified.php
-
-		-
-			message: '#^Called ''env'' outside of the config directory which returns null when the config is cached, use ''config''\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 1
-			path: app/Mail/UserReceivedVerification.php
-
-		-
-			message: '#^Expression on left side of \?\? is not nullable\.$#'
-			identifier: nullCoalesce.expr
-			count: 1
-			path: app/Mail/UserReceivedVerification.php
-
-		-
 			message: '#^Relation ''user'' is not found in App\\Models\\PollVote model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
