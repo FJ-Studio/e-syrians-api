@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.4",
         "bacon/bacon-qr-code": "^3.0",
+        "google/cloud-bigquery": "^1.36",
         "laravel/framework": "^13.0",
         "laravel/nightwatch": "^1.26",
         "laravel/sanctum": "^4.0",
