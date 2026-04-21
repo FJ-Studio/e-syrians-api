@@ -16,22 +16,8 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: #374151;
             -webkit-text-size-adjust: none;
-
-            direction: {
-                    {
-                    $dir
-                }
-            }
-
-            ;
-
-            text-align: {
-                    {
-                    $align
-                }
-            }
-
-            ;
+            direction: {{ $dir }};
+            text-align: {{ $align }};
         }
 
         a {
