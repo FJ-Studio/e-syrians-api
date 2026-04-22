@@ -15,6 +15,7 @@ class UserPollService implements UserPollServiceContract
         return $user->polls()
             ->withTrashed()
             ->withCount('votes')
+            ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }
 
