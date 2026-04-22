@@ -1,4 +1,4 @@
-[![Laravel Forge Site Deployment Status](https://img.shields.io/endpoint?url=https%3A%2F%2Fforge.laravel.com%2Fsite-badges%2Fd446903d-6e9f-4fdb-919b-6066855c4332%3Fdate%3D1%26commit%3D1&style=plastic)](https://forge.laravel.com/feras-jobeir/e-syrians-hit/3142988)
+[![Laravel Forge Site Deployment Status](https://img.shields.io/endpoint?url=https%3A%2F%2Fforge.laravel.com%2Fsite-badges%2Fd55f69ee-1ca4-4496-b87d-a710397231fc%3Fdate%3D1%26commit%3D1&style=plastic)](https://forge.laravel.com/feras-jobeir/e-syrians/2627744)
 
 # E-SYRIANS API
 
