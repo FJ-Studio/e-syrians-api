@@ -12,10 +12,10 @@ use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ViolationController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\FeatureRequestController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SuspiciousActivityController;
 
 /*
