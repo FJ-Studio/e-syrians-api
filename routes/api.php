@@ -12,6 +12,7 @@ use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\ViolationController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\FeatureRequestController;
@@ -72,6 +73,14 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
 
     // Notification preferences
     Route::middleware(['throttle:1,1,change-notifications', 'recaptcha'])->post('/change-notifications', [ProfileController::class, 'changeNotifications']);
+
+    // Notifications
+    Route::prefix('notifications')->group(function (): void {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::post('/{id}/mark-read', [NotificationController::class, 'markAsRead']);
+        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+    });
 
     // Two-Factor Authentication
     Route::prefix('2fa')->group(function (): void {
