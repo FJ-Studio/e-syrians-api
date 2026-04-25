@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
+use App\Mail\PasswordSetupOtp;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use App\Contracts\PasswordServiceContract;
 
@@ -21,6 +24,40 @@ class PasswordService implements PasswordServiceContract
         $user->save();
 
         return ['success' => true, 'message' => 'password_updated', 'code' => 200];
+    }
+
+    public function sendSetupOtp(User $user): array
+    {
+        if (! is_null($user->password)) {
+            return ['success' => false, 'message' => 'user_already_has_password', 'code' => 422];
+        }
+
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        Cache::put("password_setup_otp:{$user->id}", $code, now()->addMinutes(10));
+
+        Mail::to($user->email)->send(new PasswordSetupOtp($user, $code));
+
+        return ['success' => true, 'message' => 'otp_sent', 'code' => 200];
+    }
+
+    public function setPasswordWithOtp(User $user, string $otp, string $newPassword): array
+    {
+        if (! is_null($user->password)) {
+            return ['success' => false, 'message' => 'user_already_has_password', 'code' => 422];
+        }
+
+        $cachedOtp = Cache::get("password_setup_otp:{$user->id}");
+
+        if (! $cachedOtp || $cachedOtp !== $otp) {
+            return ['success' => false, 'message' => 'invalid_or_expired_otp', 'code' => 422];
+        }
+
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        Cache::forget("password_setup_otp:{$user->id}");
+
+        return ['success' => true, 'message' => 'password_set_successfully', 'code' => 200];
     }
 
     public function sendResetLink(string $email): array

@@ -66,6 +66,8 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
 
     // Password management
     Route::middleware(['throttle:1,1,change-password', 'recaptcha'])->post('/change-password', [PasswordController::class, 'change']);
+    Route::middleware(['throttle:1,1,send-setup-otp'])->post('/password/send-otp', [PasswordController::class, 'sendSetupOtp']);
+    Route::middleware(['throttle:3,1,set-password', 'recaptcha'])->post('/password/set', [PasswordController::class, 'setPassword']);
 
     // Email & verification
     Route::middleware(['throttle:1,1,change-email', 'recaptcha'])->post('/change-email', [ProfileController::class, 'changeEmail']);

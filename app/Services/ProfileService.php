@@ -11,6 +11,8 @@ use InvalidArgumentException;
 use Illuminate\Http\UploadedFile;
 use App\Enums\ProfileChangeTypeEnum;
 use App\Jobs\LogProfileChangeToBigQuery;
+use App\Mail\EmailChangedNotification;
+use Illuminate\Support\Facades\Mail;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\FileUploadServiceContract;
 use App\Exceptions\UpdateLimitReachedException;
@@ -143,10 +145,17 @@ class ProfileService implements ProfileServiceContract
 
     public function changeEmail(User $user, string $email): void
     {
+        $oldEmail = $user->email;
+
         $user->email = $email;
         $user->email_verified_at = null;
         $user->save();
         $user->sendEmailVerificationNotification();
+
+        // Notify the old email address about the change
+        if ($oldEmail && $oldEmail !== $email) {
+            Mail::to($oldEmail)->send(new EmailChangedNotification($user, $email));
+        }
     }
 
     public function updateNotifications(User $user, array $preferences): void
