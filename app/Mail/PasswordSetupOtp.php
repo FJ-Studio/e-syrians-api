@@ -8,8 +8,8 @@ use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Envelope;
 
 class PasswordSetupOtp extends Mailable
 {

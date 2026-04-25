@@ -6,9 +6,9 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Mail\PasswordSetupOtp;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Password;
 use App\Contracts\PasswordServiceContract;
 

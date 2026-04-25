@@ -96,7 +96,7 @@ class UserResource extends JsonResource
                 'account_verified_email' => $this->account_verified_email,
                 'city_inside_syria' => $this->city_inside_syria,
                 'language' => $this->language,
-                'has_password' => ! is_null($this->password),
+                'has_password' => ! is_null($this->resource->password),
             ]),
 
         ];
