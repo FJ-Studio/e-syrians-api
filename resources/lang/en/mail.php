@@ -18,4 +18,18 @@ return [
     'newsletter_empty' => 'It was a quiet week — nothing new to report. Stay tuned!',
     'newsletter_vote_now' => 'Vote Now',
     'newsletter_cta' => 'Visit E-SYRIANS',
+
+    // Password setup OTP
+    'otp_subject' => 'Your verification code',
+    'otp_heading' => 'Set your password',
+    'otp_body' => 'You requested to set a password for your account. Use the verification code below to proceed.',
+    'otp_expiry' => 'This code expires in 10 minutes.',
+    'otp_ignore' => 'If you did not request this, please ignore this email.',
+
+    // Email changed notification
+    'email_changed_subject' => 'Your email address has been changed',
+    'email_changed_heading' => 'Email address changed',
+    'email_changed_body' => 'Hello :name, the email address associated with your account has been changed.',
+    'email_changed_new_address' => 'The new email address is: :email',
+    'email_changed_warning' => 'If you did not make this change, please contact us immediately.',
 ];

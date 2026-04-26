@@ -15,7 +15,7 @@ beforeEach(function (): void {
         'country' => 'SY',
         'ethnicity' => 'arab',
         'religious_affiliation' => 'sunni',
-        'city_inside_syria' => 'daraa',
+        'province' => 'daraa',
         'national_id' => '12345678',
     ]);
     test()->user->assignRole('citizen');
@@ -25,10 +25,10 @@ beforeEach(function (): void {
 // City Inside Syria
 // ───────────────────────────────────────────────
 
-it('passes when user city_inside_syria matches audience', function (): void {
+it('passes when user province matches audience', function (): void {
     $poll = createPollWithRules([
-        ['criterion' => 'city_inside_syria', 'value' => 'daraa'],
-        ['criterion' => 'city_inside_syria', 'value' => 'damascus'],
+        ['criterion' => 'province', 'value' => 'daraa'],
+        ['criterion' => 'province', 'value' => 'damascus'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
@@ -37,32 +37,32 @@ it('passes when user city_inside_syria matches audience', function (): void {
     expect($failures)->toBeEmpty();
 });
 
-it('fails when user city_inside_syria does not match audience', function (): void {
+it('fails when user province does not match audience', function (): void {
     $poll = createPollWithRules([
-        ['criterion' => 'city_inside_syria', 'value' => 'aleppo'],
-        ['criterion' => 'city_inside_syria', 'value' => 'homs'],
+        ['criterion' => 'province', 'value' => 'aleppo'],
+        ['criterion' => 'province', 'value' => 'homs'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
 
     expect($eligible)->toBeFalse();
-    expect($failures)->toContain('city_inside_syria');
+    expect($failures)->toContain('province');
 });
 
-it('fails with city_inside_syria_missing when user has no city_inside_syria', function (): void {
-    test()->user->update(['city_inside_syria' => null]);
+it('fails with province_missing when user has no province', function (): void {
+    test()->user->update(['province' => null]);
 
     $poll = createPollWithRules([
-        ['criterion' => 'city_inside_syria', 'value' => 'daraa'],
+        ['criterion' => 'province', 'value' => 'daraa'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
 
     expect($eligible)->toBeFalse();
-    expect($failures)->toContain('city_inside_syria_missing');
+    expect($failures)->toContain('province_missing');
 });
 
-it('passes when audience has no city_inside_syria rules', function (): void {
+it('passes when audience has no province rules', function (): void {
     $poll = createPollWithRules([]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
@@ -82,10 +82,10 @@ it('passes when audience only has gender rule that matches', function (): void {
     expect($failures)->toBeEmpty();
 });
 
-it('checks city_inside_syria alongside other criteria', function (): void {
+it('checks province alongside other criteria', function (): void {
     $poll = createPollWithRules([
         ['criterion' => 'country', 'value' => 'SY'],
-        ['criterion' => 'city_inside_syria', 'value' => 'daraa'],
+        ['criterion' => 'province', 'value' => 'daraa'],
         ['criterion' => 'gender', 'value' => 'm'],
     ]);
 
@@ -95,17 +95,17 @@ it('checks city_inside_syria alongside other criteria', function (): void {
     expect($failures)->toBeEmpty();
 });
 
-it('fails city_inside_syria alongside other criteria when city does not match', function (): void {
+it('fails province alongside other criteria when city does not match', function (): void {
     $poll = createPollWithRules([
         ['criterion' => 'country', 'value' => 'SY'],
-        ['criterion' => 'city_inside_syria', 'value' => 'aleppo'],
+        ['criterion' => 'province', 'value' => 'aleppo'],
         ['criterion' => 'gender', 'value' => 'm'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
 
     expect($eligible)->toBeFalse();
-    expect($failures)->toContain('city_inside_syria');
+    expect($failures)->toContain('province');
     expect($failures)->not->toContain('country');
     expect($failures)->not->toContain('gender');
 });
@@ -206,7 +206,7 @@ it('collects multiple failures at once', function (): void {
     $poll = createPollWithRules([
         ['criterion' => 'country', 'value' => 'SY'],
         ['criterion' => 'religious_affiliation', 'value' => 'sunni'],
-        ['criterion' => 'city_inside_syria', 'value' => 'aleppo'],
+        ['criterion' => 'province', 'value' => 'aleppo'],
     ]);
 
     [$eligible, $failures] = test()->user->isInAudience($poll);
@@ -214,7 +214,7 @@ it('collects multiple failures at once', function (): void {
     expect($eligible)->toBeFalse();
     expect($failures)->toContain('country');
     expect($failures)->toContain('religious_affiliation');
-    expect($failures)->toContain('city_inside_syria');
+    expect($failures)->toContain('province');
 });
 
 it('passes with completely open audience (no rules)', function (): void {

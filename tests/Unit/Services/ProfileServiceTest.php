@@ -161,7 +161,7 @@ it('converts arrays to comma-separated strings for census data', function (): vo
 it('updates address and records profile change with IP', function (): void {
     test()->profileService->updateAddress(test()->user, [
         'country' => 'TR',
-        'city_inside_syria' => null,
+        'province' => null,
     ], '192.168.1.1', 'TestAgent/1.0');
 
     $this->assertDatabaseHas('users', [

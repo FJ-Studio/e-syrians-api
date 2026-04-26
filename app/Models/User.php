@@ -72,7 +72,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'google_id',
         'country',
-        'city',
         'shelter',
         'address',
         'email_verified_at',
@@ -112,7 +111,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'website',
         'received_verification_email',
         'account_verified_email',
-        'city_inside_syria',
+        'province',
         'language',
         // Two-factor authentication
         'two_factor_secret',
@@ -370,7 +369,7 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         // Criteria checks
-        $criteria = ['country', 'religious_affiliation', 'hometown', 'gender', 'ethnicity', 'city_inside_syria'];
+        $criteria = ['country', 'religious_affiliation', 'hometown', 'gender', 'ethnicity', 'province'];
         foreach ($criteria as $criterion) {
             $values = $rules->where('criterion', $criterion)->pluck('value')->all();
             if (count($values) > 0) {

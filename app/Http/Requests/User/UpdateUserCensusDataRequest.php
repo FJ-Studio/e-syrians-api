@@ -33,7 +33,6 @@ class UpdateUserCensusDataRequest extends FormRequest
     {
         return [
             'middle_name' => ['nullable', 'string', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
             'shelter' => ['nullable', 'boolean'],
             'address' => ['nullable', 'string'],
             'education_level' => ['nullable', 'in:'.implode(',', array_map(fn ($case) => $case->value, EducationLevelEnum::cases()))],

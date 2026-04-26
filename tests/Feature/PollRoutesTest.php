@@ -238,10 +238,10 @@ it('accepts allowed_voters with exactly 500 entries', function (): void {
 });
 
 // ───────────────────────────────────────────────
-// Store — city_inside_syria validation
+// Store — province validation
 // ───────────────────────────────────────────────
 
-it('creates a poll with city_inside_syria audience', function (): void {
+it('creates a poll with province audience', function (): void {
     $response = $this->postJson('/polls', [
         'question' => 'City inside Syria poll?',
         'start_date' => now()->toDateString(),
@@ -252,14 +252,14 @@ it('creates a poll with city_inside_syria audience', function (): void {
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
         'country' => ['SY'],
-        'city_inside_syria' => ['damascus', 'daraa'],
+        'province' => ['damascus', 'daraa'],
     ], authHeader(test()->user));
 
     $response->assertOk();
     $this->assertDatabaseHas('polls', ['question' => 'City inside Syria poll?']);
 });
 
-it('rejects invalid city_inside_syria values', function (): void {
+it('rejects invalid province values', function (): void {
     $response = $this->postJson('/polls', [
         'question' => 'Invalid city poll?',
         'start_date' => now()->toDateString(),
@@ -269,7 +269,7 @@ it('rejects invalid city_inside_syria values', function (): void {
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'city_inside_syria' => ['not_a_real_city_xyz'],
+        'province' => ['not_a_real_city_xyz'],
     ], authHeader(test()->user));
 
     $response->assertStatus(422);
