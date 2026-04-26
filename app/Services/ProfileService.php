@@ -154,7 +154,7 @@ class ProfileService implements ProfileServiceContract
 
         // Notify the old email address about the change
         if ($oldEmail && $oldEmail !== $email) {
-            Mail::to($oldEmail)->send(new EmailChangedNotification($user, $email));
+            Mail::to($oldEmail)->queue(new EmailChangedNotification($user, $email));
         }
     }
 

@@ -10,8 +10,9 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Contracts\Queue\ShouldQueue;
 
-class PasswordSetupOtp extends Mailable
+class PasswordSetupOtp extends Mailable implements ShouldQueue
 {
     use Queueable;
     use SerializesModels;

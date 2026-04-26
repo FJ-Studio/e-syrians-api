@@ -51,7 +51,7 @@ class PasswordController extends Controller
     {
         $request->validate([
             'otp' => ['required', 'string', 'size:6'],
-            'new_password' => ['required', 'confirmed', 'min:8', 'max:255'],
+            'new_password' => ['required', 'string', 'confirmed', 'min:8', 'max:255'],
         ]);
 
         $result = $this->passwordService->setPasswordWithOtp(

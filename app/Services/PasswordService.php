@@ -35,7 +35,7 @@ class PasswordService implements PasswordServiceContract
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         Cache::put("password_setup_otp:{$user->id}", $code, now()->addMinutes(10));
 
-        Mail::to($user->email)->send(new PasswordSetupOtp($user, $code));
+        Mail::to($user->email)->queue(new PasswordSetupOtp($user, $code));
 
         return ['success' => true, 'message' => 'otp_sent', 'code' => 200];
     }
