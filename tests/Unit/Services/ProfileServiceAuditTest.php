@@ -16,7 +16,7 @@ beforeEach(function (): void {
         'gender' => 'm',
         'birth_date' => '1990-01-01',
         'country' => 'SY',
-        'city_inside_syria' => 'damascus',
+        'province' => 'damascus',
         'ethnicity' => 'arab',
         'hometown' => 'damascus',
         'email' => 'audit_test@gmail.com',
@@ -45,7 +45,7 @@ it('captures old and new values when basic info changes', function (): void {
 it('captures old and new values when address changes', function (): void {
     test()->profileService->updateAddress(test()->user, [
         'country' => 'TR',
-        'city_inside_syria' => null,
+        'province' => null,
     ], '10.0.0.1', 'Mozilla/5.0');
 
     $update = test()->user->profileUpdates()->latest('id')->first();
@@ -117,14 +117,14 @@ it('logs blocked address update attempts', function (): void {
     for ($i = 0; $i < $limit; $i++) {
         test()->profileService->updateAddress(test()->user, [
             'country' => $countries[$i],
-            'city_inside_syria' => null,
+            'province' => null,
         ], '10.0.0.1', 'TestAgent');
     }
 
     try {
         test()->profileService->updateAddress(test()->user, [
             'country' => 'NL',
-            'city_inside_syria' => null,
+            'province' => null,
         ], '10.0.0.1', 'TestAgent');
     } catch (UpdateLimitReachedException) {
         // Expected
@@ -152,7 +152,7 @@ it('dispatches BigQuery job on basic info update', function (): void {
 it('dispatches BigQuery job on address update', function (): void {
     test()->profileService->updateAddress(test()->user, [
         'country' => 'TR',
-        'city_inside_syria' => null,
+        'province' => null,
     ], '10.0.0.1', 'TestAgent');
 
     Queue::assertPushed(LogProfileChangeToBigQuery::class);

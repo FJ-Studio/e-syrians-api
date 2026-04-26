@@ -45,6 +45,6 @@ it('Assert users in SY provides their province', function (): void {
     // asset response status (validation error)
     $response->assertStatus(422);
     // assert response has error messages regarding the city (at least)
-    expect($response['messages'])->toHaveKey('city_inside_syria');
+    expect($response['messages'])->toHaveKey('province');
 
 });

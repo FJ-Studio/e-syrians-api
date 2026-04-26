@@ -36,6 +36,37 @@ class PasswordController extends Controller
         return ApiService::success([], $result['message']);
     }
 
+    public function sendSetupOtp(Request $request): JsonResponse
+    {
+        $result = $this->passwordService->sendSetupOtp($request->user());
+
+        if (! $result['success']) {
+            return ApiService::error($result['code'], $result['message']);
+        }
+
+        return ApiService::success([], $result['message']);
+    }
+
+    public function setPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'otp' => ['required', 'string', 'size:6'],
+            'new_password' => ['required', 'string', 'confirmed', 'min:8', 'max:255'],
+        ]);
+
+        $result = $this->passwordService->setPasswordWithOtp(
+            $request->user(),
+            $request->input('otp'),
+            $request->input('new_password'),
+        );
+
+        if (! $result['success']) {
+            return ApiService::error($result['code'], $result['message']);
+        }
+
+        return ApiService::success([], $result['message']);
+    }
+
     public function forgot(Request $request): JsonResponse
     {
         $request->validate([

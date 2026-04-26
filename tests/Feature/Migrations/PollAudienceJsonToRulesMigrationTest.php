@@ -172,13 +172,13 @@ it('migrates a realistic combined audience', function (): void {
         'hometown' => ['damascus'],
         'ethnicity' => ['arab'],
         'religious_affiliation' => ['sunni'],
-        'city_inside_syria' => ['daraa'],
+        'province' => ['daraa'],
         'age_range' => ['min' => 18, 'max' => 65],
     ]);
 
     runAudienceJsonToRulesMigration();
 
     $count = DB::table('poll_audience_rules')->where('poll_id', $pollId)->count();
-    // 1 gender + 2 country + 1 hometown + 1 ethnicity + 1 religious_affiliation + 1 city_inside_syria + age_min + age_max
+    // 1 gender + 2 country + 1 hometown + 1 ethnicity + 1 religious_affiliation + 1 province + age_min + age_max
     expect($count)->toBe(9);
 });

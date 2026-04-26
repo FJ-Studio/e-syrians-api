@@ -261,7 +261,7 @@ class PollService implements PollServiceContract
                 'religious_affiliation',
                 'hometown',
                 'ethnicity',
-                'city_inside_syria',
+                'province',
             ];
 
             foreach ($arrayCriteria as $criterion) {

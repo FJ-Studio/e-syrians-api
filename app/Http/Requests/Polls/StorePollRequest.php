@@ -82,9 +82,9 @@ class StorePollRequest extends FormRequest
             // ethnicity
             'ethnicity' => ['nullable', 'array'],
             'ethnicity.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, EthnicityEnum::cases()))],
-            // city inside syria (only relevant when country is SY)
-            'city_inside_syria' => ['nullable', 'array'],
-            'city_inside_syria.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
+            // province (only relevant when country is SY)
+            'province' => ['nullable', 'array'],
+            'province.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
             // specific voters (national IDs or emails, one per entry)
             'allowed_voters' => ['nullable', 'array', 'max:500'],
             'allowed_voters.*' => ['required', 'string', 'max:255', 'regex:/^([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}|[0-9]{5,20})$/'],

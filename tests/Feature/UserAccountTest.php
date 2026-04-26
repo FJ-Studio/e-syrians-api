@@ -35,61 +35,13 @@ it('User gets profile data', function (): void {
             'uuid',
             'name',
             'surname',
-            'avatar',
             'created_at',
-            'birth_date',
-            'hometown',
-            'country',
-            'facebook_link',
-            'twitter_link',
-            'linkedin_link',
-            'instagram_link',
-            'snapchat_link',
-            'tiktok_link',
-            'youtube_link',
-            'pinterest_link',
-            'twitch_link',
-            'website',
-            'github_link',
-            'avatar',
-            'country',
-            'gender',
-            'ethnicity',
-            'verified_at',
-            'record_id',
-            'phone',
-            'national_id',
-            'middle_name',
             'email',
-            'city',
-            'address',
-            'shelter',
-            'education_level',
-            'skills',
-            'marital_status',
-            'source_of_income',
-            'estimated_monthly_income',
-            'number_of_dependents',
-            'health_status',
-            'health_insurance',
-            'easy_access_to_healthcare_services',
-            'religious_affiliation',
-            'other_nationalities',
-            'communication',
-            'more_info',
-            'email_verified_at',
-            'phone_verified_at',
-            'verification_reason',
-            'marked_as_fake_at',
-            'languages',
-            'other_nationalities',
             'roles',
             'permissions',
             'basic_info_updates',
             'received_verification_email',
             'account_verified_email',
-            'city_inside_syria',
-            'language',
         ],
     ]);
 
@@ -99,10 +51,12 @@ it('User gets profile data', function (): void {
             'surname' => test()->user->surname,
             'email' => test()->user->email,
             'uuid' => test()->user->uuid,
-            'verified_at' => null,
-            'verification_reason' => null,
         ],
     ]);
+
+    // Null fields should be stripped from the response
+    $result->assertJsonMissing(['verified_at' => null]);
+    $result->assertJsonMissing(['verification_reason' => null]);
 });
 
 // ───────────────────────────────────────────────
@@ -272,7 +226,7 @@ it('allows user to update to another country', function (): void {
         route('users.update.address'),
         [
             'country' => CountryEnum::US->value,
-            'city_inside_syria' => null,
+            'province' => null,
         ],
         authHeader(test()->user)
     );
@@ -290,7 +244,7 @@ it('allows update to SY with valid hometown', function (): void {
         route('users.update.address'),
         [
             'country' => CountryEnum::SY->value,
-            'city_inside_syria' => HometownEnum::Damascus->value,
+            'province' => HometownEnum::Damascus->value,
         ],
         authHeader(test()->user)
     );
@@ -299,11 +253,11 @@ it('allows update to SY with valid hometown', function (): void {
     $this->assertDatabaseHas('users', [
         'id' => test()->user->id,
         'country' => CountryEnum::SY->value,
-        'city_inside_syria' => HometownEnum::Damascus->value,
+        'province' => HometownEnum::Damascus->value,
     ]);
 });
 
-// ❌ 3. Missing city_inside_syria when country is SY
+// ❌ 3. Missing province when country is SY
 it('fails when updating to SY without hometown', function (): void {
     $response = $this->postJson(
         route('users.update.address'),
@@ -314,7 +268,7 @@ it('fails when updating to SY without hometown', function (): void {
     );
 
     $response->assertStatus(422);
-    expect($response['messages'])->toHaveKey('city_inside_syria');
+    expect($response['messages'])->toHaveKey('province');
 });
 
 // ❌ 4. Fails when update count is exceeded
@@ -327,7 +281,7 @@ it('prevents update when country update limit is reached', function (): void {
             route('users.update.address'),
             [
                 'country' => CountryEnum::SY->value,
-                'city_inside_syria' => HometownEnum::Damascus->value,
+                'province' => HometownEnum::Damascus->value,
             ],
             authHeader(test()->user)
         );
@@ -353,14 +307,14 @@ it('fails with invalid country or city', function (): void {
         route('users.update.address'),
         [
             'country' => 'INVALID',
-            'city_inside_syria' => 'Nowhere',
+            'province' => 'Nowhere',
         ],
         authHeader(test()->user)
     );
 
     $response->assertStatus(422);
     expect($response['messages'])->toHaveKey('country');
-    expect($response['messages'])->toHaveKey('city_inside_syria');
+    expect($response['messages'])->toHaveKey('province');
 });
 
 // Census Data being updated correctly
@@ -370,7 +324,6 @@ it('a user can update the rest of census data', function (): void {
         route('users.update.census'),
         [
             'middle_name' => 'Middle',
-            'city' => 'City',
             'address' => 'Address',
             'shelter' => '0',
             'education_level' => 'postgraduate',
@@ -395,7 +348,6 @@ it('a user can update the rest of census data', function (): void {
     $expected = [
         'id' => test()->user->id,
         'middle_name' => 'Middle',
-        'city' => 'City',
         'shelter' => 0,
         'education_level' => 'postgraduate',
         'skills' => 'coding, singing, writing',

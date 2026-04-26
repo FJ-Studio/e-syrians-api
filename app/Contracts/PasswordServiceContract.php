@@ -16,6 +16,20 @@ interface PasswordServiceContract
     public function changePassword(User $user, string $currentPassword, string $newPassword): array;
 
     /**
+     * Send a one-time password to the user's email for initial password setup
+     *
+     * @return array{success: bool, message: string, code: int}
+     */
+    public function sendSetupOtp(User $user): array;
+
+    /**
+     * Set a password for a passwordless user using an OTP
+     *
+     * @return array{success: bool, message: string, code: int}
+     */
+    public function setPasswordWithOtp(User $user, string $otp, string $newPassword): array;
+
+    /**
      * Send a password reset link to the user's email
      *
      * @return array{success: bool, message: string}

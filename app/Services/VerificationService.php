@@ -79,13 +79,13 @@ class VerificationService implements VerificationServiceContract
 
     public function getVerificationsForUser(User $user): mixed
     {
-        return $user->verifications()->with('user')->get();
+        return $user->verifications()->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get();
     }
 
     public function getVerifiersForUser(User $user): mixed
     {
         return UserVerificationResource::collection(
-            $user->verifiers()->with('verifier')->get()
+            $user->verifiers()->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get()
         );
     }
 

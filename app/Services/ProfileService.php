@@ -10,6 +10,8 @@ use App\Models\ProfileUpdate;
 use InvalidArgumentException;
 use Illuminate\Http\UploadedFile;
 use App\Enums\ProfileChangeTypeEnum;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EmailChangedNotification;
 use App\Jobs\LogProfileChangeToBigQuery;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\FileUploadServiceContract;
@@ -112,7 +114,7 @@ class ProfileService implements ProfileServiceContract
             $request,
             [
                 'country' => $data['country'],
-                'city_inside_syria' => $data['city_inside_syria'],
+                'province' => $data['province'] ?? null,
             ],
             $ipAddress,
             $userAgent,
@@ -143,10 +145,17 @@ class ProfileService implements ProfileServiceContract
 
     public function changeEmail(User $user, string $email): void
     {
+        $oldEmail = $user->email;
+
         $user->email = $email;
         $user->email_verified_at = null;
         $user->save();
         $user->sendEmailVerificationNotification();
+
+        // Notify the old email address about the change
+        if ($oldEmail && $oldEmail !== $email) {
+            Mail::to($oldEmail)->queue(new EmailChangedNotification($user, $email));
+        }
     }
 
     public function updateNotifications(User $user, array $preferences): void

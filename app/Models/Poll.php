@@ -159,7 +159,7 @@ class Poll extends Model
             'religious_affiliation' => $rules->where('criterion', 'religious_affiliation')->pluck('value')->all(),
             'hometown' => $rules->where('criterion', 'hometown')->pluck('value')->all(),
             'ethnicity' => $rules->where('criterion', 'ethnicity')->pluck('value')->all(),
-            'city_inside_syria' => $rules->where('criterion', 'city_inside_syria')->pluck('value')->all(),
+            'province' => $rules->where('criterion', 'province')->pluck('value')->all(),
         ];
     }
 
@@ -254,7 +254,7 @@ class Poll extends Model
                         'hometown' => $user->hometown,
                         'religious_affiliation' => $user->religious_affiliation,
                         'ethnicity' => $user->ethnicity,
-                        'city_inside_syria' => $user->city_inside_syria,
+                        'province' => $user->province,
                     ];
 
                     foreach ($standardCriteria as $criterion => $userValue) {

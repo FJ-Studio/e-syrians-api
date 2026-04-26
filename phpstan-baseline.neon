@@ -271,13 +271,7 @@ parameters:
 			path: app/Http/Resources/UserResource.php
 
 		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$city\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Resources/UserResource.php
-
-		-
-			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$city_inside_syria\.$#'
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$province\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Resources/UserResource.php

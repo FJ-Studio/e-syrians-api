@@ -31,7 +31,7 @@ class UpdateUserAddressRequest extends FormRequest
                 'required',
                 'in:'.implode(',', array_map(fn ($case) => $case->value, CountryEnum::cases())),
             ],
-            'city_inside_syria' => [
+            'province' => [
                 'nullable', // still allows null when not required
                 'required_if:country,SY',
                 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases())),
