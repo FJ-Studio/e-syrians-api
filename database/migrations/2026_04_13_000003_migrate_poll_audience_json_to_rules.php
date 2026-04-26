@@ -30,6 +30,7 @@ return new class () extends Migration {
                         'hometown',
                         'ethnicity',
                         'city_inside_syria',
+                        'province',
                     ];
 
                     foreach ($arrayCriteria as $criterion) {

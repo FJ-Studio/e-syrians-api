@@ -100,6 +100,19 @@ class UserResource extends JsonResource
 
         ];
 
-        return array_filter($data, fn ($value) => ! is_null($value));
+        return $data;
+    }
+
+    /**
+     * Resolve the resource to an array, stripping null values.
+     *
+     * @param  \Illuminate\Http\Request|null  $request
+     * @return array<string, mixed>
+     */
+    public function resolve($request = null): array
+    {
+        $resolved = parent::resolve($request);
+
+        return array_filter($resolved, fn ($value) => ! is_null($value));
     }
 }
