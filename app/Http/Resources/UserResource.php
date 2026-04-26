@@ -35,7 +35,7 @@ class UserResource extends JsonResource
             }
         }
 
-        return [
+        $data = [
             'uuid' => $this->uuid,
             'name' => $this->name,
             'surname' => $this->surname,
@@ -68,7 +68,6 @@ class UserResource extends JsonResource
                 'national_id' => $this->national_id,
                 'middle_name' => $this->middle_name,
                 'email' => $this->email,
-                'city' => $this->city,
                 'address' => $this->address,
                 'shelter' => $this->shelter,
                 'education_level' => $this->education_level,
@@ -94,11 +93,13 @@ class UserResource extends JsonResource
                 'basic_info_updates' => (int) (config('e-syrians.verification.basic_info_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
                 'received_verification_email' => $this->received_verification_email,
                 'account_verified_email' => $this->account_verified_email,
-                'city_inside_syria' => $this->city_inside_syria,
+                'province' => $this->province,
                 'language' => $this->language,
                 'has_password' => ! is_null($this->resource->password),
             ]),
 
         ];
+
+        return array_filter($data, fn ($value) => ! is_null($value));
     }
 }

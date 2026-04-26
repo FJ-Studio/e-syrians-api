@@ -357,10 +357,10 @@ it('ignores criteria fields when allowed_voters is provided', function (): void 
 });
 
 // ───────────────────────────────────────────────
-// Create Poll — Audience with city_inside_syria
+// Create Poll — Audience with province
 // ───────────────────────────────────────────────
 
-it('stores city_inside_syria in audience', function (): void {
+it('stores province in audience', function (): void {
     $poll = test()->pollService->createPoll([
         'question' => 'Syria city poll?',
         'start_date' => now()->toDateString(),
@@ -371,15 +371,15 @@ it('stores city_inside_syria in audience', function (): void {
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
         'country' => ['SY'],
-        'city_inside_syria' => ['daraa', 'damascus'],
+        'province' => ['daraa', 'damascus'],
     ], test()->user->id);
 
     $poll->load('audienceRules');
-    expect($poll->audience['city_inside_syria'])->toContain('daraa')->toContain('damascus');
+    expect($poll->audience['province'])->toContain('daraa')->toContain('damascus');
     expect($poll->audience['country'])->toBe(['SY']);
 });
 
-it('stores empty city_inside_syria when not provided', function (): void {
+it('stores empty province when not provided', function (): void {
     $poll = test()->pollService->createPoll([
         'question' => 'No city poll?',
         'start_date' => now()->toDateString(),
@@ -392,7 +392,7 @@ it('stores empty city_inside_syria when not provided', function (): void {
     ], test()->user->id);
 
     $poll->load('audienceRules');
-    expect($poll->audience['city_inside_syria'])->toBe([]);
+    expect($poll->audience['province'])->toBe([]);
 });
 
 // ───────────────────────────────────────────────

@@ -114,7 +114,7 @@ class ProfileService implements ProfileServiceContract
             $request,
             [
                 'country' => $data['country'],
-                'city_inside_syria' => $data['city_inside_syria'],
+                'province' => $data['province'] ?? null,
             ],
             $ipAddress,
             $userAgent,

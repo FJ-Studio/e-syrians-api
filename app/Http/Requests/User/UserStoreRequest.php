@@ -50,10 +50,9 @@ class UserStoreRequest extends FormRequest
             'password' => ['required', 'string', 'min:6'],
             // Location
             'country' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, CountryEnum::cases()))],
-            'city' => ['nullable', 'string', 'max:255'],
             'shelter' => ['nullable', 'boolean'],
             'address' => ['nullable', 'string'],
-            'city_inside_syria' => [
+            'province' => [
                 'nullable', // still allows null when not required
                 'required_if:country,SY',
                 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases())),

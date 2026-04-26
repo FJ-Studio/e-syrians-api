@@ -185,9 +185,9 @@ return [
         'country' => [
             'in' => 'Please select a valid country.',
         ],
-        'city_inside_syria' => [
-            'in' => 'Please select a valid city.',
-            'required_if' => 'City is required when country is Syria.',
+        'province' => [
+            'in' => 'Please select a valid province.',
+            'required_if' => 'Province is required when country is Syria.',
         ],
         'education_level' => [
             'in' => 'Please select a valid education level.',
@@ -236,13 +236,12 @@ return [
 
         // Address
         'country' => 'country',
-        'city_inside_syria' => 'city in Syria',
+        'province' => 'province',
 
         // Census
         'middle_name' => 'middle name',
         'religious_affiliation' => 'religious affiliation',
         'other_nationalities' => 'other nationalities',
-        'city' => 'city',
         'address' => 'address',
         'shelter' => 'shelter status',
         'education_level' => 'education level',

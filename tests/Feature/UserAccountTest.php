@@ -61,7 +61,6 @@ it('User gets profile data', function (): void {
             'national_id',
             'middle_name',
             'email',
-            'city',
             'address',
             'shelter',
             'education_level',
@@ -88,7 +87,7 @@ it('User gets profile data', function (): void {
             'basic_info_updates',
             'received_verification_email',
             'account_verified_email',
-            'city_inside_syria',
+            'province',
             'language',
         ],
     ]);
@@ -272,7 +271,7 @@ it('allows user to update to another country', function (): void {
         route('users.update.address'),
         [
             'country' => CountryEnum::US->value,
-            'city_inside_syria' => null,
+            'province' => null,
         ],
         authHeader(test()->user)
     );
@@ -290,7 +289,7 @@ it('allows update to SY with valid hometown', function (): void {
         route('users.update.address'),
         [
             'country' => CountryEnum::SY->value,
-            'city_inside_syria' => HometownEnum::Damascus->value,
+            'province' => HometownEnum::Damascus->value,
         ],
         authHeader(test()->user)
     );
@@ -299,11 +298,11 @@ it('allows update to SY with valid hometown', function (): void {
     $this->assertDatabaseHas('users', [
         'id' => test()->user->id,
         'country' => CountryEnum::SY->value,
-        'city_inside_syria' => HometownEnum::Damascus->value,
+        'province' => HometownEnum::Damascus->value,
     ]);
 });
 
-// ❌ 3. Missing city_inside_syria when country is SY
+// ❌ 3. Missing province when country is SY
 it('fails when updating to SY without hometown', function (): void {
     $response = $this->postJson(
         route('users.update.address'),
@@ -314,7 +313,7 @@ it('fails when updating to SY without hometown', function (): void {
     );
 
     $response->assertStatus(422);
-    expect($response['messages'])->toHaveKey('city_inside_syria');
+    expect($response['messages'])->toHaveKey('province');
 });
 
 // ❌ 4. Fails when update count is exceeded
@@ -327,7 +326,7 @@ it('prevents update when country update limit is reached', function (): void {
             route('users.update.address'),
             [
                 'country' => CountryEnum::SY->value,
-                'city_inside_syria' => HometownEnum::Damascus->value,
+                'province' => HometownEnum::Damascus->value,
             ],
             authHeader(test()->user)
         );
@@ -353,14 +352,14 @@ it('fails with invalid country or city', function (): void {
         route('users.update.address'),
         [
             'country' => 'INVALID',
-            'city_inside_syria' => 'Nowhere',
+            'province' => 'Nowhere',
         ],
         authHeader(test()->user)
     );
 
     $response->assertStatus(422);
     expect($response['messages'])->toHaveKey('country');
-    expect($response['messages'])->toHaveKey('city_inside_syria');
+    expect($response['messages'])->toHaveKey('province');
 });
 
 // Census Data being updated correctly
@@ -370,7 +369,6 @@ it('a user can update the rest of census data', function (): void {
         route('users.update.census'),
         [
             'middle_name' => 'Middle',
-            'city' => 'City',
             'address' => 'Address',
             'shelter' => '0',
             'education_level' => 'postgraduate',
@@ -395,7 +393,6 @@ it('a user can update the rest of census data', function (): void {
     $expected = [
         'id' => test()->user->id,
         'middle_name' => 'Middle',
-        'city' => 'City',
         'shelter' => 0,
         'education_level' => 'postgraduate',
         'skills' => 'coding, singing, writing',

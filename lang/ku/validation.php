@@ -168,9 +168,9 @@ return [
         'country' => [
             'in' => 'Ji kerema xwe welatekî derbasdar hilbijêrin.',
         ],
-        'city_inside_syria' => [
-            'in' => 'Ji kerema xwe bajarekî derbasdar hilbijêrin.',
-            'required_if' => 'Bajar pêdivî ye dema welat Sûriye be.',
+        'province' => [
+            'in' => 'Ji kerema xwe parêzgehek derbasdar hilbijêrin.',
+            'required_if' => 'Parêzgeh pêdivî ye dema welat Sûriye be.',
         ],
         'education_level' => [
             'in' => 'Ji kerema xwe asteke perwerdehiyê ya derbasdar hilbijêrin.',
@@ -214,13 +214,12 @@ return [
 
         // Navnîşan
         'country' => 'welat',
-        'city_inside_syria' => 'bajar li Sûriyê',
+        'province' => 'parêzgeh',
 
         // Serjimêrî
         'middle_name' => 'navê bav',
         'religious_affiliation' => 'girêdana olî',
         'other_nationalities' => 'welatîyên din',
-        'city' => 'bajar',
         'address' => 'navnîşan',
         'shelter' => 'rewşa stargeh',
         'education_level' => 'asta perwerdehiyê',
