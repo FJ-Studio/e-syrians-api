@@ -106,7 +106,7 @@ class UserResource extends JsonResource
     /**
      * Resolve the resource to an array, stripping null values.
      *
-     * @param  \Illuminate\Http\Request|null  $request
+     * @param  Request|null  $request
      * @return array<string, mixed>
      */
     public function resolve($request = null): array
