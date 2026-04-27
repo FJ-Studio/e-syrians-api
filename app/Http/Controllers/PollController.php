@@ -6,11 +6,13 @@ namespace App\Http\Controllers;
 
 use Exception;
 use Throwable;
+use App\Models\Poll;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\PollResource;
+use Illuminate\Support\Facades\Cache;
 use App\Contracts\PollServiceContract;
 use App\Exceptions\PollVotingException;
 use App\Exceptions\PollReactionException;
@@ -152,6 +154,51 @@ class PollController extends Controller
         } catch (Exception $e) {
             return ApiService::error(403, $e->getMessage());
         }
+    }
+
+    /**
+     * Return the audience criteria for a poll.
+     *
+     * Since polls are not editable after creation, the result is cached
+     * indefinitely (until the cache store evicts it).
+     *
+     * When the audience uses an allowed-voters list, the actual voter
+     * identifiers are only returned to the poll creator. Everyone else
+     * receives an empty `allowed_voters` array so the frontend can
+     * show a generic "invite-only" message without leaking PII.
+     */
+    public function audience(Request $request): JsonResponse
+    {
+        $request->validate([
+            'poll_id' => ['required', 'integer', 'exists:polls,id'],
+        ]);
+
+        $pollId = (int) $request->input('poll_id');
+
+        $audience = Cache::rememberForever("poll:{$pollId}:audience", function () use ($pollId) {
+            $poll = Poll::with('audienceRules')->findOrFail($pollId);
+
+            return $poll->audience;
+        });
+
+        // Hide the actual allowed-voters list from non-creators.
+        // The route is public (no auth middleware), so we attempt to
+        // resolve the user via the sanctum guard manually.
+        if (! empty($audience['allowed_voters'])) {
+            $guard = auth('sanctum');
+            // Trigger token resolution from the Authorization header.
+            $user = $guard->user();
+            $poll = Poll::select('id', 'created_by')->find($pollId);
+            $isCreator = $user !== null
+                && $poll !== null
+                && (int) $user->getAuthIdentifier() === (int) $poll->created_by;
+
+            if (! $isCreator) {
+                $audience['allowed_voters'] = [];
+            }
+        }
+
+        return ApiService::success($audience);
     }
 
     public function react(StorePollReaction $request): JsonResponse
