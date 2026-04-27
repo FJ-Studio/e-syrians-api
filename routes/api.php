@@ -134,6 +134,7 @@ Route::prefix('polls')->group(function (): void {
         Route::post('/vote', [PollController::class, 'vote'])->middleware([UserIsVerified::class, 'recaptcha']);
         Route::post('/react', [PollController::class, 'react'])->middleware([UserIsVerified::class, 'recaptcha']);
     });
+    Route::get('/audience', [PollController::class, 'audience']);
     Route::get('/{poll}', [PollController::class, 'show']);
 });
 
