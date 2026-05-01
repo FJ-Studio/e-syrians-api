@@ -32,6 +32,11 @@ class SocialLoginRequest extends FormRequest
                 new Enum(UserProviderEnum::class),
             ],
             'token' => ['required', 'string'],
+            // Optional. Apple sends the user's name only on the first sign-in
+            // (it isn't in the JWT — it comes from the client SDK separately).
+            // We accept it here so the user record gets a real name on creation
+            // instead of the email-derived fallback.
+            'name' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

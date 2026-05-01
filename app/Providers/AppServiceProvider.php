@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Config;
 use App\Contracts\StatsServiceContract;
 use App\Services\FeatureRequestService;
 use Illuminate\Support\ServiceProvider;
-use SocialiteProviders\Google\Provider;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
@@ -32,6 +31,8 @@ use Illuminate\Auth\Notifications\VerifyEmail;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use SocialiteProviders\Manager\SocialiteWasCalled;
+use SocialiteProviders\Apple\Provider as AppleProvider;
+use SocialiteProviders\Google\Provider as GoogleProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -66,7 +67,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(function (SocialiteWasCalled $event): void {
-            $event->extendSocialite('google', Provider::class);
+            $event->extendSocialite('google', GoogleProvider::class);
+            $event->extendSocialite('apple', AppleProvider::class);
         });
 
         ResetPassword::createUrlUsing(function (User $user, string $token) {
