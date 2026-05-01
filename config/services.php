@@ -40,6 +40,13 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'apple' => [
+        'client_id' => env('APPLE_CLIENT_ID'),
+        'web_client_id' => env('APPLE_WEB_CLIENT_ID'),
+        'client_secret' => env('APPLE_CLIENT_SECRET'),
+        'redirect' => env('APPLE_REDIRECT_URI'),
+    ],
+
     'recaptcha' => [
         'secret' => env('RECAPTCHA_SECRET'),
     ],

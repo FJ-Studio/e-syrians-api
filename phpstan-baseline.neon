@@ -661,12 +661,6 @@ parameters:
 			path: app/Services/AuthService.php
 
 		-
-			message: '#^Negated boolean expression is always false\.$#'
-			identifier: booleanNot.alwaysFalse
-			count: 1
-			path: app/Services/AuthService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$voters_are_visible\.$#'
 			identifier: property.notFound
 			count: 1

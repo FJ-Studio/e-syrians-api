@@ -71,6 +71,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_hashed',
         'avatar',
         'google_id',
+        'apple_id',
         'country',
         'shelter',
         'address',

@@ -9,11 +9,16 @@ use App\Models\User;
 interface AuthServiceContract
 {
     /**
-     * Authenticate via social provider (Google, etc.)
+     * Authenticate via social provider (Google, Apple).
+     *
+     * The optional $clientName is used by Apple sign-in: Apple only sends the
+     * user's name on the very first sign-in (and via the SDK, not the JWT),
+     * so callers forward it here so the user record gets a real name on
+     * creation instead of an email-derived fallback.
      *
      * @return array{user: User, token: string}|null
      */
-    public function authenticateViaSocialProvider(string $provider, string $token): ?array;
+    public function authenticateViaSocialProvider(string $provider, string $token, ?string $clientName = null): ?array;
 
     /**
      * Authenticate via credentials (email/phone/national_id + password)

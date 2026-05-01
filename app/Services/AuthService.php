@@ -13,31 +13,70 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthService implements AuthServiceContract
 {
-    public function authenticateViaSocialProvider(string $provider, string $token): ?array
+    public function authenticateViaSocialProvider(string $provider, string $token, ?string $clientName = null): ?array
     {
-        $socialUser = Socialite::driver($provider)->userFromToken($token);
+        $userData = $this->resolveSocialUserData($provider, $token);
 
-        if (! $socialUser) {
+        if (! $userData) {
             return null;
         }
 
-        $name = explode(' ', $socialUser->getName());
+        // Apple only returns the user's name on the very first sign-in (and
+        // not in the JWT — it comes from the client SDK separately). When the
+        // client passes a name through, prefer it over whatever the provider
+        // gave us (Apple gives nothing; for other providers it's a backstop).
+        $clientName = trim((string) $clientName);
+        if ($clientName !== '') {
+            $userData['name'] = $clientName;
+        }
 
-        $user = User::where('email', $socialUser->getEmail())->first();
+        // Look up by stable provider id first (Apple doesn't always return an
+        // email on subsequent sign-ins; only the first one), then fall back
+        // to email lookup. This keeps the same user across multiple logins
+        // even if Apple's email-relay address changes.
+        $providerColumn = $provider.'_id';
+        $user = User::where($providerColumn, $userData['id'])->first();
+
+        if (! $user && ! empty($userData['email'])) {
+            $user = User::where('email', $userData['email'])->first();
+        }
+
+        // resolveSocialUserData() guarantees `name` is a string (possibly empty).
+        $names = explode(' ', trim($userData['name']), 2);
 
         if (! $user) {
             $user = User::create([
-                $provider.'_id' => $socialUser->getId(),
-                'name' => $name[0],
-                'surname' => $name[1] ?? '',
-                'email' => $socialUser->getEmail(),
+                $providerColumn => $userData['id'],
+                'name' => $names[0] ?: ($userData['email'] ?? 'User'),
+                'surname' => $names[1] ?? '',
+                'email' => $userData['email'] ?? null,
             ]);
             $user->assignRole('citizen');
             $user->markEmailAsVerified();
-        }
+        } else {
+            $needsSave = false;
 
-        if (! $user) {
-            return null;
+            // Existing user signing in via this provider for the first time —
+            // link the provider id without overwriting their profile.
+            if (empty($user->{$providerColumn})) {
+                $user->{$providerColumn} = $userData['id'];
+                $needsSave = true;
+            }
+
+            // If we received a name from the client and the user doesn't have
+            // one yet (e.g. account was provisioned by another flow with only
+            // an email), backfill it now. We never overwrite an existing name.
+            if ($clientName !== '' && empty($user->name)) {
+                $user->name = $names[0];
+                if (empty($user->surname) && ! empty($names[1])) {
+                    $user->surname = $names[1];
+                }
+                $needsSave = true;
+            }
+
+            if ($needsSave) {
+                $user->save();
+            }
         }
 
         $plainToken = $user->createToken($provider)->plainTextToken;
@@ -45,6 +84,35 @@ class AuthService implements AuthServiceContract
         return [
             'user' => $user,
             'token' => explode('|', $plainToken)[1],
+        ];
+    }
+
+    /**
+     * Resolve user data from a social provider token. Apple uses a JWT
+     * identity token that we verify locally; other providers go through
+     * Laravel Socialite's userFromToken().
+     *
+     * @return array{id: string, name: string, email: ?string, avatar: ?string}|null
+     */
+    private function resolveSocialUserData(string $provider, string $token): ?array
+    {
+        if ($provider === 'apple') {
+            $data = AppleAuthService::getUserDataFromIdentityToken($token);
+
+            return empty($data) ? null : $data;
+        }
+
+        $socialUser = Socialite::driver($provider)->userFromToken($token);
+
+        if (! $socialUser) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $socialUser->getId(),
+            'name' => (string) ($socialUser->getName() ?? ''),
+            'email' => $socialUser->getEmail(),
+            'avatar' => $socialUser->getAvatar(),
         ];
     }
 

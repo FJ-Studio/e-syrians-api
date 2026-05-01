@@ -59,6 +59,7 @@ class AuthController extends Controller
         $result = $this->authService->authenticateViaSocialProvider(
             $request->provider,
             $request->token,
+            $request->input('name'),
         );
 
         if (! $result) {
