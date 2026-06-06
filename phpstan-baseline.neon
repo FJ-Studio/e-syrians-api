@@ -265,9 +265,15 @@ parameters:
 			path: app/Http/Resources/UserResource.php
 
 		-
+			# UserResource accesses $this->birth_date twice: once in the
+			# birth_year extraction (the public year-only view) and once
+			# in the owner-only mergeWhen block. Both are valid model
+			# property accesses on the underlying User; phpstan can't
+			# see the relationship without a @mixin annotation, so we
+			# baseline both. If you add a third access, bump the count.
 			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$birth_date\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Http/Resources/UserResource.php
 
 		-

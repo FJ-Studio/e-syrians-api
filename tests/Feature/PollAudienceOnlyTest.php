@@ -256,21 +256,53 @@ it('returns [unauthenticated] as failures for guests on a poll with rules', func
     expect($response->json('data.audience_failures'))->toBe(['unauthenticated']);
 });
 
-it('exposes audience details only to the creator', function (): void {
+/**
+ * Audience exposure rule (clarified 2026-06):
+ *
+ *   - **Demographic / criteria-based audience** (gender, age, country,
+ *     ethnicity, hometown, religion …) is NOT considered sensitive —
+ *     it describes which *groups* the poll targets, not which
+ *     individuals. The mobile/web `AudienceCriteriaSheet` renders the
+ *     rules next to per-row match / doesn't-match pills, so the
+ *     `audience` key is exposed to ALL viewers (guest, audience
+ *     member, non-member, creator).
+ *
+ *   - **Explicit-list audience** (`allowed_voters`: hand-picked UUIDs
+ *     of invited users) IS sensitive — surfacing it would leak the
+ *     author's guest list. The `audience` key is omitted from this
+ *     public resource for EVERY viewer, including the creator. The
+ *     creator only needs the list when editing the poll, which is
+ *     served from a dedicated creator-only edit endpoint (TBD); the
+ *     public `/polls/{id}` should not double as the edit data source.
+ *     Everyone — including the creator on the public page — only
+ *     learns "am I in?" via the `is_in_audience` / `audience_failures`
+ *     pair.
+ *
+ * The first two tests below previously asserted that the `audience`
+ * key was suppressed across the board on criteria-based polls — that
+ * was the old rule, written before the AudienceCriteriaSheet existed.
+ * They were renamed and inverted to match the current rule.
+ *
+ * The third test (added 2026-06) covers the explicit-list suppression
+ * path — previously uncovered.
+ */
+it('exposes criteria-based audience details to every viewer', function (): void {
     $poll = createAudienceOnlyPoll(test()->creator);
 
-    // Audience user (matches, but not creator) — audience should be omitted
+    // Audience user (matches the criteria) — sees the audience rules.
     $audienceResponse = $this->getJson("/polls/{$poll->id}", authHeader(test()->audienceUser));
     $audienceResponse->assertOk();
-    expect($audienceResponse->json('data'))->not->toHaveKey('audience');
+    expect($audienceResponse->json('data'))->toHaveKey('audience');
+    expect($audienceResponse->json('data.audience'))->not->toBeNull();
 
-    // Creator — poll is visible but audience details are not exposed in the response
+    // Creator — also sees the audience rules.
     $creatorResponse = $this->getJson("/polls/{$poll->id}", authHeader(test()->creator));
     $creatorResponse->assertOk();
-    expect($creatorResponse->json('data'))->not->toHaveKey('audience');
+    expect($creatorResponse->json('data'))->toHaveKey('audience');
+    expect($creatorResponse->json('data.audience'))->not->toBeNull();
 });
 
-it('does not expose audience details to guests', function (): void {
+it('exposes criteria-based audience details to guests', function (): void {
     $poll = createPublicPoll(test()->creator);
     PollAudienceRule::insert([
         ['poll_id' => $poll->id, 'criterion' => 'country', 'value' => 'TR', 'created_at' => now(), 'updated_at' => now()],
@@ -278,7 +310,59 @@ it('does not expose audience details to guests', function (): void {
 
     $response = $this->getJson("/polls/{$poll->id}");
     $response->assertOk();
-    expect($response->json('data'))->not->toHaveKey('audience');
+    expect($response->json('data'))->toHaveKey('audience');
+    expect($response->json('data.audience'))->not->toBeNull();
+});
+
+it('suppresses explicit-list audience details for every viewer', function (): void {
+    // Audience defined by an explicit invite list: only `audience@gmail.com`
+    // is allowed. That email is the `audienceUser` fixture; the outsider
+    // and the creator are NOT in the list.
+    $poll = createPublicPoll(test()->creator);
+    PollAudienceRule::insert([
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'audience@gmail.com', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    // Guest — `audience` key omitted; only the boolean signal is exposed.
+    $guestResponse = $this->getJson("/polls/{$poll->id}");
+    $guestResponse->assertOk();
+    expect($guestResponse->json('data'))->not->toHaveKey('audience');
+    expect($guestResponse->json('data'))->toHaveKey('is_in_audience');
+    expect($guestResponse->json('data'))->toHaveKey('audience_failures');
+    expect($guestResponse->json('data.audience_is_explicit_list'))->toBeTrue();
+
+    // Sanctum's StatefulGuard caches the resolved user inside a single
+    // test method, so a fresh bearer token in the next request is
+    // ignored unless we forget the cached user first. Without this,
+    // the audience check would run against the previously-resolved
+    // user (e.g. the audienceUser when checking the outsider), and
+    // `is_in_audience` would lie.
+    auth('sanctum')->forgetUser();
+
+    // Invited audience user — same suppression. They learn they're IN
+    // via `is_in_audience` without seeing who else was invited.
+    $audienceResponse = $this->getJson("/polls/{$poll->id}", authHeader(test()->audienceUser));
+    $audienceResponse->assertOk();
+    expect($audienceResponse->json('data'))->not->toHaveKey('audience');
+    expect($audienceResponse->json('data.is_in_audience'))->toBeTrue();
+
+    auth('sanctum')->forgetUser();
+
+    // Non-invited outsider — same suppression.
+    $outsiderResponse = $this->getJson("/polls/{$poll->id}", authHeader(test()->outsider));
+    $outsiderResponse->assertOk();
+    expect($outsiderResponse->json('data'))->not->toHaveKey('audience');
+    expect($outsiderResponse->json('data.is_in_audience'))->toBeFalse();
+
+    auth('sanctum')->forgetUser();
+
+    // Creator — `audience` key STILL omitted from this public endpoint.
+    // The creator can read their own `allowed_voters` list from the
+    // dedicated creator-only edit endpoint (TBD); the public poll page
+    // is not the right surface for that data.
+    $creatorResponse = $this->getJson("/polls/{$poll->id}", authHeader(test()->creator));
+    $creatorResponse->assertOk();
+    expect($creatorResponse->json('data'))->not->toHaveKey('audience');
 });
 
 // ───────────────────────────────────────────────

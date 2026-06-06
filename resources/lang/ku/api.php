@@ -48,9 +48,6 @@ return [
     'user_has_reached_the_max_selections' => 'گەیشتیت بە سنووری هەڵبژاردنەکان',
     'invalid_options' => 'هەڵبژاردنەکان نادروستن',
 
-    // سەرپێچی
-    'not_implemented' => 'بەردەست نییە',
-
     // پاراستن
     'recaptcha_token_required' => 'تۆکنی reCAPTCHA پێویستە',
     'recaptcha_verification_failed' => 'پشتڕاستکردنەوەی reCAPTCHA سەرکەوتوو نەبوو',

@@ -241,14 +241,6 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Get the violations reported by this user
-     */
-    public function violations()
-    {
-        return $this->hasMany(Violation::class, 'user_id', 'id');
-    }
-
-    /**
      * Get the profile update that this user has made
      *
      * @return int
@@ -277,6 +269,71 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isVerified(): bool
     {
         return (bool) $this->verified_at;
+    }
+
+    /**
+     * The fields that count toward "profile completeness". Mirrors the
+     * web BFF's calculation in `e-syrians-app/src/app/api/account/overview/route.ts`
+     * so the percentage is consistent across web and mobile consumers.
+     *
+     * Adding / removing a field here is a versioning concern — clients
+     * will see the percentage shift on their next request. Bump
+     * cautiously and announce in release notes.
+     *
+     * @var array<int, string>
+     */
+    public const PROFILE_COMPLETENESS_FIELDS = [
+        'name',
+        'surname',
+        'gender',
+        'birth_date',
+        'hometown',
+        'ethnicity',
+        'religious_affiliation',
+        'country',
+        'province',
+        'avatar',
+        'national_id',
+        'education_level',
+        'source_of_income',
+        'health_status',
+        'languages',
+    ];
+
+    /**
+     * Compute the user's profile completeness as a `{filled, total, percentage}`
+     * trio. Intended for serialization on `UserResource` so consumers
+     * (web account dashboard, mobile profile-completion ring, "Complete
+     * your profile" CTA) all read the same numbers.
+     *
+     * A field counts as "filled" when its value is truthy under PHP's
+     * loose-truthiness rules — non-empty strings, non-zero numbers, etc.
+     * Mirrors the web BFF's `if (profile[field])` check exactly.
+     *
+     * @return array{filled: int, total: int, percentage: int}
+     */
+    public function getProfileCompleteness(): array
+    {
+        $total = count(self::PROFILE_COMPLETENESS_FIELDS);
+        $filled = 0;
+
+        foreach (self::PROFILE_COMPLETENESS_FIELDS as $field) {
+            if (! empty($this->{$field})) {
+                $filled++;
+            }
+        }
+
+        // `$total` is `count(self::PROFILE_COMPLETENESS_FIELDS)` — a
+        // class constant array with 15 entries — so it's always > 0.
+        // The previous defensive `$total > 0 ? … : 0` was dead code
+        // and phpstan flagged it as `greater.alwaysTrue`. Keep the
+        // explicit float cast on `$filled` to silence integer-divide
+        // warnings under strict types.
+        return [
+            'filled' => $filled,
+            'total' => $total,
+            'percentage' => (int) round(((float) $filled / $total) * 100),
+        ];
     }
 
     /**

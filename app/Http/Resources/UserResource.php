@@ -7,6 +7,7 @@ namespace App\Http\Resources;
 use Exception;
 use Illuminate\Http\Request;
 use App\Enums\ProfileChangeTypeEnum;
+use Illuminate\Support\Facades\Date;
 use App\Contracts\FileUploadServiceContract;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -41,7 +42,32 @@ class UserResource extends JsonResource
             'surname' => $this->surname,
             'avatar' => $avatarUrl,
             'created_at' => $this->created_at,
-            'birth_date' => $this->birth_date,
+            /*
+             * Public birth-year only. The exact `birth_date` lives in
+             * the owner-only block below — exposing the full date
+             * publicly was a privacy/security leak (birth date is a
+             * common identity-challenge field at banks, gov agencies,
+             * etc., and the public profile is unauthenticated +
+             * deep-linkable + scrapable). The year alone is enough
+             * for community context (age cohort, "joined in their
+             * 30s", etc.) without revealing the challenge value.
+             *
+             * `birth_date` is stored as a string (not in the model's
+             * cast map), so we parse with `Date::parse` — same
+             * approach the User model uses in `audienceCheckFor()`
+             * for the age check. Wrapped in a try/catch so a
+             * malformed value falls back to null instead of throwing.
+             */
+            'birth_year' => (function () {
+                if (! $this->birth_date) {
+                    return null;
+                }
+                try {
+                    return (int) Date::parse($this->birth_date)->year;
+                } catch (Exception $e) {
+                    return null;
+                }
+            })(),
             'hometown' => $this->hometown,
             'country' => $this->country,
             'gender' => $this->gender,
@@ -63,6 +89,7 @@ class UserResource extends JsonResource
 
             // Owner-only fields
             $this->mergeWhen($isOwner, [
+                'birth_date' => $this->birth_date,
                 'record_id' => $this->record_id,
                 'phone' => $this->phone,
                 'national_id' => $this->national_id,
@@ -96,6 +123,16 @@ class UserResource extends JsonResource
                 'province' => $this->province,
                 'language' => $this->language,
                 'has_password' => ! is_null($this->resource->password),
+                /*
+                 * Profile-completeness trio (`{filled, total, percentage}`).
+                 * Lives on the User model under
+                 * `User::getProfileCompleteness()` and counts fields from
+                 * `User::PROFILE_COMPLETENESS_FIELDS`. Surfaced here so the
+                 * web account dashboard + mobile "Complete your profile"
+                 * CTA read identical numbers without each client
+                 * re-implementing the rule.
+                 */
+                'profile_completeness' => $this->resource->getProfileCompleteness(),
             ]),
 
         ];
