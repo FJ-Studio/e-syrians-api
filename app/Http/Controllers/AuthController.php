@@ -13,6 +13,7 @@ use App\Http\Requests\User\UserStoreRequest;
 use App\Http\Requests\User\SocialLoginRequest;
 use App\Http\Requests\User\UserEmailVerification;
 use App\Http\Requests\User\CredentialsLoginRequest;
+use App\Http\Requests\User\CheckEmailAvailabilityRequest;
 
 class AuthController extends Controller
 {
@@ -26,6 +27,41 @@ class AuthController extends Controller
         $user = $this->authService->register($request->validated());
 
         return ApiService::success(new UserResource($user), '', 201);
+    }
+
+    /**
+     * Pre-registration email-availability probe.
+     *
+     * Lets the mobile sign-up wizard tell the user up-front (on step 1)
+     * that the email they just typed is already taken, instead of
+     * letting them fill the remaining five steps and then bouncing off
+     * the unique-email validator inside `register()`.
+     *
+     * Security shape:
+     *   - `guest`-only — signed-in users have no business probing.
+     *   - `recaptcha` middleware gates the call so the endpoint can't
+     *     be turned into a cheap "is this email registered?" oracle
+     *     by an attacker scanning a list.
+     *   - `throttle:10,1,email_check` caps to 10 probes per minute
+     *     per IP. A genuine user fat-fingering an email a few times
+     *     is fine; sustained probing trips the limiter.
+     *
+     * Lookup goes through `AuthServiceContract::isEmailAvailable()`
+     * so the controller stays loosely coupled to the User model
+     * (matches the project's controller-uses-contracts arch rule
+     * enforced by `tests/Unit/ArchTest.php`).
+     *
+     * Response: `{ available: bool }`. Always 200 when the format
+     * passes validation; format failures come back as standard 422
+     * via Laravel's request-validation wiring (no special-casing).
+     */
+    public function checkEmailAvailability(CheckEmailAvailabilityRequest $request): JsonResponse
+    {
+        $available = $this->authService->isEmailAvailable(
+            (string) $request->input('email'),
+        );
+
+        return ApiService::success(['available' => $available]);
     }
 
     public function login(CredentialsLoginRequest $request): JsonResponse

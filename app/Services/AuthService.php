@@ -178,6 +178,18 @@ class AuthService implements AuthServiceContract
         return $user;
     }
 
+    public function isEmailAvailable(string $email): bool
+    {
+        // Normalize the same way registration does, so the answer here
+        // matches what the unique-email validator on /register will
+        // produce when the user actually submits. Lower + trim is
+        // enough — the `email` column stores raw plaintext (no hash,
+        // no encryption), so a direct `where()` is correct.
+        $normalized = mb_strtolower(trim($email));
+
+        return ! User::query()->where('email', $normalized)->exists();
+    }
+
     public function logout(User $user): void
     {
         $user->tokens()->delete();

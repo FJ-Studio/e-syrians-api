@@ -41,7 +41,7 @@ function callForgotPassword(array $payload): TestResponse
 
 test('forgot-password rejects requests with no recaptcha_token', function (): void {
     $response = callForgotPassword([
-        'email' => 'someone@example.com',
+        'email' => 'someone@gmail.com',
     ]);
 
     expect($response->status())->toBe(400);
@@ -55,10 +55,10 @@ test('forgot-password rejects a token Google marks invalid', function (): void {
         'www.google.com/*' => Http::response(['success' => false, 'score' => 0.9], 200),
     ]);
 
-    User::factory()->create(['email' => 'person@example.com']);
+    User::factory()->create(['email' => 'person@gmail.com']);
 
     $response = callForgotPassword([
-        'email' => 'person@example.com',
+        'email' => 'person@gmail.com',
         'recaptcha_token' => 'forged-token',
     ]);
 
@@ -71,10 +71,10 @@ test('forgot-password passes the middleware when Google reports a valid high-sco
         'www.google.com/*' => Http::response(['success' => true, 'score' => 0.95], 200),
     ]);
 
-    User::factory()->create(['email' => 'person@example.com']);
+    User::factory()->create(['email' => 'person@gmail.com']);
 
     $response = callForgotPassword([
-        'email' => 'person@example.com',
+        'email' => 'person@gmail.com',
         'recaptcha_token' => 'real-token',
     ]);
 

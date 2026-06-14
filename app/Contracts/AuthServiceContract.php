@@ -35,6 +35,18 @@ interface AuthServiceContract
     public function register(array $data): User;
 
     /**
+     * Check whether an email is free to register.
+     *
+     * Called by the mobile sign-up wizard's step-1 Continue handler so
+     * the user is told up-front that the email is already taken —
+     * rather than filling the remaining steps and bouncing off the
+     * unique validator in `register()`. Case + whitespace
+     * normalization happen inside the implementation so callers may
+     * pass the raw user input.
+     */
+    public function isEmailAvailable(string $email): bool;
+
+    /**
      * Revoke all tokens for a user
      */
     public function logout(User $user): void;

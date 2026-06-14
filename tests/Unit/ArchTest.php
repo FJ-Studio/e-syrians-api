@@ -93,6 +93,7 @@ arch('controllers do not depend on concrete services directly')
     ->toOnlyUse([
         'App\Http\Controllers\Controller',
         'App\Contracts\AuthServiceContract',
+        'App\Http\Requests\User\CheckEmailAvailabilityRequest',
         'App\Http\Requests\User\CredentialsLoginRequest',
         'App\Http\Requests\User\SocialLoginRequest',
         'App\Http\Requests\User\UserEmailVerification',
