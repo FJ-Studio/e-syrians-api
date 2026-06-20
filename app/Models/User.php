@@ -119,6 +119,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'two_factor_enabled',
         'two_factor_confirmed_at',
         'recovery_codes',
+        // Snapshot count of how many recovery codes were issued at the
+        // most recent generation. The mobile + web UIs subtract from
+        // count(recovery_codes) to display "N of M remaining". Set in
+        // RecoveryCodeService::issueFor() — never mutated on consumption.
+        'recovery_codes_total',
     ];
 
     public function getRouteKeyName()

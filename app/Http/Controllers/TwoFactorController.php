@@ -26,14 +26,24 @@ class TwoFactorController extends Controller
 
     /**
      * Get the current 2FA status for the authenticated user.
+     *
+     * Includes the recovery-codes counters so the mobile/web settings
+     * screen can render "N of M remaining" without an extra round-trip
+     * to GET /users/recovery-codes. `recovery_codes_total` is null for
+     * accounts whose codes pre-date the snapshot column — the UI
+     * gracefully falls back to a denominator-less display in that case.
      */
     public function status(Request $request): JsonResponse
     {
         $user = $request->user();
 
+        $recoveryCodes = is_array($user->recovery_codes) ? $user->recovery_codes : [];
+
         return ApiService::success([
             'enabled' => $user->hasTwoFactorEnabled(),
             'confirmed_at' => $user->two_factor_confirmed_at?->toIso8601String(),
+            'recovery_codes_remaining' => count($recoveryCodes),
+            'recovery_codes_total' => $user->recovery_codes_total,
         ]);
     }
 
