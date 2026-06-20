@@ -28,11 +28,8 @@ class Recaptcha
     public function handle(Request $request, Closure $next): Response
     {
         $recaptchaToken = $request->input('recaptcha_token');
-        $route = $request->path();
 
         if (! $recaptchaToken) {
-            Log::info('[recaptcha] missing token', ['route' => $route, 'ip' => $request->ip()]);
-
             return ApiService::error(400, 'recaptcha_token_required');
         }
 
@@ -41,12 +38,13 @@ class Recaptcha
         $siteKey = config('services.recaptcha.site_key');
         $minScore = (float) config('services.recaptcha.min_score', 0.7);
 
-        // Misconfiguration check — fail loudly in dev, not silently
-        // letting Google return some ambiguous error. Production should
-        // have all four set in `.env` (see config/services.php).
+        // Guardrail: log loudly if any of the four env vars is missing.
+        // This is a deployment bug (someone shipped without setting env),
+        // not a per-request diagnostic — kept so production catches it
+        // instead of letting Google return some ambiguous error.
         if (! $projectId || ! $apiKey || ! $siteKey) {
             Log::error('[recaptcha] middleware misconfigured', [
-                'route' => $route,
+                'route' => $request->path(),
                 'project_id_set' => (bool) $projectId,
                 'api_key_set' => (bool) $apiKey,
                 'site_key_set' => (bool) $siteKey,
@@ -54,21 +52,6 @@ class Recaptcha
 
             return ApiService::error(500, 'recaptcha_misconfigured');
         }
-
-        // Always-on entry log. Matches the frontend's `[recaptcha] ✓ token`
-        // line head/tail fingerprint so you can correlate a JS console
-        // line with a backend log line for the same submission.
-        $tokenLen = strlen($recaptchaToken);
-        $tokenHead = substr($recaptchaToken, 0, 8);
-        $tokenTail = substr($recaptchaToken, -6);
-        Log::info('[recaptcha] verifying token', [
-            'route' => $route,
-            'ip' => $request->ip(),
-            'token_length' => $tokenLen,
-            'token_head' => $tokenHead . '…',
-            'token_tail' => '…' . $tokenTail,
-            'project_id' => $projectId,
-        ]);
 
         // POST to Enterprise Assessments. The `event` payload requires:
         //   - token:    the value returned by grecaptcha.enterprise.execute
@@ -101,38 +84,8 @@ class Recaptcha
             && $score >= $minScore;
 
         if (! $verified) {
-            // Surface the verdict from Google. Common failure shapes:
-            //   - tokenProperties.valid=false +
-            //     invalidReason=MALFORMED|EXPIRED|DUPE|MISSING|BROWSER_ERROR
-            //   - tokenProperties.valid=true, riskAnalysis.score < min_score
-            //     → bot-ish; check riskAnalysis.reasons for the verdict
-            //     drivers (AUTOMATION / UNEXPECTED_USAGE_PATTERNS / etc.)
-            //   - HTTP 4xx with `error.message` → API key / project_id /
-            //     site_key mismatch. Read the message to find which one.
-            Log::warning('[recaptcha] verification failed', [
-                'route' => $route,
-                'ip' => $request->ip(),
-                'http_status' => $response->status(),
-                'token_valid' => $tokenValid,
-                'invalid_reason' => $tokenProps['invalidReason'] ?? null,
-                'token_action' => $tokenProps['action'] ?? null,
-                'token_hostname' => $tokenProps['hostname'] ?? null,
-                'score' => $score,
-                'min_score' => $minScore,
-                'risk_reasons' => $riskAnalysis['reasons'] ?? [],
-                'api_error' => is_array($result) ? ($result['error'] ?? null) : null,
-                'result' => $result,
-            ]);
-
             return ApiService::error(403, 'recaptcha_verification_failed');
         }
-
-        Log::info('[recaptcha] ✓ verified', [
-            'route' => $route,
-            'score' => $score,
-            'action' => $tokenProps['action'] ?? null,
-            'hostname' => $tokenProps['hostname'] ?? null,
-        ]);
 
         return $next($request);
     }
