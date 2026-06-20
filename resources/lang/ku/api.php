@@ -1,54 +1,54 @@
 <?php
 
 return [
-    // ناسنامە
-    'unauthenticated' => 'ناسنامە نەکراوە',
-    'logged_out' => 'بە سەرکەوتوویی دەرچوویت',
-    'user_already_verified' => 'بەکارهێنەر پێشتر پشتڕاستکراوەتەوە',
-    'verification_email_sent' => 'لینکی پشتڕاستکردنەوە نێردرا',
-    'email_verified' => 'ئیمەیڵ بە سەرکەوتوویی پشتڕاستکرایەوە',
-    'invalid_verification_link' => 'لینکی پشتڕاستکردنەوە نادروستە',
-    'invalid_verification_signature' => 'واژووی پشتڕاستکردنەوە نادروستە',
+    // Nasname / Authentication
+    'unauthenticated' => 'Nasname nehat erêkirin',
+    'logged_out' => 'Bi serkeftî hatî derketin',
+    'user_already_verified' => 'Bikarhêner berê hatiye testkirin',
+    'verification_email_sent' => 'Lînka testkirinê hat şandin',
+    'email_verified' => 'E-name bi serkeftî hat testkirin',
+    'invalid_verification_link' => 'Lînka testkirinê ne derbasdar e',
+    'invalid_verification_signature' => 'Îmzaya testkirinê ne derbasdar e',
 
-    // وشەی نهێنی
-    'current_password_incorrect' => 'وشەی نهێنی ئێستا هەڵەیە',
-    'password_updated' => 'وشەی نهێنی بە سەرکەوتوویی نوێکرایەوە',
-    'reset_link_sent' => 'لینکی ڕیسێتکردنی وشەی نهێنی نێردرا',
-    'failed_to_send_password_reset_email' => 'نەتوانرا ئیمەیڵی ڕیسێتکردنی وشەی نهێنی بنێردرێت',
-    'failed_to_reset_password' => 'نەتوانرا وشەی نهێنی ڕیسێت بکرێت',
-    'password_reset_successfully' => 'وشەی نهێنی بە سەرکەوتوویی ڕیسێتکرا',
+    // Şîfre / Password
+    'current_password_incorrect' => 'Şîfreya niha çewt e',
+    'password_updated' => 'Şîfre bi serkeftî hat nûkirin',
+    'reset_link_sent' => 'Lînka sazkirina şîfreyê hat şandin',
+    'failed_to_send_password_reset_email' => 'E-nameya sazkirina şîfreyê nehat şandin',
+    'failed_to_reset_password' => 'Sazkirina şîfreyê biserneket',
+    'password_reset_successfully' => 'Şîfre bi serkeftî hat sazkirin',
 
-    // پرۆفایل
-    'email_changed' => 'ئیمەیڵ بە سەرکەوتوویی گۆڕدرا',
-    'notifications_changed' => 'ڕێکخستنەکانی ئاگادارکردنەوە نوێکرانەوە',
-    'language_updated' => 'زمان بە سەرکەوتوویی نوێکرایەوە',
-    'invalid_file_type' => 'جۆری فایل نادروستە',
-    'basic_info_updates_limit_reached' => 'گەیشتیت بە سنووری نوێکردنەوەی زانیاری بنەڕەتی',
-    'country_updates_limit_reached' => 'گەیشتیت بە سنووری نوێکردنەوەی وڵات',
+    // Profîl
+    'email_changed' => 'E-name bi serkeftî hat guhertin',
+    'notifications_changed' => 'Mîhengên agahdariyê hatin nûkirin',
+    'language_updated' => 'Ziman bi serkeftî hat nûkirin',
+    'invalid_file_type' => 'Cureyê pelê ne derbasdar e',
+    'basic_info_updates_limit_reached' => 'Te gihîştiye sînorê nûkirinên agahiyên bingehîn',
+    'country_updates_limit_reached' => 'Te gihîştiye sînorê guhertina welatî',
 
-    // پشتڕاستکردنەوەی ناسنامە
-    'user_not_found' => 'بەکارهێنەر نەدۆزرایەوە',
-    'target_user_not_found' => 'بەکارهێنەری مەبەست نەدۆزرایەوە',
-    'user_is_banned' => 'بەکارهێنەر بڵۆک کراوە',
-    'you_cannot_verify_yourself' => 'ناتوانیت خۆت پشتڕاست بکەیتەوە',
-    'circular_verification_not_allowed' => 'پشتڕاستکردنەوەی هاوبەش ڕێگەپێدراو نییە',
-    'you_have_already_verified_this_user' => 'تۆ پێشتر ئەم بەکارهێنەرەت پشتڕاستکردووەتەوە',
-    'target_user_data_not_filled' => 'زانیاری بەکارهێنەری مەبەست تەواو نییە',
-    'your_account_is_banned' => 'هەژمارەکەت بڵۆک کراوە',
-    'you_are_not_verified' => 'تۆ پشتڕاست نەکراویت',
-    'you_have_reached_the_maximum_verifications' => 'گەیشتیت بە زۆرترین ژمارەی پشتڕاستکردنەوەکان',
-    'you_do_not_have_enough_verifications' => 'پشتڕاستکردنەوەی پێویستت نییە',
-    'you_have_made_a_lot_of_verifications' => 'تۆ ژمارەیەکی زۆر پشتڕاستکردنەوەت ئەنجام داوە',
+    // Testkirina nasnameyê / Identity verification
+    'user_not_found' => 'Bikarhêner nehat dîtin',
+    'target_user_not_found' => 'Bikarhênera mebest nehat dîtin',
+    'user_is_banned' => 'Bikarhêner hatiye qedexekirin',
+    'you_cannot_verify_yourself' => 'Tu nikarî xwe test bikî',
+    'circular_verification_not_allowed' => 'Testkirina dorîn destûr nayê dayîn',
+    'you_have_already_verified_this_user' => 'Te berê ev bikarhêner test kiriye',
+    'target_user_data_not_filled' => 'Agahiyên bikarhênera mebest ne temam in',
+    'your_account_is_banned' => 'Hesabê te hatiye qedexekirin',
+    'you_are_not_verified' => 'Tu ne testkirî yî',
+    'you_have_reached_the_maximum_verifications' => 'Te gihîştiye herî zêde testkirinan',
+    'you_do_not_have_enough_verifications' => 'Testkirinên te yên pêwîst tune ne',
+    'you_have_made_a_lot_of_verifications' => 'Te gelek testkirin pêk anîne',
 
-    // ڕاپرسی
-    'poll_has_not_started_yet' => 'ڕاپرسی هێشتا دەست پێ نەکردووە',
-    'poll_has_expired' => 'ڕاپرسی تەواو بووە',
-    'you_have_already_voted' => 'تۆ پێشتر دەنگت داوە',
-    'user_is_not_in_poll_audience' => 'بەکارهێنەر لە ئامانجی ڕاپرسی نییە',
-    'user_has_reached_the_max_selections' => 'گەیشتیت بە سنووری هەڵبژاردنەکان',
-    'invalid_options' => 'هەڵبژاردنەکان نادروستن',
+    // Rapirsî / Poll
+    'poll_has_not_started_yet' => 'Rapirsî hîn dest pê nekiriye',
+    'poll_has_expired' => 'Rapirsî bi dawî bûye',
+    'you_have_already_voted' => 'Te berê deng daye',
+    'user_is_not_in_poll_audience' => 'Bikarhêner di girûpa rapirsiyê de tune ye',
+    'user_has_reached_the_max_selections' => 'Te gihîştiye sînorê hilbijartinan',
+    'invalid_options' => 'Hilbijartin ne derbasdar in',
 
-    // پاراستن
-    'recaptcha_token_required' => 'تۆکنی reCAPTCHA پێویستە',
-    'recaptcha_verification_failed' => 'پشتڕاستکردنەوەی reCAPTCHA سەرکەوتوو نەبوو',
+    // Ewlehî / Security
+    'recaptcha_token_required' => 'Tokena reCAPTCHA pêwîst e',
+    'recaptcha_verification_failed' => 'Testkirina reCAPTCHA biserneket',
 ];
