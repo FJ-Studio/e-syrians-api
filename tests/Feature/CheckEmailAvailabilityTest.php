@@ -92,10 +92,20 @@ it('returns 422 when email is not a valid format', function (): void {
 // Recaptcha gate
 // ───────────────────────────────────────────────
 
+// Helper to seed the Enterprise config block used by the real recaptcha
+// middleware once it's swapped back in for the gating tests.
+function withRecaptchaEnterpriseConfig(): void
+{
+    config()->set('services.recaptcha.project_id', 'test-project');
+    config()->set('services.recaptcha.api_key', 'test-api-key');
+    config()->set('services.recaptcha.site_key', 'test-site-key');
+    config()->set('services.recaptcha.min_score', 0.7);
+}
+
 it('is gated by the recaptcha middleware', function (): void {
     // Restore the real recaptcha middleware so this test exercises it.
     $this->app->forgetInstance(Recaptcha::class);
-    config()->set('services.recaptcha.secret', 'test-secret');
+    withRecaptchaEnterpriseConfig();
 
     $response = $this->postJson(route('users.check_email_availability'), [
         'email' => 'test@gmail.com',
@@ -108,10 +118,13 @@ it('is gated by the recaptcha middleware', function (): void {
 
 it('passes when a valid recaptcha token is supplied', function (): void {
     $this->app->forgetInstance(Recaptcha::class);
-    config()->set('services.recaptcha.secret', 'test-secret');
+    withRecaptchaEnterpriseConfig();
 
     Http::fake([
-        'www.google.com/*' => Http::response(['success' => true, 'score' => 0.95], 200),
+        'recaptchaenterprise.googleapis.com/*' => Http::response([
+            'tokenProperties' => ['valid' => true, 'action' => 'email_check'],
+            'riskAnalysis' => ['score' => 0.95],
+        ], 200),
     ]);
 
     $response = $this->postJson(route('users.check_email_availability'), [

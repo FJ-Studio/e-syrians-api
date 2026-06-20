@@ -16,6 +16,13 @@ class Recaptcha
     /**
      * Handle an incoming request.
      *
+     * Verifies the `recaptcha_token` from the request body against Google
+     * Cloud's reCAPTCHA Enterprise Assessments API. The frontend uses
+     * `grecaptcha.enterprise.execute(...)` (see mobile + web recaptcha
+     * modules) — tokens from that path FAIL with `browser-error` when
+     * sent to the legacy `siteverify` endpoint, so we use the proper
+     * Assessments endpoint here.
+     *
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
@@ -29,11 +36,28 @@ class Recaptcha
             return ApiService::error(400, 'recaptcha_token_required');
         }
 
-        // Always-on entry log so it's obvious in dev whether the
-        // middleware is being hit at all (matches the frontend
-        // `[recaptcha] ✓ token …` line head/tail-fingerprint format
-        // so you can correlate a JS console line with a backend log
-        // line for the same submission).
+        $projectId = config('services.recaptcha.project_id');
+        $apiKey = config('services.recaptcha.api_key');
+        $siteKey = config('services.recaptcha.site_key');
+        $minScore = (float) config('services.recaptcha.min_score', 0.7);
+
+        // Misconfiguration check — fail loudly in dev, not silently
+        // letting Google return some ambiguous error. Production should
+        // have all four set in `.env` (see config/services.php).
+        if (! $projectId || ! $apiKey || ! $siteKey) {
+            Log::error('[recaptcha] middleware misconfigured', [
+                'route' => $route,
+                'project_id_set' => (bool) $projectId,
+                'api_key_set' => (bool) $apiKey,
+                'site_key_set' => (bool) $siteKey,
+            ]);
+
+            return ApiService::error(500, 'recaptcha_misconfigured');
+        }
+
+        // Always-on entry log. Matches the frontend's `[recaptcha] ✓ token`
+        // line head/tail fingerprint so you can correlate a JS console
+        // line with a backend log line for the same submission.
         $tokenLen = strlen($recaptchaToken);
         $tokenHead = substr($recaptchaToken, 0, 8);
         $tokenTail = substr($recaptchaToken, -6);
@@ -43,40 +67,60 @@ class Recaptcha
             'token_length' => $tokenLen,
             'token_head' => $tokenHead . '…',
             'token_tail' => '…' . $tokenTail,
-            'secret_set' => ! empty(config('services.recaptcha.secret')),
+            'project_id' => $projectId,
         ]);
 
-        $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
-            'secret' => config('services.recaptcha.secret'),
-            'response' => $recaptchaToken,
-            'remoteip' => $request->ip(),
+        // POST to Enterprise Assessments. The `event` payload requires:
+        //   - token:    the value returned by grecaptcha.enterprise.execute
+        //   - siteKey:  the site key the token was generated for (must
+        //               match the key set in mobile / web env)
+        // Optional fields we DON'T set today:
+        //   - expectedAction: per-route action gate. We'd need to
+        //                     parameterize the middleware (`recaptcha:login`
+        //                     etc.) to validate it usefully. Tracked as a
+        //                     follow-up; the action is still surfaced by
+        //                     Google for risk analytics either way.
+        //   - userIpAddress, userAgent, ja3: marginal lift, skip for now.
+        $endpoint = "https://recaptchaenterprise.googleapis.com/v1/projects/{$projectId}/assessments?key={$apiKey}";
+        $response = Http::asJson()->post($endpoint, [
+            'event' => [
+                'token' => $recaptchaToken,
+                'siteKey' => $siteKey,
+            ],
         ]);
 
         $result = $response->json();
+        $tokenProps = is_array($result) ? ($result['tokenProperties'] ?? []) : [];
+        $riskAnalysis = is_array($result) ? ($result['riskAnalysis'] ?? []) : [];
+        $tokenValid = (bool) ($tokenProps['valid'] ?? false);
+        $score = $riskAnalysis['score'] ?? null;
 
-        if (! is_array($result) || empty($result['success']) || ($result['score'] ?? 0) < 0.7) {
-            // Surface the verdict from Google. The two most common
-            // failure shapes:
-            //   1. success=false + error-codes=['invalid-input-secret']
-            //      → backend's RECAPTCHA_SECRET doesn't match the site
-            //        key the frontend used. Check .env vs the admin
-            //        console for the active key/secret pair.
-            //   2. success=false + error-codes=['invalid-input-response']
-            //      → token is malformed/expired/already-consumed. Check
-            //        the frontend WebView is fetching fresh tokens per
-            //        submit (no caching).
-            //   3. success=true but score < 0.7 → Google thinks the
-            //      request looks bot-ish. Lower the threshold or audit
-            //      the user-agent / IP if this fires on a real user.
+        $verified = $response->successful()
+            && $tokenValid
+            && is_numeric($score)
+            && $score >= $minScore;
+
+        if (! $verified) {
+            // Surface the verdict from Google. Common failure shapes:
+            //   - tokenProperties.valid=false +
+            //     invalidReason=MALFORMED|EXPIRED|DUPE|MISSING|BROWSER_ERROR
+            //   - tokenProperties.valid=true, riskAnalysis.score < min_score
+            //     → bot-ish; check riskAnalysis.reasons for the verdict
+            //     drivers (AUTOMATION / UNEXPECTED_USAGE_PATTERNS / etc.)
+            //   - HTTP 4xx with `error.message` → API key / project_id /
+            //     site_key mismatch. Read the message to find which one.
             Log::warning('[recaptcha] verification failed', [
                 'route' => $route,
                 'ip' => $request->ip(),
                 'http_status' => $response->status(),
-                'google_success' => $result['success'] ?? null,
-                'google_score' => $result['score'] ?? null,
-                'google_error_codes' => $result['error-codes'] ?? [],
-                'google_hostname' => $result['hostname'] ?? null,
-                'google_action' => $result['action'] ?? null,
+                'token_valid' => $tokenValid,
+                'invalid_reason' => $tokenProps['invalidReason'] ?? null,
+                'token_action' => $tokenProps['action'] ?? null,
+                'token_hostname' => $tokenProps['hostname'] ?? null,
+                'score' => $score,
+                'min_score' => $minScore,
+                'risk_reasons' => $riskAnalysis['reasons'] ?? [],
+                'api_error' => is_array($result) ? ($result['error'] ?? null) : null,
                 'result' => $result,
             ]);
 
@@ -85,8 +129,9 @@ class Recaptcha
 
         Log::info('[recaptcha] ✓ verified', [
             'route' => $route,
-            'score' => $result['score'] ?? null,
-            'action' => $result['action'] ?? null,
+            'score' => $score,
+            'action' => $tokenProps['action'] ?? null,
+            'hostname' => $tokenProps['hostname'] ?? null,
         ]);
 
         return $next($request);

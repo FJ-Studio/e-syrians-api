@@ -47,8 +47,33 @@ return [
         'redirect' => env('APPLE_REDIRECT_URI'),
     ],
 
+    /*
+    | reCAPTCHA Enterprise — verified via Google Cloud's Assessments API,
+    | not the legacy `siteverify` endpoint. The frontend (mobile + web)
+    | uses `grecaptcha.enterprise.execute(...)` which produces tokens that
+    | `siteverify` rejects with `browser-error`. The middleware calls:
+    |
+    |   POST https://recaptchaenterprise.googleapis.com/v1/projects/
+    |        {project_id}/assessments?key={api_key}
+    |
+    | Required env vars. Get them from GCP Console:
+    |   - RECAPTCHA_PROJECT_ID  → Project picker top-bar → "Project ID"
+    |   - RECAPTCHA_API_KEY     → APIs & Services → Credentials → API key
+    |                             with reCAPTCHA Enterprise API enabled
+    |   - RECAPTCHA_SITE_KEY    → Security → reCAPTCHA Enterprise → your
+    |                             key (same value as mobile's
+    |                             EXPO_PUBLIC_RECAPTCHA_SITE_KEY)
+    |   - RECAPTCHA_MIN_SCORE   → optional, defaults to 0.7
+    |
+    | The legacy `RECAPTCHA_SECRET` field has been retired — it's
+    | meaningless for Enterprise tokens and was the source of the
+    | `browser-error` we hit during migration.
+    */
     'recaptcha' => [
-        'secret' => env('RECAPTCHA_SECRET'),
+        'project_id' => env('RECAPTCHA_PROJECT_ID'),
+        'api_key' => env('RECAPTCHA_API_KEY'),
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'min_score' => (float) env('RECAPTCHA_MIN_SCORE', 0.7),
     ],
 
     'internal_api_key' => env('INTERNAL_API_KEY'),
