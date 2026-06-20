@@ -48,9 +48,6 @@ return [
     'user_has_reached_the_max_selections' => 'تم الوصول إلى الحد الأقصى للاختيارات',
     'invalid_options' => 'خيارات غير صالحة',
 
-    // المخالفات
-    'not_implemented' => 'غير متوفر',
-
     // الحماية
     'recaptcha_token_required' => 'رمز reCAPTCHA مطلوب',
     'recaptcha_verification_failed' => 'فشل التحقق من reCAPTCHA',

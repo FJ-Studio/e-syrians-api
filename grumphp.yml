@@ -14,6 +14,15 @@ grumphp:
             use_grumphp_paths: false
             triggered_by: [php]
             memory_limit: "-1"
+        # Rector runs in --dry-run mode at commit time so refactors are
+        # *flagged* (fails the hook with a diff to apply) but never
+        # silently rewritten under the user. To apply, run
+        # `composer rector` manually then re-commit.
+        rector:
+            config: ./rector.php
+            triggered_by: [php]
+            clear_cache: false
+            no_diffs: false
         composer_script:
             script: test
             triggered_by: [php]

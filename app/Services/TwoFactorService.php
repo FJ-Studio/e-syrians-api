@@ -142,8 +142,12 @@ final class TwoFactorService
         $user->update([
             'two_factor_enabled' => true,
             'two_factor_confirmed_at' => now(),
-            'recovery_codes' => RecoveryCodeService::generateCodes(),
         ]);
+
+        // Issue the initial recovery-codes batch through the service so
+        // the `recovery_codes_total` snapshot is set alongside the array
+        // (needed by the mobile + web UI to display "N of M remaining").
+        RecoveryCodeService::issueFor($user);
 
         return true;
     }

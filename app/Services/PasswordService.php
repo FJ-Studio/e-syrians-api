@@ -62,15 +62,15 @@ class PasswordService implements PasswordServiceContract
 
     public function sendResetLink(string $email): array
     {
-        $hashedEmail = StrService::hash($email);
-        $user = User::where('email_hashed', $hashedEmail)->first();
+        $normalizedEmail = mb_strtolower(trim($email));
+        $user = User::where('email', $normalizedEmail)->first();
 
         if (! $user) {
             // Don't reveal whether the email exists for privacy
             return ['success' => true, 'message' => 'reset_link_sent', 'code' => 200];
         }
 
-        $status = Password::sendResetLink(['email' => $email]);
+        $status = Password::sendResetLink(['email' => $normalizedEmail]);
 
         if ($status !== Password::RESET_LINK_SENT) {
             return ['success' => false, 'message' => 'failed_to_send_password_reset_email', 'code' => 500];

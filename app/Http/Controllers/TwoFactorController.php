@@ -26,14 +26,33 @@ class TwoFactorController extends Controller
 
     /**
      * Get the current 2FA status for the authenticated user.
+     *
+     * Includes the recovery-codes counters so the mobile/web settings
+     * screen can render "N of M remaining" without an extra round-trip
+     * to GET /users/recovery-codes. `recovery_codes_total` is null for
+     * accounts whose codes pre-date the snapshot column — the UI
+     * gracefully falls back to a denominator-less display in that case.
      */
     public function status(Request $request): JsonResponse
     {
         $user = $request->user();
 
+        // `recovery_codes` carries a Laravel `array` cast (see
+        // User::casts()), so the accessor returns `array|null` at
+        // runtime. PHPStan / Larastan don't always pick up the cast
+        // and infer the underlying JSON column as `string|null`,
+        // which trips `count()` and `is_array()` checks. The inline
+        // `@var` below is the narrow assertion to silence that
+        // specific false positive without weakening type safety
+        // elsewhere.
+        /** @var list<string> $recoveryCodes */
+        $recoveryCodes = $user->recovery_codes ?? [];
+
         return ApiService::success([
             'enabled' => $user->hasTwoFactorEnabled(),
             'confirmed_at' => $user->two_factor_confirmed_at?->toIso8601String(),
+            'recovery_codes_remaining' => count($recoveryCodes),
+            'recovery_codes_total' => $user->recovery_codes_total,
         ]);
     }
 

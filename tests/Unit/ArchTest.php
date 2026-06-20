@@ -30,11 +30,18 @@ arch()->preset()->security()
 //     ->ignoring('App\Models\FeatureRequestVote')
 //     ->ignoring('App\Models\PollAudienceRule');
 
+// `toOnlyBeUsedIn` whitelists the namespaces where App\Models can be
+// referenced. We allow `App` (the obvious one) plus `Database\Seeders`
+// and `Database\Factories` — both legitimately need to instantiate
+// models as part of the standard Laravel data-seeding / factory
+// pattern. Without `Database\Seeders` here, DemoDataSeeder cannot
+// `use App\Models\…`, which would force seeders into a raw-SQL or
+// repository pattern with no upside.
 arch()
     ->expect('App\Models')
     ->toBeClasses()
     ->toExtend('Illuminate\Database\Eloquent\Model')
-    ->toOnlyBeUsedIn('App')
+    ->toOnlyBeUsedIn(['App', 'Database\Seeders', 'Database\Factories'])
     ->ignoring('App\Models\User');
 
 // ───────────────────────────────────────────────
@@ -86,6 +93,7 @@ arch('controllers do not depend on concrete services directly')
     ->toOnlyUse([
         'App\Http\Controllers\Controller',
         'App\Contracts\AuthServiceContract',
+        'App\Http\Requests\User\CheckEmailAvailabilityRequest',
         'App\Http\Requests\User\CredentialsLoginRequest',
         'App\Http\Requests\User\SocialLoginRequest',
         'App\Http\Requests\User\UserEmailVerification',

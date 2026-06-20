@@ -26,6 +26,28 @@ class PollResource extends JsonResource
 
         [$isInAudience, $audienceFailures] = $this->resource->audienceCheckFor($user);
 
+        // Audience exposure rule (tightened 2026-06):
+        //   - Demographic audience (gender / age / country / …) — exposed
+        //     to ALL viewers so the mobile/web audience-criteria sheet
+        //     can render the actual targeting rules next to per-row
+        //     match / doesn't-match pills. Not sensitive (the
+        //     `AudienceLine` on the poll detail already broadcasts that
+        //     the poll IS audience-restricted; the rules don't reveal
+        //     anything about individual voters).
+        //   - Explicit-list audience (`allowed_voters`) — **never** exposed
+        //     via this resource, including to the creator. The list is a
+        //     hand-picked guest list of user UUIDs; surfacing it on the
+        //     public poll page would leak which other users the author
+        //     invited. Creators only need the list when editing the
+        //     poll, not when viewing its public page — the creator-edit
+        //     form should fetch it from a dedicated creator-only
+        //     endpoint (TBD). Everyone — including the creator on the
+        //     public page — only learns "am I in?" via
+        //     `is_in_audience` / `audience_failures`.
+        $audience = $this->resource->audience;
+        $isExplicitListAudience = isset($audience['allowed_voters']);
+        $exposeAudience = ! $isExplicitListAudience;
+
         return [
             'id' => $this->id,
             'question' => $this->question,
@@ -35,10 +57,17 @@ class PollResource extends JsonResource
             'audience_can_add_options' => $this->audience_can_add_options,
             'is_in_audience' => $isInAudience,
             'audience_failures' => $audienceFailures,
-            // Full audience details are only exposed to the poll's creator
-            // (needed to pre-fill the dashboard edit form). Non-creators don't
-            // need the criteria themselves — only whether they qualify.
-            'audience' => $this->when($isCreator, fn () => $this->resource->audience),
+            // See the `$exposeAudience` rationale above. When the poll
+            // has an explicit-voter-list audience, the key is omitted
+            // entirely for every viewer (creator included) — the
+            // client falls back to the `is_in_audience` /
+            // `audience_failures` signal.
+            'audience' => $this->when($exposeAudience, fn () => $audience),
+            // True iff the poll uses an explicit-voter-list audience.
+            // Exposed to everyone so the mobile/web audience sheet can
+            // render the right summary row ("You're in / You're not in")
+            // without trying to enumerate criteria it doesn't have.
+            'audience_is_explicit_list' => $isExplicitListAudience,
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn () => $this->deleted_at->toISOString()),

@@ -11,7 +11,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\TwoFactorController;
-use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
@@ -35,6 +34,12 @@ Route::get('/ping', function () {
 */
 Route::prefix('users')->group(function (): void {
     Route::middleware(['guest', 'throttle:6,1,register', 'recaptcha'])->post('/register', [AuthController::class, 'register'])->name('users.register');
+    // Pre-registration email-availability probe used by the mobile
+    // sign-up wizard (step 1 → Continue). reCAPTCHA-gated so the route
+    // can't be abused as an "is this email registered?" oracle; 10/min
+    // per-IP throttle is loose enough for honest typos but tight
+    // enough that scanning a list is impractical.
+    Route::middleware(['guest', 'throttle:10,1,email_check', 'recaptcha'])->post('/check-email-availability', [AuthController::class, 'checkEmailAvailability'])->name('users.check_email_availability');
     Route::middleware(['guest', 'throttle:6,1,login'])->post('/login', [AuthController::class, 'login']);
     Route::middleware(['guest', 'throttle:6,1,social_login'])->post('/login/social', [AuthController::class, 'socialLogin']);
     Route::middleware(['guest', 'throttle:2,1,forgot_password', 'recaptcha'])->post('/forgot-password', [PasswordController::class, 'forgot']);
@@ -136,21 +141,6 @@ Route::prefix('polls')->group(function (): void {
     });
     Route::get('/audience', [PollController::class, 'audience']);
     Route::get('/{poll}', [PollController::class, 'show']);
-});
-
-/*
-|--------------------------------------------------------------------------
-| Violation Routes
-|--------------------------------------------------------------------------
-*/
-Route::prefix('violations')->group(function (): void {
-    Route::get('/', [ViolationController::class, 'index']);
-    Route::get('/{violation}', [ViolationController::class, 'show']);
-    Route::middleware(['auth:sanctum'])->group(function (): void {
-        Route::post('/', [ViolationController::class, 'store']);
-        Route::post('/react', [ViolationController::class, 'react'])->middleware(UserIsVerified::class);
-        Route::post('/attachments', [ViolationController::class, 'attachments']);
-    });
 });
 
 /*

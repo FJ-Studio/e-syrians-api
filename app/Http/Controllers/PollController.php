@@ -159,13 +159,26 @@ class PollController extends Controller
     /**
      * Return the audience criteria for a poll.
      *
-     * Since polls are not editable after creation, the result is cached
+     * Polls are immutable while they have votes (and the dedicated
+     * creator-only edit endpoint — TBD — only operates on vote-less
+     * polls), so the audience snapshot returned here is cached
      * indefinitely (until the cache store evicts it).
      *
-     * When the audience uses an allowed-voters list, the actual voter
-     * identifiers are only returned to the poll creator. Everyone else
-     * receives an empty `allowed_voters` array so the frontend can
-     * show a generic "invite-only" message without leaking PII.
+     * Audience exposure rule (tightened 2026-06):
+     *   • Demographic criteria (gender / age / country / …) — exposed
+     *     to every viewer so the audience-criteria sheet can render
+     *     the actual targeting rules.
+     *   • Explicit-list audience (`allowed_voters`) — never exposed
+     *     via this endpoint, not even to the creator. The list is a
+     *     hand-picked guest list of voter identifiers; surfacing it
+     *     here would leak who else was invited. The creator only
+     *     needs the list when editing the poll, which goes through a
+     *     dedicated creator-only edit endpoint (TBD); the cache still
+     *     holds the full audience array internally, but every
+     *     response strips `allowed_voters` to an empty list before
+     *     sending. Non-creators learn membership via the boolean
+     *     `is_in_audience` / `audience_failures` fields on
+     *     /polls/{id}, not this endpoint.
      */
     public function audience(Request $request): JsonResponse
     {
@@ -181,21 +194,17 @@ class PollController extends Controller
             return $poll->audience;
         });
 
-        // Hide the actual allowed-voters list from non-creators.
-        // The route is public (no auth middleware), so we attempt to
-        // resolve the user via the sanctum guard manually.
+        // `allowed_voters` is the author's hand-picked invite list and is
+        // never exposed via this public-audience endpoint — not even to
+        // the creator. The creator only needs the list when editing the
+        // poll, which goes through a dedicated creator-only edit
+        // endpoint (TBD); the public surface uses the empty array as a
+        // "this poll uses an invite list, but you don't get to see it"
+        // signal. Non-creators learn membership via the boolean
+        // `is_in_audience` / failure-code `audience_failures` returned
+        // by /polls/{id}, not this endpoint.
         if (! empty($audience['allowed_voters'])) {
-            $guard = auth('sanctum');
-            // Trigger token resolution from the Authorization header.
-            $user = $guard->user();
-            $poll = Poll::select('id', 'created_by')->find($pollId);
-            $isCreator = $user !== null
-                && $poll !== null
-                && (int) $user->getAuthIdentifier() === (int) $poll->created_by;
-
-            if (! $isCreator) {
-                $audience['allowed_voters'] = [];
-            }
+            $audience['allowed_voters'] = [];
         }
 
         return ApiService::success($audience);

@@ -26,7 +26,13 @@ beforeEach(function (): void {
     // it so we're only testing recaptcha behaviour.
     $this->withoutMiddleware(ThrottleRequests::class);
 
-    config()->set('services.recaptcha.secret', 'test-secret');
+    // Enterprise config block — the middleware now calls the
+    // Assessments API instead of the legacy siteverify endpoint, so all
+    // four fields must be set for the middleware to proceed.
+    config()->set('services.recaptcha.project_id', 'test-project');
+    config()->set('services.recaptcha.api_key', 'test-api-key');
+    config()->set('services.recaptcha.site_key', 'test-site-key');
+    config()->set('services.recaptcha.min_score', 0.7);
 });
 
 /**
@@ -41,7 +47,7 @@ function callForgotPassword(array $payload): TestResponse
 
 test('forgot-password rejects requests with no recaptcha_token', function (): void {
     $response = callForgotPassword([
-        'email' => 'someone@example.com',
+        'email' => 'someone@gmail.com',
     ]);
 
     expect($response->status())->toBe(400);
@@ -52,13 +58,16 @@ test('forgot-password rejects requests with no recaptcha_token', function (): vo
 
 test('forgot-password rejects a token Google marks invalid', function (): void {
     Http::fake([
-        'www.google.com/*' => Http::response(['success' => false, 'score' => 0.9], 200),
+        'recaptchaenterprise.googleapis.com/*' => Http::response([
+            'tokenProperties' => ['valid' => false, 'invalidReason' => 'MALFORMED'],
+            'riskAnalysis' => ['score' => 0.0],
+        ], 200),
     ]);
 
-    User::factory()->create(['email' => 'person@example.com']);
+    User::factory()->create(['email' => 'person@gmail.com']);
 
     $response = callForgotPassword([
-        'email' => 'person@example.com',
+        'email' => 'person@gmail.com',
         'recaptcha_token' => 'forged-token',
     ]);
 
@@ -68,13 +77,16 @@ test('forgot-password rejects a token Google marks invalid', function (): void {
 
 test('forgot-password passes the middleware when Google reports a valid high-score token', function (): void {
     Http::fake([
-        'www.google.com/*' => Http::response(['success' => true, 'score' => 0.95], 200),
+        'recaptchaenterprise.googleapis.com/*' => Http::response([
+            'tokenProperties' => ['valid' => true, 'action' => 'forgot_password'],
+            'riskAnalysis' => ['score' => 0.95],
+        ], 200),
     ]);
 
-    User::factory()->create(['email' => 'person@example.com']);
+    User::factory()->create(['email' => 'person@gmail.com']);
 
     $response = callForgotPassword([
-        'email' => 'person@example.com',
+        'email' => 'person@gmail.com',
         'recaptcha_token' => 'real-token',
     ]);
 

@@ -48,9 +48,6 @@ return [
     'user_has_reached_the_max_selections' => 'Maximum selections reached',
     'invalid_options' => 'Invalid options',
 
-    // Violation
-    'not_implemented' => 'Not implemented',
-
     // Middleware
     'recaptcha_token_required' => 'reCAPTCHA token is required',
     'recaptcha_verification_failed' => 'reCAPTCHA verification failed',
