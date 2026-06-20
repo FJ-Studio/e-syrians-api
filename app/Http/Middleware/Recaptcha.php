@@ -83,7 +83,32 @@ class Recaptcha
             && is_numeric($score)
             && $score >= $minScore;
 
+        // TEMP DIAGNOSTIC (re-added 2026-06-20): on any rejection, log the
+        // exact reason Google returned so we can tell apart EXPIRED
+        // (slow client / slow backend), SITE_MISMATCH (FE/BE key drift),
+        // DUPE (replay), low-score (bot), and HTTP-level failures
+        // (quota / auth). Strip this block once production is healthy.
         if (! $verified) {
+            Log::warning('[recaptcha] verification failed', [
+                'route' => $request->path(),
+                'http_status' => $response->status(),
+                'http_successful' => $response->successful(),
+                'token_valid' => $tokenValid,
+                'invalid_reason' => $tokenProps['invalidReason'] ?? null,
+                'token_action' => $tokenProps['action'] ?? null,
+                'token_hostname' => $tokenProps['hostname'] ?? null,
+                'token_create_time' => $tokenProps['createTime'] ?? null,
+                'score' => $score,
+                'min_score' => $minScore,
+                'token_prefix' => substr((string) $recaptchaToken, 0, 10),
+                'token_length' => strlen((string) $recaptchaToken),
+                'configured_site_key_prefix' => substr((string) $siteKey, 0, 10),
+                'configured_project_id' => $projectId,
+                'google_body_excerpt' => is_array($result)
+                    ? json_encode(array_intersect_key($result, array_flip(['tokenProperties', 'riskAnalysis', 'error'])))
+                    : substr((string) $response->body(), 0, 500),
+            ]);
+
             return ApiService::error(403, 'recaptcha_verification_failed');
         }
 
