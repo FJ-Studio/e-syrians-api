@@ -37,7 +37,16 @@ class TwoFactorController extends Controller
     {
         $user = $request->user();
 
-        $recoveryCodes = is_array($user->recovery_codes) ? $user->recovery_codes : [];
+        // `recovery_codes` carries a Laravel `array` cast (see
+        // User::casts()), so the accessor returns `array|null` at
+        // runtime. PHPStan / Larastan don't always pick up the cast
+        // and infer the underlying JSON column as `string|null`,
+        // which trips `count()` and `is_array()` checks. The inline
+        // `@var` below is the narrow assertion to silence that
+        // specific false positive without weakening type safety
+        // elsewhere.
+        /** @var list<string> $recoveryCodes */
+        $recoveryCodes = $user->recovery_codes ?? [];
 
         return ApiService::success([
             'enabled' => $user->hasTwoFactorEnabled(),
