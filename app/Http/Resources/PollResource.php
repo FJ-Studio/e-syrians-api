@@ -76,6 +76,14 @@ class PollResource extends JsonResource
             'downs_count' => $this->downs_count,
             'voters_are_visible' => $this->voters_are_visible,
             'audience_only' => $this->audience_only,
+            // `is_private` is creator-only. The flag is normally
+            // hidden by the public_polls global scope so non-owners
+            // never see private polls at all — but the My Polls
+            // listing skips that scope (so owners CAN see their
+            // own private polls), and the management UI needs to
+            // render a "Private" pill so the owner knows what
+            // they're looking at.
+            'is_private' => $this->when($isCreator, fn () => (bool) $this->is_private),
             'unique_voters_count' => $this->unique_voters_count ?? 0,
 
             'user' => $this->relationLoaded('user')

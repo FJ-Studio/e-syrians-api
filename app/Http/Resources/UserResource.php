@@ -74,6 +74,25 @@ class UserResource extends JsonResource
             'ethnicity' => $this->ethnicity,
             'verified_at' => $this->verified_at,
 
+            /*
+             * Public profile stats trio. Mobile + web read these to
+             * render the "verified by N · M votes · K requests" row
+             * on /verify/{uuid}. We use direct ->count() relationship
+             * queries rather than `whenCounted` because UserResource
+             * is consumed both by single-user fetches (where this is
+             * cheap) and by the small first-registrants list — both
+             * acceptable without a withCount preload. If a future
+             * endpoint exposes a large paginated user list, switch
+             * those queries to `withCount(...)` + `whenCounted` here.
+             *
+             * `activeVerifiers` excludes cancelled verifications so
+             * the surfaced count matches what the verifiers list
+             * actually shows.
+             */
+            'verified_by_count' => $this->activeVerifiers()->count(),
+            'polls_count' => $this->polls()->count(),
+            'requests_count' => $this->featureRequests()->count(),
+
             // Social links
             'facebook_link' => $this->facebook_link,
             'twitter_link' => $this->twitter_link,
@@ -118,6 +137,30 @@ class UserResource extends JsonResource
                 'roles' => $this->getRoleNames(),
                 'permissions' => $this->getAllPermissions()->pluck('name'),
                 'basic_info_updates' => (int) (config('e-syrians.verification.basic_info_updates_limit') - $this->getTotalUpdatesCount(ProfileChangeTypeEnum::BasicData->value)),
+                /*
+                 * Count of active verifications the user has
+                 * issued (rows where verifier_id = me AND not
+                 * cancelled). Surfaced for the Sent Verifications
+                 * tab's StatCard so it can show "X people you've
+                 * verified · Y of 25 left" without a separate
+                 * round-trip. The 25 cap lives in
+                 * config('e-syrians.verification.max') and is
+                 * enforced server-side by canVerify().
+                 */
+                'verifications_made_count' => $this->verifications()->whereNull('cancelled_at')->count(),
+                /*
+                 * Religion change budget remaining in the current
+                 * 365-day window. Surfaced so the census form can
+                 * show "1 religion change left" near the religion
+                 * picker before the user commits and gets a 403.
+                 * The cap exists because polls target by
+                 * religious_affiliation — see config
+                 * `verification.religion_updates_limit`.
+                 */
+                'religion_updates' => (int) max(
+                    0,
+                    config('e-syrians.verification.religion_updates_limit') - $this->resource->getReligionUpdatesCount(),
+                ),
                 'received_verification_email' => $this->received_verification_email,
                 'account_verified_email' => $this->account_verified_email,
                 'province' => $this->province,

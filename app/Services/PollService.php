@@ -8,6 +8,7 @@ use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollVote;
 use App\Models\PollOption;
+use Illuminate\Support\Carbon;
 use App\Enums\RevealResultsEnum;
 use App\Models\PollAudienceRule;
 use Illuminate\Support\Facades\DB;
@@ -78,10 +79,20 @@ class PollService implements PollServiceContract
     public function createPoll(array $data, int $userId): Poll
     {
         return DB::transaction(function () use ($data, $userId) {
+            // BUG FIX (2026-06-22): `end_date` was previously
+            // computed from `now()` instead of the start date, so
+            // a poll created on Apr 8 with start=Apr 30 + duration=5
+            // ended on Apr 13 (= now + 5) instead of May 5
+            // (= start + 5). The frontend (web table, mobile My
+            // Polls card) faithfully renders whatever the backend
+            // saves, which is why "Apr 30 → Apr 13" showed up
+            // there. End date must always be derived from the
+            // user-specified start, not the request timestamp.
+            $startDate = Carbon::parse($data['start_date']);
             $poll = new Poll([
                 'question' => $data['question'],
-                'start_date' => $data['start_date'],
-                'end_date' => now()->addDays((int) ($data['duration'])),
+                'start_date' => $startDate,
+                'end_date' => $startDate->copy()->addDays((int) ($data['duration'])),
                 'max_selections' => $data['max_selections'],
                 'audience_can_add_options' => $data['audience_can_add_options'],
                 'reveal_results' => $data['reveal_results'],

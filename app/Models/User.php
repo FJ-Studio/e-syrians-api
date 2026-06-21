@@ -216,6 +216,17 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the feature requests that this user has created. Mirrors
+     * `polls()` — same `created_by` foreign-key convention.
+     *
+     * @return HasMany
+     */
+    public function featureRequests()
+    {
+        return $this->hasMany(FeatureRequest::class, 'created_by', 'id');
+    }
+
+    /**
      * Get the votes that this user has cast
      *
      * @return HasMany
@@ -262,6 +273,23 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->profileUpdates()
             ->where('change_type', ProfileChangeTypeEnum::Address->value)
+            ->where('created_at', '>=', now()->subYear())
+            ->count();
+    }
+
+    /**
+     * Count of religion changes in the last 365 days. Used by
+     * ProfileService::updateCensusData to enforce
+     * `verification.religion_updates_limit` — polls can target by
+     * religious_affiliation so we cap how often a user can flip
+     * to prevent just-in-time switching for poll eligibility.
+     *
+     * @return int
+     */
+    public function getReligionUpdatesCount()
+    {
+        return $this->profileUpdates()
+            ->where('change_type', ProfileChangeTypeEnum::Religion->value)
             ->where('created_at', '>=', now()->subYear())
             ->count();
     }

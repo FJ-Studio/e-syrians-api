@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\UserVerification;
 use DomainException;
 use App\Events\VerificationReceived;
 use App\Contracts\VerificationServiceContract;
@@ -79,7 +80,15 @@ class VerificationService implements VerificationServiceContract
 
     public function getVerificationsForUser(User $user): mixed
     {
-        return $user->verifications()->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get();
+        // Wrap in UserVerificationResource so the response shape
+        // matches getVerifiersForUser (which already does). Without
+        // this, Sent rows came back as raw Eloquent (missing the
+        // signed avatar URL handling + the `whenLoaded` shape) while
+        // Received rows came back resource-formatted — clients had
+        // to special-case parsing per tab.
+        return UserVerificationResource::collection(
+            $user->verifications()->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get()
+        );
     }
 
     public function getVerifiersForUser(User $user): mixed
@@ -87,6 +96,41 @@ class VerificationService implements VerificationServiceContract
         return UserVerificationResource::collection(
             $user->verifiers()->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get()
         );
+    }
+
+    public function cancelVerificationByVerifier(
+        User $verifier,
+        UserVerification $verification,
+        string $reason = 'cancelled_by_verifier',
+    ): UserVerification {
+        // Authorize: the auth user MUST be the original verifier of
+        // this row. We surface this as DomainException so the
+        // controller can translate to a 403 with the message key.
+        // Treating it as a user-level error (not auth failure) keeps
+        // the auth-middleware semantics clean.
+        if ($verification->verifier_id !== $verifier->id) {
+            throw new DomainException('not_authorized_to_cancel_this_verification');
+        }
+
+        if ($verification->cancelled_at !== null) {
+            throw new DomainException('verification_already_cancelled');
+        }
+
+        // Soft-cancel: keep the row so the audit trail stays intact.
+        // The `cancelation_payload` array gives us room to carry
+        // metadata (who cancelled, when, why); list endpoints that
+        // want only active verifications filter on
+        // `whereNull('cancelled_at')`.
+        $verification->forceFill([
+            'cancelled_at' => now(),
+            'cancelation_payload' => [
+                'reason' => $reason,
+                'cancelled_by' => 'verifier',
+                'cancelled_at' => now()->toIso8601String(),
+            ],
+        ])->save();
+
+        return $verification->fresh();
     }
 
     /**

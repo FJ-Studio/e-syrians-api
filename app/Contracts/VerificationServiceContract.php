@@ -32,4 +32,23 @@ interface VerificationServiceContract
      * Get verifiers for a user
      */
     public function getVerifiersForUser(User $user): mixed;
+
+    /**
+     * Mark a verification as cancelled by its verifier.
+     *
+     * Marks the row's `cancelled_at` and records the reason in
+     * `cancelation_payload`. The verification stays in the DB
+     * (soft-cancel) so the audit trail is preserved — list
+     * endpoints filter by `whereNull('cancelled_at')` when they
+     * only want active ones.
+     *
+     * @throws \DomainException When the auth user isn't the
+     *         verifier_id of the record, or when the record is
+     *         already cancelled.
+     */
+    public function cancelVerificationByVerifier(
+        User $verifier,
+        \App\Models\UserVerification $verification,
+        string $reason = 'cancelled_by_verifier',
+    ): \App\Models\UserVerification;
 }

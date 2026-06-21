@@ -18,6 +18,12 @@ return [
         'basic_info_updates_limit' => 2,
         'social_links_updates_limit' => 5,
         'country_updates_limit' => 2,
+        // Religion changes are rate-limited per year. Polls can
+        // target by `religious_affiliation`, so without a cap a
+        // user could flip just-in-time to vote in audience-gated
+        // polls aimed at a different group. Mirrors the
+        // address/country cap of 2 per year.
+        'religion_updates_limit' => 2,
     ],
     'cache' => [
         'daily_registrants' => 'daily_registrants',
