@@ -85,6 +85,23 @@ class PollResource extends JsonResource
             // they're looking at.
             'is_private' => $this->when($isCreator, fn () => (bool) $this->is_private),
             'unique_voters_count' => $this->unique_voters_count ?? 0,
+            /*
+             * Backward-compat alias. Before UserPollController::myPolls
+             * was wrapped in PollResource, it returned raw model rows
+             * where `votes_count` (from withCount('votes')) was on
+             * the wire — the web's account dashboard My Polls table
+             * reads it as the "Participants count" column. When the
+             * relationship was counted (owner-scoped endpoints that
+             * still call withCount('votes')) we return that raw count
+             * so the existing behaviour is preserved exactly; for
+             * endpoints that don't (public /polls), we fall back to
+             * unique_voters_count so the field always has a sensible
+             * value. The web should migrate to unique_voters_count
+             * for semantic clarity (raw `votes_count` double-counts
+             * multi-select votes), but that's a separate change —
+             * this alias unblocks the deploy.
+             */
+            'votes_count' => $this->votes_count ?? $this->unique_voters_count ?? 0,
 
             'user' => $this->relationLoaded('user')
                 ? new UserResource($this->user)
