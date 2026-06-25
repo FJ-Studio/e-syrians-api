@@ -6,14 +6,14 @@ namespace App\Http\Controllers;
 
 use Exception;
 use DomainException;
-use App\Models\UserVerification;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
+use App\Models\UserVerification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\User\VerifyUserRequest;
-use App\Http\Resources\UserVerificationResource;
 use App\Contracts\VerificationServiceContract;
+use App\Http\Resources\UserVerificationResource;
 
 class VerificationController extends Controller
 {

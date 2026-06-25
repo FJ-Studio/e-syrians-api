@@ -89,9 +89,9 @@ class UserResource extends JsonResource
              * the surfaced count matches what the verifiers list
              * actually shows.
              */
-            'verified_by_count' => $this->activeVerifiers()->count(),
-            'polls_count' => $this->polls()->count(),
-            'requests_count' => $this->featureRequests()->count(),
+            'verified_by_count' => $this->resource->activeVerifiers()->count(),
+            'polls_count' => $this->resource->polls()->count(),
+            'requests_count' => $this->resource->featureRequests()->count(),
 
             // Social links
             'facebook_link' => $this->facebook_link,
@@ -147,7 +147,7 @@ class UserResource extends JsonResource
                  * config('e-syrians.verification.max') and is
                  * enforced server-side by canVerify().
                  */
-                'verifications_made_count' => $this->verifications()->whereNull('cancelled_at')->count(),
+                'verifications_made_count' => $this->resource->verifications()->whereNull('cancelled_at')->count(),
                 /*
                  * Religion change budget remaining in the current
                  * 365-day window. Surfaced so the census form can

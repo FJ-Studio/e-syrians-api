@@ -83,7 +83,7 @@ class PollResource extends JsonResource
             // own private polls), and the management UI needs to
             // render a "Private" pill so the owner knows what
             // they're looking at.
-            'is_private' => $this->when($isCreator, fn () => (bool) $this->is_private),
+            'is_private' => $this->when($isCreator, fn () => (bool) $this->resource->is_private),
             'unique_voters_count' => $this->unique_voters_count ?? 0,
             /*
              * Backward-compat alias. Before UserPollController::myPolls

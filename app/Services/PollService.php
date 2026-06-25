@@ -8,11 +8,11 @@ use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollVote;
 use App\Models\PollOption;
-use Illuminate\Support\Carbon;
 use App\Enums\RevealResultsEnum;
 use App\Models\PollAudienceRule;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\LogPollVoteToBigQuery;
+use Illuminate\Support\Facades\Date;
 use App\Contracts\PollServiceContract;
 use App\Exceptions\PollVotingException;
 use App\Exceptions\PollReactionException;
@@ -88,7 +88,7 @@ class PollService implements PollServiceContract
             // saves, which is why "Apr 30 → Apr 13" showed up
             // there. End date must always be derived from the
             // user-specified start, not the request timestamp.
-            $startDate = Carbon::parse($data['start_date']);
+            $startDate = Date::parse($data['start_date']);
             $poll = new Poll([
                 'question' => $data['question'],
                 'start_date' => $startDate,

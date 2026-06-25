@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
-use App\Models\UserVerification;
 use DomainException;
+use App\Models\UserVerification;
 use App\Events\VerificationReceived;
 use App\Contracts\VerificationServiceContract;
 use App\Http\Resources\UserVerificationResource;

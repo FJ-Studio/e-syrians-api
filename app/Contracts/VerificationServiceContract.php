@@ -6,6 +6,8 @@ namespace App\Contracts;
 
 use Exception;
 use App\Models\User;
+use DomainException;
+use App\Models\UserVerification;
 
 interface VerificationServiceContract
 {
@@ -42,13 +44,13 @@ interface VerificationServiceContract
      * endpoints filter by `whereNull('cancelled_at')` when they
      * only want active ones.
      *
-     * @throws \DomainException When the auth user isn't the
+     * @throws DomainException When the auth user isn't the
      *         verifier_id of the record, or when the record is
      *         already cancelled.
      */
     public function cancelVerificationByVerifier(
         User $verifier,
-        \App\Models\UserVerification $verification,
+        UserVerification $verification,
         string $reason = 'cancelled_by_verifier',
-    ): \App\Models\UserVerification;
+    ): UserVerification;
 }
