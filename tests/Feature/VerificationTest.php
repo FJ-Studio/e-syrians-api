@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\UserVerification;
 use Illuminate\Support\Facades\Event;
 use App\Contracts\VerificationServiceContract;
 
@@ -117,4 +118,81 @@ it('allows a user to verify another user once only', function (): void {
 
     $response2->assertStatus(403);
     expect($response2['messages'])->toContain('you_have_already_verified_this_user');
+});
+
+// ───────────────────────────────────────────────
+// Cancel verification (P3.3 follow-up)
+// ───────────────────────────────────────────────
+
+it('lets the original verifier soft-cancel a verification they sent', function (): void {
+    // Set up: verifier vouches for a target, then cancels the row.
+    $verification = UserVerification::create([
+        'verifier_id' => test()->verifiedUser->id,
+        'user_id' => test()->unverifiedUser->id,
+    ]);
+
+    $response = $this->postJson(
+        route('users.verifications.cancel', ['verification' => $verification->id]),
+        [],
+        authHeader(test()->verifiedUser)
+    );
+
+    $response->assertStatus(200);
+
+    // Row stays in DB (soft-cancel), `cancelled_at` is set, and
+    // the payload records the reason. Audit trail preserved.
+    $verification->refresh();
+    expect($verification->cancelled_at)->not->toBeNull();
+    expect($verification->cancelation_payload)->toMatchArray([
+        'reason' => 'cancelled_by_verifier',
+        'cancelled_by' => 'verifier',
+    ]);
+});
+
+it('blocks a non-verifier from cancelling someone else\'s verification', function (): void {
+    $thirdParty = User::factory()->create([
+        'name' => 'Third',
+        'surname' => 'Party',
+        'email' => 'third@example.com',
+        'uuid' => '11111111-2222-3333-4444-555555555555',
+        'verified_at' => now(),
+        'verification_reason' => 'first_registrant',
+    ]);
+
+    $verification = UserVerification::create([
+        'verifier_id' => test()->verifiedUser->id,
+        'user_id' => test()->unverifiedUser->id,
+    ]);
+
+    // Third party (not the original verifier) tries to cancel — 403.
+    $response = $this->postJson(
+        route('users.verifications.cancel', ['verification' => $verification->id]),
+        [],
+        authHeader($thirdParty)
+    );
+
+    $response->assertStatus(403);
+    expect($response['messages'])->toContain('not_authorized_to_cancel_this_verification');
+
+    // Sanity: the row stays uncancelled.
+    $verification->refresh();
+    expect($verification->cancelled_at)->toBeNull();
+});
+
+it('rejects re-cancelling a verification that is already cancelled', function (): void {
+    $verification = UserVerification::create([
+        'verifier_id' => test()->verifiedUser->id,
+        'user_id' => test()->unverifiedUser->id,
+        'cancelled_at' => now(),
+        'cancelation_payload' => ['reason' => 'cancelled_by_verifier'],
+    ]);
+
+    $response = $this->postJson(
+        route('users.verifications.cancel', ['verification' => $verification->id]),
+        [],
+        authHeader(test()->verifiedUser)
+    );
+
+    $response->assertStatus(403);
+    expect($response['messages'])->toContain('verification_already_cancelled');
 });

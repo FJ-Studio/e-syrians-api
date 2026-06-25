@@ -107,6 +107,11 @@ class ProfileService implements ProfileServiceContract
 
         $user->update($data);
 
+        // Audit payload mirrors the three address fields we now
+        // accept. `address` is opaque PII so we record only its
+        // presence in the audit metadata, never the value itself
+        // (the encrypted attribute is persisted on the user row
+        // via `$user->update($data)` above).
         $profileUpdate = $this->createAuditRecord(
             $user,
             ProfileChangeTypeEnum::Address,
@@ -115,6 +120,7 @@ class ProfileService implements ProfileServiceContract
             [
                 'country' => $data['country'],
                 'province' => $data['province'] ?? null,
+                'address_set' => array_key_exists('address', $data) && $data['address'] !== null && $data['address'] !== '',
             ],
             $ipAddress,
             $userAgent,
@@ -129,6 +135,35 @@ class ProfileService implements ProfileServiceContract
         $data['languages'] = implode(',', $data['languages'] ?? []);
         $data['other_nationalities'] = implode(',', $data['other_nationalities'] ?? []);
 
+        // Religion is rate-limited separately from the rest of the
+        // Census data. Polls can target by `religious_affiliation`,
+        // so without a per-year cap a user could flip just-in-time
+        // to vote in audience-gated polls. We detect a real change
+        // (incoming value present AND different from stored) before
+        // counting it against the limit — saving the form without
+        // touching religion never burns a slot.
+        $religionChanged = array_key_exists('religious_affiliation', $data)
+            && $data['religious_affiliation'] !== null
+            && $data['religious_affiliation'] !== ''
+            && $data['religious_affiliation'] !== $user->religious_affiliation;
+
+        if ($religionChanged) {
+            $religionLimit = config('e-syrians.verification.religion_updates_limit');
+            if ($user->getReligionUpdatesCount() >= $religionLimit) {
+                $this->logBlockedAttempt(
+                    $user,
+                    ProfileChangeTypeEnum::Religion,
+                    ['religious_affiliation' => $data['religious_affiliation']],
+                    'limit_reached',
+                    $request,
+                    null,
+                    null,
+                );
+
+                throw new UpdateLimitReachedException('religion_updates_limit_reached');
+            }
+        }
+
         $changes = $this->buildChanges($user, $data);
 
         $user->update($data);
@@ -141,6 +176,27 @@ class ProfileService implements ProfileServiceContract
         );
 
         dispatch(new LogProfileChangeToBigQuery($profileUpdate));
+
+        // Religion changes also get a dedicated audit row so the
+        // per-year counter (getReligionUpdatesCount) can count
+        // them without filtering through the generic Regular bag.
+        // We log only the religion delta — the broader census
+        // changes are already covered by the Regular audit above.
+        if ($religionChanged) {
+            $religionAudit = $this->createAuditRecord(
+                $user,
+                ProfileChangeTypeEnum::Religion,
+                [
+                    'religious_affiliation' => [
+                        'old' => $user->getOriginal('religious_affiliation'),
+                        'new' => $data['religious_affiliation'],
+                    ],
+                ],
+                $request,
+            );
+
+            dispatch(new LogProfileChangeToBigQuery($religionAudit));
+        }
     }
 
     public function changeEmail(User $user, string $email): void

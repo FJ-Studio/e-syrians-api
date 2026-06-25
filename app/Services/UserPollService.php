@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\PollVote;
 use App\Contracts\UserPollServiceContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -12,9 +13,33 @@ class UserPollService implements UserPollServiceContract
 {
     public function getUserPolls(User $user, int $perPage = 25): LengthAwarePaginator
     {
+        // Owner-scoped listing. Two scope skips are deliberate:
+        //   - withTrashed(): the My Polls screen shows both active
+        //     and closed (soft-deleted) polls so the user can
+        //     reopen them.
+        //   - withoutGlobalScope('public_polls'): Poll::booted()
+        //     hides `is_private = true` rows from every query by
+        //     default. Without skipping it here, an owner could
+        //     not see their own private polls in the My Polls list.
+        //     Owners are always allowed to see their own polls
+        //     regardless of visibility.
+        // The PollResource downstream reads `unique_voters_count`
+        // (distinct voters, not raw vote count). Mirror the
+        // subselect from PollService::buildPollQuery so the
+        // resource doesn't fall through to `?? 0` and the My Polls
+        // card can render the real number. `withCount('votes')`
+        // alone produces `votes_count` (raw votes) — kept here
+        // because some downstream consumers still read it, but the
+        // resource specifically wants the distinct count.
         return $user->polls()
+            ->withoutGlobalScope('public_polls')
             ->withTrashed()
             ->withCount('votes')
+            ->selectSub(
+                PollVote::selectRaw('COUNT(DISTINCT user_id)')
+                    ->whereColumn('poll_id', 'polls.id'),
+                'unique_voters_count'
+            )
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
     }

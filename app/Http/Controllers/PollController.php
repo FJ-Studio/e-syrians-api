@@ -82,12 +82,48 @@ class PollController extends Controller
         }
     }
 
+    /**
+     * Toggle a poll between active and soft-deleted (the
+     * "Close/Reopen" action on My Polls). Ownership is enforced
+     * here — without it any authenticated user could close any
+     * other user's poll, which would be a destructive vulnerability
+     * given the public delete-via-soft-delete semantics. We look
+     * up the poll with `withTrashed()` because a reopen request
+     * targets a soft-deleted row that the default scope would
+     * exclude, and we deliberately bypass the public_polls global
+     * scope so creators can still close their private polls.
+     *
+     * Returns the updated poll's `id` and a fresh `deleted_at`
+     * value so the client can update its row state without
+     * re-fetching the full list.
+     */
     public function status(Request $request, int $pollId): JsonResponse
     {
+        $poll = Poll::withTrashed()
+            ->withoutGlobalScope('public_polls')
+            ->find($pollId);
+
+        if (! $poll) {
+            return ApiService::error(404, 'poll_not_found');
+        }
+
+        if ($poll->created_by !== $request->user()->id) {
+            return ApiService::error(403, 'not_your_poll');
+        }
+
         try {
             $this->pollService->toggleStatus($pollId);
 
-            return ApiService::success([]);
+            // Re-fetch so we surface the updated trashed state to
+            // the client (closed ↔ reopened).
+            $fresh = Poll::withTrashed()
+                ->withoutGlobalScope('public_polls')
+                ->findOrFail($pollId);
+
+            return ApiService::success([
+                'id' => $fresh->id,
+                'deleted_at' => $fresh->deleted_at?->toISOString(),
+            ]);
         } catch (Exception $e) {
             return ApiService::error(500, $e->getMessage());
         }

@@ -76,7 +76,32 @@ class PollResource extends JsonResource
             'downs_count' => $this->downs_count,
             'voters_are_visible' => $this->voters_are_visible,
             'audience_only' => $this->audience_only,
+            // `is_private` is creator-only. The flag is normally
+            // hidden by the public_polls global scope so non-owners
+            // never see private polls at all — but the My Polls
+            // listing skips that scope (so owners CAN see their
+            // own private polls), and the management UI needs to
+            // render a "Private" pill so the owner knows what
+            // they're looking at.
+            'is_private' => $this->when($isCreator, fn () => (bool) $this->resource->is_private),
             'unique_voters_count' => $this->unique_voters_count ?? 0,
+            /*
+             * Backward-compat alias. Before UserPollController::myPolls
+             * was wrapped in PollResource, it returned raw model rows
+             * where `votes_count` (from withCount('votes')) was on
+             * the wire — the web's account dashboard My Polls table
+             * reads it as the "Participants count" column. When the
+             * relationship was counted (owner-scoped endpoints that
+             * still call withCount('votes')) we return that raw count
+             * so the existing behaviour is preserved exactly; for
+             * endpoints that don't (public /polls), we fall back to
+             * unique_voters_count so the field always has a sensible
+             * value. The web should migrate to unique_voters_count
+             * for semantic clarity (raw `votes_count` double-counts
+             * multi-select votes), but that's a separate change —
+             * this alias unblocks the deploy.
+             */
+            'votes_count' => $this->votes_count ?? $this->unique_voters_count ?? 0,
 
             'user' => $this->relationLoaded('user')
                 ? new UserResource($this->user)

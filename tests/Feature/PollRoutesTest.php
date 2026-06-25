@@ -376,6 +376,59 @@ it('returns 401 when toggling status without authentication', function (): void 
     $response->assertStatus(401);
 });
 
+/*
+ * Ownership gate on the status toggle. Before the My Polls work,
+ * PollController::status would happily close any poll for any
+ * authed user — letting Person A soft-delete Person B's poll.
+ * The controller now checks `created_by` and 403s otherwise.
+ */
+it('rejects toggling status of a poll owned by another user', function (): void {
+    $owner = User::factory()->create(['verified_at' => now()]);
+    $owner->assignRole('citizen');
+    $poll = createActivePollForFeature($owner);
+
+    $response = $this->postJson(
+        "/polls/status/{$poll->id}",
+        [],
+        authHeader(test()->user),
+    );
+
+    $response->assertStatus(403);
+    // Sanity: the poll must NOT have been soft-deleted by the
+    // rejected request.
+    expect(Poll::find($poll->id))->not->toBeNull()
+        ->and(Poll::find($poll->id)->trashed())->toBeFalse();
+});
+
+/*
+ * Round-trip the status toggle and assert the response carries
+ * the updated `deleted_at` so the client can patch its row state
+ * without a list refetch. Re-toggling reopens the poll and the
+ * value flips back to null.
+ */
+it('returns updated deleted_at on close and reopen', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+
+    $close = $this->postJson(
+        "/polls/status/{$poll->id}",
+        [],
+        authHeader(test()->user),
+    );
+
+    $close->assertOk();
+    expect($close->json('data.id'))->toEqual($poll->id)
+        ->and($close->json('data.deleted_at'))->not->toBeNull();
+
+    $reopen = $this->postJson(
+        "/polls/status/{$poll->id}",
+        [],
+        authHeader(test()->user),
+    );
+
+    $reopen->assertOk();
+    expect($reopen->json('data.deleted_at'))->toBeNull();
+});
+
 // ───────────────────────────────────────────────
 // Helper
 // ───────────────────────────────────────────────

@@ -36,6 +36,13 @@ class UpdateUserAddressRequest extends FormRequest
                 'required_if:country,SY',
                 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases())),
             ],
+            // Optional street/mailing address. Stored encrypted on
+            // the User model (see `address` in the `encrypted` cast
+            // block) and surfaced only on the owner-only block of
+            // UserResource. Collected on registration too — exposing
+            // it here closes the parity gap so users can update it
+            // after sign-up without going through the Census form.
+            'address' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

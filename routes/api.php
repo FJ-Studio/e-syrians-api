@@ -112,6 +112,11 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
     // User's verifications
     Route::get('/my-verifications', [VerificationController::class, 'myVerifications']);
     Route::get('/my-verifiers', [VerificationController::class, 'myVerifiers']);
+    // Cancel a verification the auth user previously sent. POST
+    // (not DELETE) because the row stays in the DB — we soft-cancel
+    // via `cancelled_at` + payload to preserve the audit trail.
+    Route::post('/verifications/{verification}/cancel', [VerificationController::class, 'cancel'])
+        ->name('users.verifications.cancel');
 
     // Profile updates — all protected by reCAPTCHA except language (silent
     // preference toggle with no user-visible form).
