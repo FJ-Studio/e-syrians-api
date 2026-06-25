@@ -48,16 +48,34 @@ class VerificationController extends Controller
 
     public function myVerifications(Request $request): JsonResponse
     {
-        $verifications = $this->verificationService->getVerificationsForUser($request->user());
+        $perPage = (int) $request->query('per_page', 25);
+        $page = $this->verificationService->getVerificationsForUser($request->user(), $perPage);
 
-        return ApiService::success($verifications);
+        // Match the pagination response shape UserPollController
+        // uses for /users/my-polls: a flat object with a named
+        // items array plus current/last/per/total. Mobile + web
+        // both consume this shape.
+        return ApiService::success([
+            'verifications' => UserVerificationResource::collection($page->items()),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+        ]);
     }
 
     public function myVerifiers(Request $request): JsonResponse
     {
-        $verifiers = $this->verificationService->getVerifiersForUser($request->user());
+        $perPage = (int) $request->query('per_page', 25);
+        $page = $this->verificationService->getVerifiersForUser($request->user(), $perPage);
 
-        return ApiService::success($verifiers);
+        return ApiService::success([
+            'verifiers' => UserVerificationResource::collection($page->items()),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+        ]);
     }
 
     /**

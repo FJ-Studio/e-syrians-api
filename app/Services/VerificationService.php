@@ -78,24 +78,26 @@ class VerificationService implements VerificationServiceContract
         event(new VerificationReceived($verifier, $targetUser));
     }
 
-    public function getVerificationsForUser(User $user): mixed
+    public function getVerificationsForUser(User $user, int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        // Wrap in UserVerificationResource so the response shape
-        // matches getVerifiersForUser (which already does). Without
-        // this, Sent rows came back as raw Eloquent (missing the
-        // signed avatar URL handling + the `whenLoaded` shape) while
-        // Received rows came back resource-formatted — clients had
-        // to special-case parsing per tab.
-        return UserVerificationResource::collection(
-            $user->verifications()->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get()
-        );
+        // Paginate so the Sent / Received lists scale beyond a
+        // single page. Newest first matches the "most recent
+        // first" reading order both clients use. The controller
+        // wraps `items()` in UserVerificationResource — keeping
+        // the resource at the controller layer is the same
+        // pattern UserPollController::myPolls follows.
+        return $user->verifications()
+            ->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
     }
 
-    public function getVerifiersForUser(User $user): mixed
+    public function getVerifiersForUser(User $user, int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        return UserVerificationResource::collection(
-            $user->verifiers()->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get()
-        );
+        return $user->verifiers()
+            ->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
     }
 
     public function cancelVerificationByVerifier(
