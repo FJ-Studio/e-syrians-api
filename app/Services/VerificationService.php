@@ -10,6 +10,7 @@ use App\Models\UserVerification;
 use App\Events\VerificationReceived;
 use App\Contracts\VerificationServiceContract;
 use App\Http\Resources\UserVerificationResource;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class VerificationService implements VerificationServiceContract
 {
@@ -78,7 +79,7 @@ class VerificationService implements VerificationServiceContract
         event(new VerificationReceived($verifier, $targetUser));
     }
 
-    public function getVerificationsForUser(User $user, int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getVerificationsForUser(User $user, int $perPage = 25): LengthAwarePaginator
     {
         // Paginate so the Sent / Received lists scale beyond a
         // single page. Newest first matches the "most recent
@@ -87,16 +88,14 @@ class VerificationService implements VerificationServiceContract
         // the resource at the controller layer is the same
         // pattern UserPollController::myPolls follows.
         return $user->verifications()
-            ->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])
-            ->orderBy('created_at', 'desc')
+            ->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->latest()
             ->paginate($perPage);
     }
 
-    public function getVerifiersForUser(User $user, int $perPage = 25): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    public function getVerifiersForUser(User $user, int $perPage = 25): LengthAwarePaginator
     {
         return $user->verifiers()
-            ->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])
-            ->orderBy('created_at', 'desc')
+            ->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->latest()
             ->paginate($perPage);
     }
 
