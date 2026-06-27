@@ -50,8 +50,16 @@ class UserPollController extends Controller
 
     public function myVotes(Request $request): JsonResponse
     {
-        $page = (int) $request->query('page', 1);
-        $perPage = (int) $request->query('per_page', 25);
+        // `page=0` is treated as `page=1` by Laravel internally, but
+        // we still clamp before forwarding so getUserVotes' offset
+        // math (LIMIT/OFFSET) doesn't see negatives if a client
+        // sends `?page=-3`. `per_page` is capped at 100 — without
+        // a cap a malicious or buggy client could request 10_000
+        // and force a huge JOIN; `per_page=0` would otherwise
+        // divide-by-zero inside Laravel's paginator.
+        $page = max(1, (int) $request->query('page', '1'));
+        $rawPerPage = (int) $request->query('per_page', '25');
+        $perPage = $rawPerPage < 1 ? 25 : min($rawPerPage, 100);
 
         $votes = $this->userPollService->getUserVotes($request->user(), $page, $perPage);
 
