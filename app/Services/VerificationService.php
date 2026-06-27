@@ -131,6 +131,27 @@ class VerificationService implements VerificationServiceContract
             ],
         ])->save();
 
+        // Recompute the recipient's verified status. Without this,
+        // a peer-verified user who drops below the active-verifier
+        // threshold (config('e-syrians.verification.min')) keeps
+        // `verified_at` set and continues to pass the `UserIsVerified`
+        // middleware — i.e. they keep voting, creating polls, and
+        // verifying others despite no longer meeting the bar. We
+        // skip recompute for first_registrant users since their
+        // verification_reason exempts them from the per-recipient
+        // threshold.
+        $recipient = $verification->user;
+        if (
+            $recipient
+            && $recipient->verified_at !== null
+            && $recipient->verification_reason !== 'first_registrant'
+        ) {
+            $min = (int) config('e-syrians.verification.min');
+            if ($recipient->activeVerifiers()->count() < $min) {
+                $recipient->markAsUnverified();
+            }
+        }
+
         return $verification->fresh();
     }
 

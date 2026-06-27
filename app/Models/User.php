@@ -389,8 +389,14 @@ class User extends Authenticatable implements MustVerifyEmail
             return [false, 'you_are_not_verified'];
         }
         // 3. check the user verifications status
+        // Both counts are ACTIVE-only — cancelled rows must release
+        // the quota slot they took, otherwise the UI and the cap
+        // disagree: UserResource exposes `verifications_made_count`
+        // as active-only, so a user who cancels would see 4/25
+        // remaining on screen but `canVerify()` would still reject
+        // their next attempt with `you_have_reached_the_maximum...`.
         $receivedVerifications = $this->activeVerifiers()->count();
-        $givenVerifications = $this->verifications()->count();
+        $givenVerifications = $this->verifications()->whereNull('cancelled_at')->count();
         $threshold = config('e-syrians.verification');
         // A. If the user exceeded the maximum number of verifications allowed
         if ($givenVerifications >= $threshold['max']) {
