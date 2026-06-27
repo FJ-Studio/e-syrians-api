@@ -30,6 +30,12 @@ interface PollServiceContract
     public function createPoll(array $data, int $userId): Poll;
 
     /**
+     * Update an existing poll. The caller MUST have already gated
+     * on ownership + the zero-votes rule; this method assumes both.
+     */
+    public function updatePoll(Poll $poll, array $data): Poll;
+
+    /**
      * Toggle a poll's active/deleted status
      */
     public function toggleStatus(int $pollId): void;

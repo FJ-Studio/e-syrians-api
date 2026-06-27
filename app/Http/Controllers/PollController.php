@@ -19,6 +19,7 @@ use App\Exceptions\PollReactionException;
 use App\Contracts\FileUploadServiceContract;
 use App\Http\Requests\Polls\StorePollRequest;
 use App\Http\Requests\Polls\StorePollReaction;
+use App\Http\Requests\Polls\UpdatePollRequest;
 use App\Http\Requests\Polls\StorePollVoteRequest;
 
 class PollController extends Controller
@@ -50,11 +51,19 @@ class PollController extends Controller
         ]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Poll $poll): JsonResponse
     {
+        // The route param is `{poll}`, which AppServiceProvider's
+        // `Route::bind` resolves to a Poll without the
+        // `public_polls` global scope (and 404s non-creators
+        // attempting to view someone else's private poll). We
+        // re-fetch via `getPollById` because the binding only
+        // returns the bare model — getPollById enriches it with
+        // the withCount/withExists/relationship loading the
+        // PollResource depends on, and it computes `is_restricted`
+        // for audience-only polls.
         $userId = auth('sanctum')->user()?->id;
-
-        $poll = $this->pollService->getPollById($id, $userId);
+        $poll = $this->pollService->getPollById($poll->id, $userId);
 
         if ($poll->is_restricted) {
             return ApiService::error(403, 'poll_visible_to_targeted_audience_only');
@@ -75,6 +84,76 @@ class PollController extends Controller
         } catch (Throwable $e) {
             Log::error('Poll creation failed', [
                 'error' => $e->getMessage(),
+                'user_id' => $request->user()->id,
+            ]);
+
+            return ApiService::error(500);
+        }
+    }
+
+    /**
+     * Creator-only edit payload — the data the edit form needs to
+     * hydrate, including the audience block with `allowed_voters`.
+     *
+     * Why this exists separately from `show()`: the public show
+     * endpoint deliberately suppresses the `audience` key on
+     * explicit-list polls for every viewer (creator included),
+     * because surfacing the guest list on a public URL would leak
+     * who else the author invited. The edit form however needs
+     * that list back — otherwise it can't tell the poll is
+     * allowlisted and silently wipes the audience on save. This
+     * endpoint is the supported way to fetch it.
+     *
+     * Gates: auth (sanctum guard via route group) + ownership
+     * check below. We don't apply the vote-lock here because the
+     * edit form should still render (so the user sees what they
+     * created) — the UpdatePollRequest::authorize is the
+     * authoritative gate when they hit Save.
+     */
+    public function editPayload(Request $request, Poll $poll): JsonResponse
+    {
+        if ($poll->created_by !== $request->user()->id) {
+            return ApiService::error(403, 'not_your_poll');
+        }
+
+        // Re-fetch through the service so the resource has the
+        // same eager-loaded relationships and computed columns
+        // (withCount, withExists, unique_voters_count) it does on
+        // the public show endpoint. The bare bound model lacks
+        // those.
+        $enriched = $this->pollService->getPollById(
+            $poll->id,
+            $request->user()->id,
+        );
+
+        return ApiService::success(
+            (new PollResource($enriched))->withFullAudience(),
+        );
+    }
+
+    /**
+     * Edit a poll the user created — only legal while the poll
+     * has zero votes. UpdatePollRequest::authorize() handles both
+     * the ownership and the vote-lock check; reaching this method
+     * means we're cleared to write.
+     */
+    public function update(UpdatePollRequest $request, Poll $poll): JsonResponse
+    {
+        try {
+            $updated = $this->pollService->updatePoll($poll, $request->validated());
+
+            return ApiService::success(new PollResource($updated));
+        } catch (PollVotingException $e) {
+            // Vote-lock race: a vote committed between authorize()
+            // and the updatePoll transaction lock. The service
+            // throws `poll_has_votes_cannot_edit` with HTTP 403 —
+            // surface it as such so the client toast translates
+            // correctly instead of falling through to a generic 500.
+            return ApiService::error($e->getCode(), [$e->getMessage()]);
+        } catch (Throwable $e) {
+            Log::error('Poll update failed', [
+                'error' => $e->getMessage(),
+                'poll_id' => $poll->id,
                 'user_id' => $request->user()->id,
             ]);
 

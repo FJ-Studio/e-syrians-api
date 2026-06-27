@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Poll;
 use App\Models\User;
 use App\Services\AuthService;
 use App\Services\PollService;
@@ -16,6 +17,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Date;
 use App\Services\VerificationService;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Route;
 use App\Contracts\AuthServiceContract;
 use App\Contracts\PollServiceContract;
 use Illuminate\Support\Facades\Config;
@@ -69,6 +71,31 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(function (SocialiteWasCalled $event): void {
             $event->extendSocialite('google', GoogleProvider::class);
             $event->extendSocialite('apple', AppleProvider::class);
+        });
+
+        // Custom route binding for `{poll}`. The Poll model has a
+        // `public_polls` global scope that hides private polls
+        // (`is_private = true`). That's the right default for the
+        // public show endpoint, but it breaks owner-only routes
+        // (edit, status toggle) for private polls — Laravel's
+        // implicit binding runs Poll::find() which inherits the
+        // scope and 404s the owner.
+        //
+        // This binding resolves WITHOUT the global scope and then
+        // enforces the privacy rule explicitly: anyone can resolve
+        // public polls; only the creator can resolve their private
+        // ones. Non-creators on private polls still get 404, so
+        // the previous public-show behaviour is preserved.
+        Route::bind('poll', function (string $value) {
+            /** @var Poll|null $poll */
+            $poll = Poll::withoutGlobalScope('public_polls')->find($value);
+            if (! $poll) {
+                abort(404);
+            }
+            if ($poll->is_private && $poll->created_by !== auth('sanctum')->id()) {
+                abort(404);
+            }
+            return $poll;
         });
 
         ResetPassword::createUrlUsing(function (User $user, string $token) {

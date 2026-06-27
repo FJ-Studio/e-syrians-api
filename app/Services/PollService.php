@@ -122,6 +122,115 @@ class PollService implements PollServiceContract
         });
     }
 
+    /**
+     * Update an existing poll. Edits are only legal while the
+     * poll has zero votes — the controller / FormRequest enforce
+     * that. This method re-checks the gate INSIDE a transaction
+     * with a SELECT … FOR UPDATE on the poll row, which serialises
+     * against `vote()` (which takes the same lock). That closes
+     * the race where a vote was in flight when the FormRequest
+     * authorised the edit, and lands while we're soft-deleting
+     * the options it references — without the lock the new vote
+     * could end up pointing at a soft-deleted poll_option_id (no
+     * FK to catch it), corrupting the option totals.
+     */
+    public function updatePoll(Poll $poll, array $data): Poll
+    {
+        return DB::transaction(function () use ($poll, $data) {
+            // Re-acquire the poll WITH a row-level write lock.
+            // Concurrent vote() calls also lockForUpdate the poll
+            // row, so this serialises edits vs votes against the
+            // same poll. A vote that won the race lands first and
+            // gets reflected in the count check below.
+            //
+            // `withoutGlobalScope('public_polls')` is required: the
+            // route binding handed us a private poll the owner is
+            // editing, but the default scope would filter
+            // `is_private = false` and the firstOrFail would 404
+            // mid-transaction.
+            $poll = Poll::withoutGlobalScope('public_polls')
+                ->whereKey($poll->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Inside the locked region: re-check the vote-lock.
+            // FormRequest::authorize already ran this once, but a
+            // vote could have committed between authorize() and
+            // this transaction starting. Throwing here surfaces
+            // the same UX message clients already handle.
+            if ($poll->votes()->exists()) {
+                throw new PollVotingException('poll_has_votes_cannot_edit', 403);
+            }
+
+            // Scalar-field updates — only touch fields the client
+            // actually sent. The array_intersect_key dance lets a
+            // caller PATCH just `question` without us nulling out
+            // unrelated columns.
+            $editable = [
+                'question',
+                'max_selections',
+                'audience_can_add_options',
+                'reveal_results',
+                'voters_are_visible',
+                'audience_only',
+            ];
+            $patch = array_intersect_key($data, array_flip($editable));
+
+            // start_date / duration → recompute end_date the same
+            // way createPoll does (the bug-fixed `start + duration`
+            // formula, not `now + duration`). Either field on its
+            // own triggers the recompute using the other side's
+            // existing value.
+            if (array_key_exists('start_date', $data) || array_key_exists('duration', $data)) {
+                $startDate = Date::parse(
+                    $data['start_date'] ?? $poll->start_date->toDateString()
+                );
+                $duration = (int) ($data['duration'] ?? $startDate->diffInDays($poll->end_date));
+                $patch['start_date'] = $startDate;
+                $patch['end_date'] = $startDate->copy()->addDays($duration);
+            }
+
+            if ($patch !== []) {
+                $poll->fill($patch)->save();
+            }
+
+            // Options — full replace. Soft-delete to preserve the
+            // audit trail since PollOption uses SoftDeletes; the
+            // unique constraint on (poll_id, option_text) is
+            // tolerant of soft-deleted rows.
+            if (array_key_exists('options', $data)) {
+                $poll->options()->delete();
+                $now = now();
+                $rows = collect($data['options'])->map(fn ($text) => [
+                    'poll_id' => $poll->id,
+                    'option_text' => $text,
+                    'created_by' => $poll->created_by,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+                PollOption::insert($rows->all());
+            }
+
+            // Audience rules — full replace. We trigger the
+            // rebuild whenever ANY audience-related field is sent;
+            // sending an empty array (or no key) for a criterion
+            // means "no rule for that criterion".
+            $audienceKeys = [
+                'gender', 'min_age', 'max_age', 'country',
+                'religious_affiliation', 'hometown', 'ethnicity',
+                'province', 'allowed_voters',
+            ];
+            $anyAudienceChange = count(array_intersect(array_keys($data), $audienceKeys)) > 0;
+            if ($anyAudienceChange) {
+                PollAudienceRule::where('poll_id', $poll->id)->delete();
+                $this->insertAudienceRules($poll, $data);
+                dispatch(new SyncPollAudienceRulesToBigQuery($poll->id));
+            }
+
+            return $poll->refresh();
+        });
+    }
+
     public function toggleStatus(int $pollId): void
     {
         $poll = Poll::withTrashed()->findOrFail($pollId);
@@ -135,50 +244,70 @@ class PollService implements PollServiceContract
 
     public function vote(int $pollId, array $optionIds, int $userId): void
     {
-        $poll = Poll::with('audienceRules')->findOrFail($pollId);
+        // Wrap vote validation + insert in a transaction with a
+        // SELECT … FOR UPDATE on the poll row. This serialises
+        // votes against updatePoll() (which takes the same lock)
+        // so a vote can't reference an option that's about to be
+        // soft-deleted by a concurrent edit. PollOption uses
+        // SoftDeletes + has no FK from poll_votes.poll_option_id,
+        // so without this lock a vote could persist a poll_option_id
+        // that the edit then soft-deletes — corrupting the option
+        // totals on the poll detail screen.
+        DB::transaction(function () use ($pollId, $optionIds, $userId): void {
+            /** @var Poll $poll */
+            $poll = Poll::whereKey($pollId)->lockForUpdate()->firstOrFail();
+            $poll->load('audienceRules');
 
-        if ($poll->start_date->isFuture()) {
-            throw new PollVotingException('poll_has_not_started_yet');
-        }
+            if ($poll->start_date->isFuture()) {
+                throw new PollVotingException('poll_has_not_started_yet');
+            }
 
-        if ($poll->end_date->isPast()) {
-            throw new PollVotingException('poll_has_expired');
-        }
+            if ($poll->end_date->isPast()) {
+                throw new PollVotingException('poll_has_expired');
+            }
 
-        if ($poll->votes()->where('user_id', $userId)->exists()) {
-            throw new PollVotingException('you_have_already_voted');
-        }
+            if ($poll->votes()->where('user_id', $userId)->exists()) {
+                throw new PollVotingException('you_have_already_voted');
+            }
 
-        // Audience eligibility check
-        $user = User::findOrFail($userId);
-        [$eligible, $failures] = $user->isInAudience($poll);
-        if (! $eligible) {
-            throw new PollVotingException('user_is_not_in_poll_audience', 400, $failures);
-        }
+            // Audience eligibility check
+            $user = User::findOrFail($userId);
+            [$eligible, $failures] = $user->isInAudience($poll);
+            if (! $eligible) {
+                throw new PollVotingException('user_is_not_in_poll_audience', 400, $failures);
+            }
 
-        if (count($optionIds) > $poll->max_selections) {
-            throw new PollVotingException('user_has_reached_the_max_selections');
-        }
+            if (count($optionIds) > $poll->max_selections) {
+                throw new PollVotingException('user_has_reached_the_max_selections');
+            }
 
-        // Validate options belong to the poll
-        $validOptions = PollOption::whereIn('id', $optionIds)
-            ->where('poll_id', $poll->id)
-            ->count();
+            // Validate options belong to the poll. SoftDeletes
+            // automatically excludes deleted rows from the count;
+            // since updatePoll() holds the same row lock, any
+            // option-replace it performs has either committed
+            // before us (and we see the new options) or is
+            // waiting on our lock to release.
+            $validOptions = PollOption::whereIn('id', $optionIds)
+                ->where('poll_id', $poll->id)
+                ->count();
 
-        if ($validOptions !== count($optionIds)) {
-            throw new PollVotingException('invalid_options');
-        }
+            if ($validOptions !== count($optionIds)) {
+                throw new PollVotingException('invalid_options');
+            }
 
-        $poll->votes()->createMany(
-            collect($optionIds)->map(fn ($optionId) => [
-                'user_id' => $userId,
-                'poll_option_id' => $optionId,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])->all()
-        );
+            $poll->votes()->createMany(
+                collect($optionIds)->map(fn ($optionId) => [
+                    'user_id' => $userId,
+                    'poll_option_id' => $optionId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ])->all()
+            );
+        });
 
-        // Mirror vote to BigQuery for fraud detection
+        // Mirror vote to BigQuery for fraud detection — outside the
+        // transaction so a failed dispatch doesn't roll back the
+        // vote (the queue worker can retry independently).
         $request = request();
         dispatch(new LogPollVoteToBigQuery($userId, $pollId, $optionIds, $request->ip(), $request->userAgent()));
     }

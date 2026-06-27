@@ -2,7 +2,9 @@
 
 use App\Models\Poll;
 use App\Models\User;
+use App\Models\PollVote;
 use App\Models\PollOption;
+use App\Models\PollAudienceRule;
 
 beforeEach(function (): void {
     test()->user = User::factory()->create([
@@ -427,6 +429,168 @@ it('returns updated deleted_at on close and reopen', function (): void {
 
     $reopen->assertOk();
     expect($reopen->json('data.deleted_at'))->toBeNull();
+});
+
+// ───────────────────────────────────────────────
+// Edit poll (PATCH /polls/{poll}) — vote-locked
+// ───────────────────────────────────────────────
+
+it('lets the creator edit a poll that has no votes', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        [
+            'question' => 'Edited question?',
+            'max_selections' => 1,
+            'recaptcha_token' => 'test',
+        ],
+        authHeader(test()->user),
+    );
+
+    $response->assertOk();
+    expect($response->json('data.question'))->toEqual('Edited question?')
+        ->and($response->json('data.max_selections'))->toEqual(1);
+    expect(Poll::find($poll->id)->question)->toEqual('Edited question?');
+});
+
+it('rejects editing a poll owned by another user', function (): void {
+    $owner = User::factory()->create(['verified_at' => now()]);
+    $owner->assignRole('citizen');
+    $poll = createActivePollForFeature($owner);
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        ['question' => 'Hijack attempt?', 'recaptcha_token' => 'test'],
+        authHeader(test()->user),
+    );
+
+    $response->assertStatus(403);
+    expect(Poll::find($poll->id)->question)->toEqual('Feature test poll?');
+});
+
+it('rejects editing a poll once a vote has been cast', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+    /** @var PollOption $option */
+    $option = $poll->options()->first();
+
+    // Cast a vote directly so we exercise the gate, not the
+    // /polls/vote endpoint's own validation.
+    PollVote::create([
+        'poll_id' => $poll->id,
+        'poll_option_id' => $option->id,
+        'user_id' => test()->user->id,
+    ]);
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        ['question' => 'Too late to edit?', 'recaptcha_token' => 'test'],
+        authHeader(test()->user),
+    );
+
+    $response->assertStatus(403);
+    expect(Poll::find($poll->id)->question)->toEqual('Feature test poll?');
+});
+
+// Regression: partial PATCH — sending only `question` shouldn't
+// 422 because UpdatePollRequest::prepareForValidation used to
+// merge empty `duration` / `max_selections` defaults, defeating
+// `sometimes` validation.
+it('accepts a partial PATCH that only touches the question', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        ['question' => 'Just the question', 'recaptcha_token' => 'test'],
+        authHeader(test()->user),
+    );
+
+    $response->assertOk();
+    expect(Poll::find($poll->id)->question)->toEqual('Just the question');
+    // Unrelated fields stay intact.
+    expect(Poll::find($poll->id)->max_selections)->toEqual(2);
+});
+
+// Regression: poll already started — `start_date` is intentionally
+// omitted from the PATCH so the `after_or_equal:today` rule doesn't
+// fire. The backend reuses the existing start_date when computing
+// end_date from the new duration.
+it('allows editing duration on a poll that started yesterday', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+    // Sanity: createActivePollForFeature uses start_date = yesterday.
+    expect($poll->start_date->isPast())->toBeTrue();
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        ['duration' => 14, 'recaptcha_token' => 'test'],
+        authHeader(test()->user),
+    );
+
+    $response->assertOk();
+    $fresh = Poll::find($poll->id);
+    expect($fresh->end_date->toDateString())
+        ->toEqual($poll->start_date->copy()->addDays(14)->toDateString());
+});
+
+// Regression: private polls were 404'ing on PATCH because the
+// `public_polls` global scope hid them from route binding. The
+// AppServiceProvider's custom Route::bind('poll', ...) now drops
+// the scope and re-applies the privacy rule explicitly: creators
+// see their own private polls, everyone else still gets 404.
+it('lets the creator edit their private poll', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+    $poll->forceFill(['is_private' => true])->save();
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        ['question' => 'Edited private', 'recaptcha_token' => 'test'],
+        authHeader(test()->user),
+    );
+
+    $response->assertOk();
+    expect(Poll::withoutGlobalScope('public_polls')->find($poll->id)->question)
+        ->toEqual('Edited private');
+});
+
+it('still 404s a private poll for a non-creator viewer', function (): void {
+    $owner = User::factory()->create(['verified_at' => now()]);
+    $owner->assignRole('citizen');
+    $poll = createActivePollForFeature($owner);
+    $poll->forceFill(['is_private' => true])->save();
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        ['question' => 'Snoop attempt', 'recaptcha_token' => 'test'],
+        authHeader(test()->user),
+    );
+
+    $response->assertStatus(404);
+});
+
+// Regression: allowlist preservation — editing a poll that has an
+// explicit-voter-list audience without sending audience keys must
+// leave the allowlist intact. (The web edit form used to wipe it
+// because PollResource hid `allowed_voters`.)
+it('leaves the allowlist intact on a scalar-only PATCH', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+    PollAudienceRule::insert([
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'someone@example.com', 'created_at' => now(), 'updated_at' => now()],
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'other@example.com', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        ['question' => 'Edited but allowlist stays', 'recaptcha_token' => 'test'],
+        authHeader(test()->user),
+    );
+
+    $response->assertOk();
+    $allowlist = PollAudienceRule::where('poll_id', $poll->id)
+        ->where('criterion', 'allowed_voter')
+        ->pluck('value')
+        ->all();
+    expect($allowlist)->toContain('someone@example.com')
+        ->and($allowlist)->toContain('other@example.com');
 });
 
 // ───────────────────────────────────────────────
