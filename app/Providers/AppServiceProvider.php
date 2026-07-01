@@ -9,9 +9,11 @@ use App\Models\User;
 use App\Services\AuthService;
 use App\Services\PollService;
 use App\Services\StatsService;
+use App\Services\DeviceService;
 use App\Services\ProfileService;
 use App\Services\PasswordService;
 use App\Services\UserPollService;
+use App\Services\OneSignalService;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Date;
@@ -24,9 +26,11 @@ use Illuminate\Support\Facades\Config;
 use App\Contracts\StatsServiceContract;
 use App\Services\FeatureRequestService;
 use Illuminate\Support\ServiceProvider;
+use App\Contracts\DeviceServiceContract;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
+use App\Contracts\OneSignalServiceContract;
 use App\Contracts\FileUploadServiceContract;
 use App\Contracts\VerificationServiceContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -45,8 +49,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public array $bindings = [
         AuthServiceContract::class => AuthService::class,
+        DeviceServiceContract::class => DeviceService::class,
         FeatureRequestServiceContract::class => FeatureRequestService::class,
         FileUploadServiceContract::class => FileUploadService::class,
+        OneSignalServiceContract::class => OneSignalService::class,
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,
         ProfileServiceContract::class => ProfileService::class,

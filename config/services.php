@@ -76,6 +76,24 @@ return [
         'min_score' => (float) env('RECAPTCHA_MIN_SCORE', 0.7),
     ],
 
+    /*
+    | OneSignal push notifications — server-side credentials. The
+    | mobile SDK reads its own EXPO_PUBLIC_ONESIGNAL_APP_ID at build
+    | time; that value goes into the JS bundle. The REST API key here
+    | is SEPARATE — it's the server-side key used by our
+    | `OneSignalService` to fan out push sends. NEVER bundle it into
+    | the mobile JS or expose it to the browser.
+    |
+    | Both come from the OneSignal dashboard → Settings → Keys & IDs.
+    | The modern OneSignal API uses keys prefixed `os_v2_…`; older
+    | keys still work but use a different Authorization header format
+    | (auto-detected in `OneSignalService::isV2Key`).
+    */
+    'onesignal' => [
+        'app_id' => env('ONESIGNAL_APP_ID'),
+        'rest_api_key' => env('ONESIGNAL_REST_API_KEY'),
+    ],
+
     'internal_api_key' => env('INTERNAL_API_KEY'),
 
     'bigquery' => [

@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
@@ -117,6 +118,28 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
     // via `cancelled_at` + payload to preserve the audit trail.
     Route::post('/verifications/{verification}/cancel', [VerificationController::class, 'cancel'])
         ->name('users.verifications.cancel');
+
+    // Push-notification device registration (OneSignal).
+    //
+    // POST   /users/devices             — register or re-register
+    // DELETE /users/devices/{device}    — unregister (route binding
+    //                                     resolves by subscription_id,
+    //                                     see Device::getRouteKeyName)
+    //
+    // Throttled per-user (30 writes/min) to absorb a buggy SDK build
+    // that re-registers on every notification — generous enough that
+    // legitimate clients (one register at login, occasional re-register
+    // on subscription change) never hit the limit.
+    Route::middleware(['throttle:30,1,devices'])->group(function (): void {
+        Route::post('/devices', [DeviceController::class, 'store'])->name('users.devices.store');
+        // Raw string param (NOT implicit route-model binding). We
+        // handle the "device not found" case ourselves and return
+        // 204 either way — the spec says DELETE is idempotent and
+        // must not leak whether a given subscription_id exists.
+        // Implicit binding would 404 before the controller runs,
+        // which contradicts that contract.
+        Route::delete('/devices/{subscription_id}', [DeviceController::class, 'destroy'])->name('users.devices.destroy');
+    });
 
     // Profile updates — all protected by reCAPTCHA except language (silent
     // preference toggle with no user-visible form).

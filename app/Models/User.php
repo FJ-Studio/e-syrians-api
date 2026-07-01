@@ -257,6 +257,40 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Registered OneSignal push devices for this user. One row per
+     * device the user has signed in on. Hard-deleted via cascade when
+     * the user is deleted (see migration's `cascadeOnDelete`).
+     *
+     * @return HasMany
+     */
+    public function devices()
+    {
+        return $this->hasMany(Device::class);
+    }
+
+    /**
+     * Laravel notification-channel hook. Called by
+     * `App\Channels\OneSignalChannel` (and our `OneSignalService`
+     * underneath) to resolve which subscription IDs to target when
+     * a notification's `via()` includes `OneSignalChannel::class`.
+     *
+     * Returns the user's registered subscription IDs (modern OneSignal
+     * term for what older docs call "player IDs"). An empty array is
+     * legitimate — a user with no registered devices simply doesn't
+     * receive push.
+     *
+     * @return array<int, string>
+     */
+    public function routeNotificationForOneSignal(): array
+    {
+        return $this->devices()
+            ->pluck('subscription_id')
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
      * Get the profile update that this user has made
      *
      * @return int
