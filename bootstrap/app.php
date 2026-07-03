@@ -27,7 +27,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->append(SetAppLocalization::class);
-        $middleware->trustProxies(at: '*');
 
         // Spatie Permission v6 no longer auto-registers these aliases in
         // Laravel 11's bootstrap structure — register them explicitly so
