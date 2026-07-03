@@ -48,16 +48,54 @@ class VerificationController extends Controller
 
     public function myVerifications(Request $request): JsonResponse
     {
-        $verifications = $this->verificationService->getVerificationsForUser($request->user());
+        $perPage = $this->normalizePerPage($request);
+        $page = $this->verificationService->getVerificationsForUser($request->user(), $perPage);
 
-        return ApiService::success($verifications);
+        // Match the pagination response shape UserPollController
+        // uses for /users/my-polls: a flat object with a named
+        // items array plus current/last/per/total. Mobile + web
+        // both consume this shape.
+        return ApiService::success([
+            'verifications' => UserVerificationResource::collection($page->items()),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+        ]);
     }
 
     public function myVerifiers(Request $request): JsonResponse
     {
-        $verifiers = $this->verificationService->getVerifiersForUser($request->user());
+        $perPage = $this->normalizePerPage($request);
+        $page = $this->verificationService->getVerifiersForUser($request->user(), $perPage);
 
-        return ApiService::success($verifiers);
+        return ApiService::success([
+            'verifiers' => UserVerificationResource::collection($page->items()),
+            'current_page' => $page->currentPage(),
+            'last_page' => $page->lastPage(),
+            'per_page' => $page->perPage(),
+            'total' => $page->total(),
+        ]);
+    }
+
+    /**
+     * Clamp client-supplied `per_page` into a sane range.
+     *
+     * `(int) $request->query('per_page', 25)` blindly cast even
+     * 0 and absurdly large values through to Laravel's paginator,
+     * where `per_page=0` triggers a divide-by-zero in the
+     * `ceil($total / $perPage)` last-page calculation, and large
+     * values bypass any practical limit on response size. Page
+     * is similarly clamped (>=1) inside Laravel itself, so we
+     * don't need to mirror that here.
+     */
+    private function normalizePerPage(Request $request, int $default = 25, int $max = 100): int
+    {
+        $raw = (int) $request->query('per_page', (string) $default);
+        if ($raw < 1) {
+            return $default;
+        }
+        return min($raw, $max);
     }
 
     /**

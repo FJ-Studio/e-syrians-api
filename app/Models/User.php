@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Filament\Panel;
 use Illuminate\Support\Str;
 use App\Services\StrService;
 use Laravel\Sanctum\HasApiTokens;
@@ -12,13 +13,14 @@ use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
     use HasApiTokens;
 
@@ -257,6 +259,58 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Registered OneSignal push devices for this user. One row per
+     * device the user has signed in on. Hard-deleted via cascade when
+     * the user is deleted (see migration's `cascadeOnDelete`).
+     *
+     * @return HasMany
+     */
+    public function devices()
+    {
+        return $this->hasMany(Device::class);
+    }
+
+    /**
+     * Laravel notification-channel hook. Called by
+     * `App\Channels\OneSignalChannel` (and our `OneSignalService`
+     * underneath) to resolve which subscription IDs to target when
+     * a notification's `via()` includes `OneSignalChannel::class`.
+     *
+     * Returns the user's registered subscription IDs (modern OneSignal
+     * term for what older docs call "player IDs"). An empty array is
+     * legitimate — a user with no registered devices simply doesn't
+     * receive push.
+     *
+     * @return array<int, string>
+     */
+    public function routeNotificationForOneSignal(): array
+    {
+        return $this->devices()
+            ->pluck('subscription_id')
+            ->filter()
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * Filament admin-panel access gate. Called on every request to
+     * `https://admin.e-syrians.com/…` — returning false 403s the
+     * user before Filament renders anything.
+     *
+     * Only Spatie's `admin` role can log in. The role is provisioned
+     * by `Database\Seeders\RolesPermissionsSeeder`; assign it to a
+     * user with `User::find($id)->assignRole('admin')` (tinker).
+     *
+     * The `$panel` parameter is unused today because we only have one
+     * panel (`admin`) — if we ever add a second (e.g. a moderator
+     * panel with narrower access), branch on `$panel->getId()` here.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
      * Get the profile update that this user has made
      *
      * @return int
@@ -389,8 +443,14 @@ class User extends Authenticatable implements MustVerifyEmail
             return [false, 'you_are_not_verified'];
         }
         // 3. check the user verifications status
+        // Both counts are ACTIVE-only — cancelled rows must release
+        // the quota slot they took, otherwise the UI and the cap
+        // disagree: UserResource exposes `verifications_made_count`
+        // as active-only, so a user who cancels would see 4/25
+        // remaining on screen but `canVerify()` would still reject
+        // their next attempt with `you_have_reached_the_maximum...`.
         $receivedVerifications = $this->activeVerifiers()->count();
-        $givenVerifications = $this->verifications()->count();
+        $givenVerifications = $this->verifications()->whereNull('cancelled_at')->count();
         $threshold = config('e-syrians.verification');
         // A. If the user exceeded the maximum number of verifications allowed
         if ($givenVerifications >= $threshold['max']) {

@@ -8,6 +8,7 @@ use Exception;
 use App\Models\User;
 use DomainException;
 use App\Models\UserVerification;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 interface VerificationServiceContract
 {
@@ -26,14 +27,21 @@ interface VerificationServiceContract
     public function verifyUser(User $verifier, string $targetUuid, ?string $ipAddress, ?string $userAgent): void;
 
     /**
-     * Get verifications received by a user
+     * Get verifications the user has issued (Sent tab on the
+     * account dashboard). Returns a Laravel paginator so the
+     * mobile + web clients can scroll through history rather
+     * than be capped at a single fetch.
      */
-    public function getVerificationsForUser(User $user): mixed;
+    public function getVerificationsForUser(User $user, int $perPage = 25): LengthAwarePaginator;
 
     /**
-     * Get verifiers for a user
+     * Get verifications the user has received (Received tab on
+     * the account dashboard). Paginated for the same reason as
+     * getVerificationsForUser — and especially relevant here
+     * since the received count is unbounded (verifiers can be
+     * unlimited, while the verifier cap of 25 caps the Sent list).
      */
-    public function getVerifiersForUser(User $user): mixed;
+    public function getVerifiersForUser(User $user, int $perPage = 25): LengthAwarePaginator;
 
     /**
      * Mark a verification as cancelled by its verifier.

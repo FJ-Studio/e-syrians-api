@@ -11,6 +11,30 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PollResource extends JsonResource
 {
     /**
+     * When true the `audience` payload is exposed in full even for
+     * explicit-list polls (which include `allowed_voters`). Default
+     * is false — see the comment in `toArray()` for the policy
+     * rationale and `withFullAudience()` for how the creator-only
+     * edit endpoint opts into this.
+     */
+    public bool $exposeFullAudience = false;
+
+    /**
+     * Expose the full audience block (including `allowed_voters`)
+     * for the creator-only edit endpoint
+     * (PollController::editPayload). The public show endpoint
+     * never sets this flag, so explicit-list polls keep their
+     * "audience is suppressed for everyone" guarantee on the
+     * public surface — see PollAudienceOnlyTest.
+     */
+    public function withFullAudience(): self
+    {
+        $this->exposeFullAudience = true;
+
+        return $this;
+    }
+
+    /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
@@ -34,19 +58,23 @@ class PollResource extends JsonResource
         //     `AudienceLine` on the poll detail already broadcasts that
         //     the poll IS audience-restricted; the rules don't reveal
         //     anything about individual voters).
-        //   - Explicit-list audience (`allowed_voters`) — **never** exposed
-        //     via this resource, including to the creator. The list is a
-        //     hand-picked guest list of user UUIDs; surfacing it on the
-        //     public poll page would leak which other users the author
-        //     invited. Creators only need the list when editing the
-        //     poll, not when viewing its public page — the creator-edit
-        //     form should fetch it from a dedicated creator-only
-        //     endpoint (TBD). Everyone — including the creator on the
-        //     public page — only learns "am I in?" via
-        //     `is_in_audience` / `audience_failures`.
+        //   - Explicit-list audience (`allowed_voters`) — **never**
+        //     exposed via this resource on the public show endpoint,
+        //     including to the creator. The list is a hand-picked
+        //     guest list; surfacing it on the public poll page would
+        //     leak who else the author invited.
+        //
+        //     Creators DO need the list back when editing the poll
+        //     (otherwise the edit form falls into the criteria
+        //     branch and wipes the audience on save). That data
+        //     comes from the dedicated creator-only edit endpoint
+        //     `GET /polls/{poll}/edit` — see
+        //     PollController::editPayload — which constructs this
+        //     resource with `withFullAudience()` set. The public
+        //     surface stays clean.
         $audience = $this->resource->audience;
         $isExplicitListAudience = isset($audience['allowed_voters']);
-        $exposeAudience = ! $isExplicitListAudience;
+        $exposeAudience = ! $isExplicitListAudience || $this->exposeFullAudience;
 
         return [
             'id' => $this->id,
@@ -84,6 +112,15 @@ class PollResource extends JsonResource
             // render a "Private" pill so the owner knows what
             // they're looking at.
             'is_private' => $this->when($isCreator, fn () => (bool) $this->resource->is_private),
+            // Creator-only edit gate. Editing is allowed only
+            // while the poll has zero votes — once anyone casts a
+            // vote the poll becomes immutable. The mobile + web
+            // kebab/action menus read this to decide whether to
+            // show the "Edit poll" action.
+            'is_editable' => $this->when(
+                $isCreator,
+                fn () => ($this->unique_voters_count ?? 0) === 0,
+            ),
             'unique_voters_count' => $this->unique_voters_count ?? 0,
             /*
              * Backward-compat alias. Before UserPollController::myPolls

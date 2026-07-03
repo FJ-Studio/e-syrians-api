@@ -357,12 +357,38 @@ it('suppresses explicit-list audience details for every viewer', function (): vo
     auth('sanctum')->forgetUser();
 
     // Creator — `audience` key STILL omitted from this public endpoint.
-    // The creator can read their own `allowed_voters` list from the
-    // dedicated creator-only edit endpoint (TBD); the public poll page
-    // is not the right surface for that data.
+    // The creator reads their own `allowed_voters` list from the
+    // dedicated creator-only edit endpoint (see next test); the
+    // public poll page is not the right surface for that data.
     $creatorResponse = $this->getJson("/polls/{$poll->id}", authHeader(test()->creator));
     $creatorResponse->assertOk();
     expect($creatorResponse->json('data'))->not->toHaveKey('audience');
+});
+
+it('exposes the allowlist on the creator-only edit endpoint', function (): void {
+    // Inverse of the suppression test above: the creator MUST be
+    // able to fetch their explicit-list audience back, otherwise
+    // the edit form can't tell the poll is allowlisted and would
+    // silently wipe the audience on save.
+    $poll = createPublicPoll(test()->creator);
+    PollAudienceRule::insert([
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'guest1@example.com', 'created_at' => now(), 'updated_at' => now()],
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'guest2@example.com', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $response = $this->getJson("/polls/{$poll->id}/edit", authHeader(test()->creator));
+    $response->assertOk();
+    expect($response->json('data.audience.allowed_voters'))
+        ->toContain('guest1@example.com')
+        ->toContain('guest2@example.com');
+});
+
+it('rejects the edit endpoint for non-creators', function (): void {
+    $poll = createPublicPoll(test()->creator);
+
+    auth('sanctum')->forgetUser();
+    $response = $this->getJson("/polls/{$poll->id}/edit", authHeader(test()->outsider));
+    $response->assertStatus(403);
 });
 
 // ───────────────────────────────────────────────

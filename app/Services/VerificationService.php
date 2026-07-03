@@ -10,6 +10,7 @@ use App\Models\UserVerification;
 use App\Events\VerificationReceived;
 use App\Contracts\VerificationServiceContract;
 use App\Http\Resources\UserVerificationResource;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class VerificationService implements VerificationServiceContract
 {
@@ -78,24 +79,24 @@ class VerificationService implements VerificationServiceContract
         event(new VerificationReceived($verifier, $targetUser));
     }
 
-    public function getVerificationsForUser(User $user): mixed
+    public function getVerificationsForUser(User $user, int $perPage = 25): LengthAwarePaginator
     {
-        // Wrap in UserVerificationResource so the response shape
-        // matches getVerifiersForUser (which already does). Without
-        // this, Sent rows came back as raw Eloquent (missing the
-        // signed avatar URL handling + the `whenLoaded` shape) while
-        // Received rows came back resource-formatted — clients had
-        // to special-case parsing per tab.
-        return UserVerificationResource::collection(
-            $user->verifications()->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get()
-        );
+        // Paginate so the Sent / Received lists scale beyond a
+        // single page. Newest first matches the "most recent
+        // first" reading order both clients use. The controller
+        // wraps `items()` in UserVerificationResource — keeping
+        // the resource at the controller layer is the same
+        // pattern UserPollController::myPolls follows.
+        return $user->verifications()
+            ->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->latest()
+            ->paginate($perPage);
     }
 
-    public function getVerifiersForUser(User $user): mixed
+    public function getVerifiersForUser(User $user, int $perPage = 25): LengthAwarePaginator
     {
-        return UserVerificationResource::collection(
-            $user->verifiers()->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->get()
-        );
+        return $user->verifiers()
+            ->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->latest()
+            ->paginate($perPage);
     }
 
     public function cancelVerificationByVerifier(
@@ -129,6 +130,27 @@ class VerificationService implements VerificationServiceContract
                 'cancelled_at' => now()->toIso8601String(),
             ],
         ])->save();
+
+        // Recompute the recipient's verified status. Without this,
+        // a peer-verified user who drops below the active-verifier
+        // threshold (config('e-syrians.verification.min')) keeps
+        // `verified_at` set and continues to pass the `UserIsVerified`
+        // middleware — i.e. they keep voting, creating polls, and
+        // verifying others despite no longer meeting the bar. We
+        // skip recompute for first_registrant users since their
+        // verification_reason exempts them from the per-recipient
+        // threshold.
+        $recipient = $verification->user;
+        if (
+            $recipient
+            && $recipient->verified_at !== null
+            && $recipient->verification_reason !== 'first_registrant'
+        ) {
+            $min = (int) config('e-syrians.verification.min');
+            if ($recipient->activeVerifiers()->count() < $min) {
+                $recipient->markAsUnverified();
+            }
+        }
 
         return $verification->fresh();
     }

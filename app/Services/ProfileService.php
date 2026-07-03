@@ -132,8 +132,20 @@ class ProfileService implements ProfileServiceContract
     public function updateCensusData(User $user, array $data): void
     {
         $request = request();
-        $data['languages'] = implode(',', $data['languages'] ?? []);
-        $data['other_nationalities'] = implode(',', $data['other_nationalities'] ?? []);
+
+        // Only collapse the array-shaped fields into the comma-
+        // separated DB column when the client actually sent them.
+        // The mobile census flow PATCHes one category at a time
+        // (Employment / Education / Health / Demographics), so a
+        // blind `implode(',', $data[...] ?? [])` would coerce the
+        // absent keys to empty strings and wipe the stored values
+        // on every partial save.
+        if (array_key_exists('languages', $data)) {
+            $data['languages'] = implode(',', $data['languages'] ?? []);
+        }
+        if (array_key_exists('other_nationalities', $data)) {
+            $data['other_nationalities'] = implode(',', $data['other_nationalities'] ?? []);
+        }
 
         // Religion is rate-limited separately from the rest of the
         // Census data. Polls can target by `religious_affiliation`,
@@ -142,10 +154,11 @@ class ProfileService implements ProfileServiceContract
         // (incoming value present AND different from stored) before
         // counting it against the limit — saving the form without
         // touching religion never burns a slot.
+        $oldReligion = $user->religious_affiliation;
         $religionChanged = array_key_exists('religious_affiliation', $data)
             && $data['religious_affiliation'] !== null
             && $data['religious_affiliation'] !== ''
-            && $data['religious_affiliation'] !== $user->religious_affiliation;
+            && $data['religious_affiliation'] !== $oldReligion;
 
         if ($religionChanged) {
             $religionLimit = config('e-syrians.verification.religion_updates_limit');
@@ -182,13 +195,20 @@ class ProfileService implements ProfileServiceContract
         // them without filtering through the generic Regular bag.
         // We log only the religion delta — the broader census
         // changes are already covered by the Regular audit above.
+        //
+        // The old value is taken from the pre-update snapshot we
+        // captured above, NOT from `$user->getOriginal(...)`:
+        // Eloquent's `update()` calls `syncOriginal()` internally,
+        // so by the time we get here `getOriginal` returns the
+        // freshly-saved new value and the audit would record
+        // old=new, defeating the audit's purpose.
         if ($religionChanged) {
             $religionAudit = $this->createAuditRecord(
                 $user,
                 ProfileChangeTypeEnum::Religion,
                 [
                     'religious_affiliation' => [
-                        'old' => $user->getOriginal('religious_affiliation'),
+                        'old' => $oldReligion,
                         'new' => $data['religious_affiliation'],
                     ],
                 ],

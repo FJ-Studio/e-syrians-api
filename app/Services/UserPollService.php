@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use stdClass;
 use App\Models\User;
 use App\Models\PollVote;
+use Illuminate\Support\Facades\DB;
 use App\Contracts\UserPollServiceContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -56,38 +58,107 @@ class UserPollService implements UserPollServiceContract
 
     public function getUserVotes(User $user, int $page = 1, int $perPage = 25): array
     {
-        $userVotes = $user->votes()
-            ->with('option.poll')
-            ->get()
-            ->groupBy('option.poll_id')
-            ->map(function ($votes) {
-                $firstVote = $votes->first();
-                $option = $firstVote->option ?? null;
+        // Two-query implementation. Previously this method ->get()
+        // the user's entire vote history into memory, ->groupBy()
+        // by poll_id in PHP, then ->forPage() to slice — so every
+        // page request triggered a full vote-table scan.
+        //
+        // First cut at the fix used a single grouped query with
+        // GROUP_CONCAT(option_text), which broke the test suite
+        // (SQLite has no `SEPARATOR` keyword), risked silent
+        // truncation under MySQL's default group_concat_max_len,
+        // and bypassed PollOption's SoftDeletes scope because the
+        // raw join doesn't respect Eloquent global scopes.
+        //
+        // Current shape: paginate the distinct polls the user
+        // voted on (portable SQL — `GROUP BY` + LIMIT/OFFSET via
+        // Laravel's paginate), then fetch the actual option texts
+        // for just those polls in a second Eloquent query that
+        // routes through the `option` relation so PollOption's
+        // SoftDeletes scope applies for free.
+        //
+        // Soft-delete semantics are now explicit + match the old
+        // Eloquent-relation path: query 1 filters out votes whose
+        // option OR poll has been soft-deleted (so a poll where
+        // every voted option was deleted disappears), and we also
+        // skip private polls (the old code did too, via the
+        // public_polls global scope being applied to the
+        // relation load).
+        // Query 1 uses DB::table (not Eloquent) so each row is a
+        // generic \stdClass and PHPStan doesn't trip on the
+        // dynamic property access for the projected columns —
+        // we don't need any model methods here, this is a pure
+        // aggregate read.
+        $pollPage = DB::table('poll_votes')
+            ->join('poll_options', 'poll_votes.poll_option_id', '=', 'poll_options.id')
+            ->join('polls', 'poll_votes.poll_id', '=', 'polls.id')
+            ->where('poll_votes.user_id', $user->id)
+            ->whereNull('poll_options.deleted_at')
+            ->whereNull('polls.deleted_at')
+            ->where('polls.is_private', false)
+            ->select([
+                'polls.id as poll_id',
+                'polls.question as question',
+                DB::raw('MIN(poll_votes.created_at) as voted_at'),
+            ])
+            ->groupBy('polls.id', 'polls.question')
+            ->orderByRaw('MIN(poll_votes.created_at) DESC')
+            ->paginate($perPage, ['*'], 'page', $page);
 
-                if (! $option || ! $option->poll) {
-                    return null;
-                }
+        $pollIds = array_map(
+            static fn (stdClass $row): int => (int) $row->poll_id,
+            $pollPage->items(),
+        );
 
-                $poll = $option->poll;
+        // Query 2: option texts for this page's polls. Also via
+        // DB::table — the earlier draft used
+        // `PollVote::query()->with('option' => …)` but Larastan
+        // can't follow the `option` relation off the PollVote
+        // model and complained both that the relation didn't
+        // exist and that `$vote->option` was an undefined
+        // property. The raw join is simpler anyway: the Eloquent
+        // path only mattered because it inherited PollOption's
+        // SoftDeletes scope; we now make that filter explicit
+        // with `whereNull('poll_options.deleted_at')`, matching
+        // the same semantics without any model property access.
+        /** @var array<int, array<int, string>> $optionsByPoll */
+        $optionsByPoll = [];
 
-                return [
-                    'poll_id' => $poll->id,
-                    'question' => $poll->question,
-                    'selected_options' => $votes->pluck('option.option_text'),
-                    'created_at' => $firstVote->created_at,
-                ];
-            })
-            ->filter()
-            ->values();
+        if ($pollIds !== []) {
+            $optionRows = DB::table('poll_votes')
+                ->join('poll_options', 'poll_votes.poll_option_id', '=', 'poll_options.id')
+                ->where('poll_votes.user_id', $user->id)
+                ->whereIn('poll_votes.poll_id', $pollIds)
+                ->whereNull('poll_options.deleted_at')
+                ->orderBy('poll_votes.poll_id')
+                ->orderBy('poll_votes.id')
+                ->select(['poll_votes.poll_id', 'poll_options.option_text'])
+                ->get();
 
-        $total = $userVotes->count();
+            foreach ($optionRows as $row) {
+                /** @var stdClass $row */
+                $optionsByPoll[(int) $row->poll_id][] = (string) $row->option_text;
+            }
+        }
+
+        // Wrap items in a Collection so the return shape matches
+        // the contract's `data: Collection` slot.
+        $items = collect(array_map(
+            static fn (stdClass $row): array => [
+                'poll_id' => (int) $row->poll_id,
+                'question' => (string) $row->question,
+                'selected_options' => $optionsByPoll[(int) $row->poll_id] ?? [],
+                'created_at' => $row->voted_at,
+            ],
+            $pollPage->items(),
+        ));
 
         return [
-            'data' => $userVotes->forPage($page, $perPage)->values(),
-            'total' => $total,
-            'per_page' => $perPage,
-            'current_page' => $page,
-            'last_page' => (int) ceil($total / $perPage),
+            'data' => $items,
+            'total' => $pollPage->total(),
+            'per_page' => $pollPage->perPage(),
+            'current_page' => $pollPage->currentPage(),
+            'last_page' => $pollPage->lastPage(),
         ];
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatsController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
@@ -118,6 +119,28 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
     Route::post('/verifications/{verification}/cancel', [VerificationController::class, 'cancel'])
         ->name('users.verifications.cancel');
 
+    // Push-notification device registration (OneSignal).
+    //
+    // POST   /users/devices             — register or re-register
+    // DELETE /users/devices/{device}    — unregister (route binding
+    //                                     resolves by subscription_id,
+    //                                     see Device::getRouteKeyName)
+    //
+    // Throttled per-user (30 writes/min) to absorb a buggy SDK build
+    // that re-registers on every notification — generous enough that
+    // legitimate clients (one register at login, occasional re-register
+    // on subscription change) never hit the limit.
+    Route::middleware(['throttle:30,1,devices'])->group(function (): void {
+        Route::post('/devices', [DeviceController::class, 'store'])->name('users.devices.store');
+        // Raw string param (NOT implicit route-model binding). We
+        // handle the "device not found" case ourselves and return
+        // 204 either way — the spec says DELETE is idempotent and
+        // must not leak whether a given subscription_id exists.
+        // Implicit binding would 404 before the controller runs,
+        // which contradicts that contract.
+        Route::delete('/devices/{subscription_id}', [DeviceController::class, 'destroy'])->name('users.devices.destroy');
+    });
+
     // Profile updates — all protected by reCAPTCHA except language (silent
     // preference toggle with no user-visible form).
     Route::middleware(['recaptcha'])->group(function (): void {
@@ -140,7 +163,27 @@ Route::prefix('polls')->group(function (): void {
     Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::get('/option-voters', [PollController::class, 'optionVoters']);
         Route::post('/', [PollController::class, 'store'])->middleware('recaptcha');
-        Route::post('/status/{poll}', [PollController::class, 'status'])->middleware('recaptcha');
+        // Creator-only edit payload. Mirrors `show()` but exposes
+        // the full audience block (incl. allowed_voters) that the
+        // public show endpoint intentionally suppresses — the
+        // edit form would otherwise wipe the allowlist on save.
+        // Must be declared BEFORE `/{poll}` so the literal segment
+        // doesn't get swallowed by the dynamic show route. Sits
+        // under auth:sanctum; the controller checks ownership.
+        Route::get('/{poll}/edit', [PollController::class, 'editPayload']);
+        // Edit gate is in UpdatePollRequest::authorize (ownership +
+        // zero-votes). Must be PATCH not POST so it doesn't collide
+        // with the public `/{poll}` show route below.
+        Route::patch('/{poll}', [PollController::class, 'update'])->middleware('recaptcha');
+        // Uses `{pollId}` (not `{poll}`) on purpose: the
+        // AppServiceProvider's `Route::bind('poll', …)` resolves
+        // the parameter to a Poll model without the `public_polls`
+        // global scope, but it does NOT apply `withTrashed()`.
+        // Status toggles a soft-deleted poll (Activate flips it
+        // back), so the controller has to do its own withTrashed
+        // lookup. A different parameter name keeps the binding
+        // out of the way and lets `int $pollId` resolve naturally.
+        Route::post('/status/{pollId}', [PollController::class, 'status'])->middleware('recaptcha');
         Route::post('/vote', [PollController::class, 'vote'])->middleware([UserIsVerified::class, 'recaptcha']);
         Route::post('/react', [PollController::class, 'react'])->middleware([UserIsVerified::class, 'recaptcha']);
     });
