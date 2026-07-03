@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Filament\Panel;
 use Illuminate\Support\Str;
 use App\Services\StrService;
 use Laravel\Sanctum\HasApiTokens;
@@ -12,13 +13,14 @@ use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
     use HasApiTokens;
 
@@ -288,6 +290,24 @@ class User extends Authenticatable implements MustVerifyEmail
             ->filter()
             ->values()
             ->toArray();
+    }
+
+    /**
+     * Filament admin-panel access gate. Called on every request to
+     * `https://admin.e-syrians.com/…` — returning false 403s the
+     * user before Filament renders anything.
+     *
+     * Only Spatie's `admin` role can log in. The role is provisioned
+     * by `Database\Seeders\RolesPermissionsSeeder`; assign it to a
+     * user with `User::find($id)->assignRole('admin')` (tinker).
+     *
+     * The `$panel` parameter is unused today because we only have one
+     * panel (`admin`) — if we ever add a second (e.g. a moderator
+     * panel with narrower access), branch on `$panel->getId()` here.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->hasRole('admin');
     }
 
     /**
