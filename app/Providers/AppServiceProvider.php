@@ -74,6 +74,33 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force HTTPS on every URL Laravel generates (`url()`,
+        // `route()`, `asset()`, `URL::to()`, etc.).
+        //
+        // Every host this Laravel app is served from — api.e-syrians.com,
+        // admin.e-syrians.com locally under Herd, and their production
+        // counterparts — is behind TLS. TLS termination happens at the
+        // proxy layer (Herd's local proxy, Cloudflare in production),
+        // and the request forwarded to PHP arrives as plain HTTP with
+        // an `X-Forwarded-Proto: https` header.
+        //
+        // `trustProxies(at: '*')` in `bootstrap/app.php` is the
+        // "polite" way to handle this — but Herd's forwarded-header
+        // shape doesn't always line up with Laravel's expectations,
+        // and Filament (which uses `asset()` to link its CSS/JS)
+        // ends up emitting `http://admin.e-syrians.com/css/…` URLs
+        // while the browser loaded the page over `https://`, blocking
+        // every asset as Mixed Content.
+        //
+        // Belt-and-suspenders: force the scheme unconditionally.
+        // Safe because we're never actually served over plain HTTP
+        // anywhere the URL generator runs — production strictly HTTPS,
+        // local Herd strictly HTTPS. If we ever add a non-HTTPS
+        // deployment (unlikely — insecure and modern browsers ignore
+        // cookies over HTTP), remove this line and rely on the
+        // trusted-proxy path instead.
+        URL::forceScheme('https');
+
         Event::listen(function (SocialiteWasCalled $event): void {
             $event->extendSocialite('google', GoogleProvider::class);
             $event->extendSocialite('apple', AppleProvider::class);
