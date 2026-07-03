@@ -18,15 +18,16 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
         apiPrefix: '',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->append(SetAppLocalization::class);
+        $middleware->trustProxies(at: '*');
 
         // Spatie Permission v6 no longer auto-registers these aliases in
         // Laravel 11's bootstrap structure — register them explicitly so
