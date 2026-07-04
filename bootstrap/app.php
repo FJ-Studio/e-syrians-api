@@ -40,16 +40,44 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // The ApiService JSON envelope (success / messages / data) is
+        // the contract for API clients — mobile and web talk to this
+        // Laravel app via `Accept: application/json` and rely on the
+        // envelope shape.
+        //
+        // Filament panels (and any future server-rendered surface)
+        // are ALSO Laravel routes. Without the `expectsJson()` gate,
+        // an unauthenticated browser hit on `/admin` throws
+        // AuthenticationException — which we override into a JSON
+        // blob, so the admin sees `{"success":false,...}` instead
+        // of being redirected to the login page.
+        //
+        // Gate every renderer on `expectsJson()`: API clients keep
+        // the envelope, browser navigation falls through to Laravel's
+        // default handlers (unauth redirect, HTML 404, etc.), which
+        // is what Filament + any other web surface expects.
         $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
             return ApiService::error(401, __('api.unauthenticated'));
         });
         $exceptions->render(function (ValidationException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
             return ApiService::error(422, $e->errors());
         });
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
             return ApiService::error(404, $e->getMessage());
         });
         $exceptions->render(function (HttpException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
             return ApiService::error($e->getStatusCode(), $e->getMessage());
         });
     })->create();
