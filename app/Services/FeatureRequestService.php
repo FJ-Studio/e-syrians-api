@@ -8,6 +8,7 @@ use App\Models\FeatureRequest;
 use App\Models\FeatureRequestVote;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Enums\FeatureRequestStatusEnum;
 use Illuminate\Database\Eloquent\Builder;
 use App\Exceptions\FeatureRequestException;
 use App\Contracts\FeatureRequestServiceContract;
@@ -18,17 +19,16 @@ class FeatureRequestService implements FeatureRequestServiceContract
 {
     private const PER_PAGE = 20;
 
-    /**
-     * Allowed status filters. Matches FeatureRequest::status accessor.
-     */
-    private const STATUSES = ['idea', 'in_development', 'in_testing', 'shipped'];
-
     public function getPaginatedFeatureRequests(string $sort, ?string $status, ?int $userId): LengthAwarePaginator
     {
         $query = $this->buildQuery($userId);
 
-        if ($status !== null && in_array($status, self::STATUSES, true)) {
-            $this->applyStatusFilter($query, $status);
+        // Unknown / null status → no filter. Valid enum value → apply the
+        // corresponding timeline-column filter. This preserves the existing
+        // "ignore invalid input silently" behaviour.
+        $stage = $status !== null ? FeatureRequestStatusEnum::tryFrom($status) : null;
+        if ($stage !== null) {
+            $this->applyStatusFilter($query, $stage);
         }
 
         $this->applySort($query, $sort);
@@ -232,23 +232,15 @@ class FeatureRequestService implements FeatureRequestServiceContract
             });
     }
 
-    private function applyStatusFilter(Builder $query, string $status): void
+    /**
+     * Delegate to the `atStage` scope on the model — single source of
+     * truth shared with the Filament admin filter.
+     *
+     * @param  Builder<FeatureRequest>  $query
+     */
+    private function applyStatusFilter(Builder $query, FeatureRequestStatusEnum $stage): void
     {
-        match ($status) {
-            'idea' => $query
-                ->whereNull('coded_at')
-                ->whereNull('tested_at')
-                ->whereNull('deployed_at'),
-            'in_development' => $query
-                ->whereNotNull('coded_at')
-                ->whereNull('tested_at')
-                ->whereNull('deployed_at'),
-            'in_testing' => $query
-                ->whereNotNull('tested_at')
-                ->whereNull('deployed_at'),
-            'shipped' => $query->whereNotNull('deployed_at'),
-            default => null,
-        };
+        $query->atStage($stage);
     }
 
     private function applySort(Builder $query, string $sort): void

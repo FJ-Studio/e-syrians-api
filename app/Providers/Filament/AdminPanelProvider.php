@@ -22,9 +22,18 @@ use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 
 /**
- * Admin panel — mounted at `https://admin.e-syrians.com/`.
+ * Admin panel.
  *
- * Why a subdomain instead of `/admin` on the main host:
+ *   - Production: `https://admin.e-syrians.com/` (subdomain-scoped)
+ *   - Non-production (local Herd, staging, etc.):
+ *     `<APP_URL>/admin` (path-scoped, e.g. `https://e-syrians-api.test/admin`)
+ *
+ * The split lives in `panel()` below and branches on
+ * `app()->environment('production')` so no env var wiring is needed —
+ * boot the API on Herd, browse to your dev host + `/admin`, and
+ * you're in.
+ *
+ * Why a subdomain in production instead of `/admin` on the main host:
  *
  *   1. Cleanly separates the admin surface from the public API
  *      (`api.e-syrians.com`) at the DNS / CDN layer. Admin can have
@@ -43,6 +52,13 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
  *      and would rely on path-prefix ordering. Different subdomain =
  *      no ambiguity.
  *
+ * Locally the trade-offs of (1) and (2) don't matter (no CDN, dev
+ * data), and (3) doesn't bite because the API currently defines no
+ * routes under `/admin/*`. Point (3) is the one to watch: if we ever
+ * add an `/admin` route to `routes/api.php`, the local path-mounted
+ * panel will start swallowing it. Prod stays fine because it's on a
+ * different subdomain.
+ *
  * Access gate lives in `User::canAccessPanel()` (see
  * `App\Models\User`) — only users with the Spatie `admin` role can
  * log in. The seeder `RolesPermissionsSeeder` provisions the role;
@@ -56,17 +72,9 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->default()
             ->id('admin')
-            // Empty path => mounts at the subdomain root
-            // (https://admin.e-syrians.com/ instead of /admin).
-            ->path('')
-            // Binds this panel's routes to the subdomain. Routes
-            // registered elsewhere (e.g. `routes/api.php` for the
-            // mobile/web API) stay on their own hosts and don't
-            // collide.
-            ->domain('admin.e-syrians.com')
             ->login()
             ->colors([
                 // e-syrians brand indigo (#393D98). Matches the mobile
@@ -98,5 +106,18 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+
+        // Mount location: subdomain in prod (see class-level doc for
+        // the "why"), path on any other environment so local dev
+        // works without touching DNS or /etc/hosts. `admin.<your-
+        // herd-domain>` would need Herd Pro custom-domain wiring;
+        // `<your-herd-domain>/admin` just works.
+        if (app()->environment('production')) {
+            return $panel
+                ->path('')
+                ->domain('admin.e-syrians.com');
+        }
+
+        return $panel->path('admin');
     }
 }
