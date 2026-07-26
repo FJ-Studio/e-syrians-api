@@ -49,6 +49,6 @@ return [
     'invalid_options' => 'Hilbijartin ne derbasdar in',
 
     // Ewlehî / Security
-    'recaptcha_token_required' => 'Tokena reCAPTCHA pêwîst e',
-    'recaptcha_verification_failed' => 'Testkirina reCAPTCHA biserneket',
+    'recaptcha_token_required' => 'Me nekarî daxwaza we piştrast bikin. Ji kerema xwe rûpelê ji nû ve bar bike û dîsa biceribîne.',
+    'recaptcha_verification_failed' => 'Me nekarî piştrast bikin ku hûn ne robot in. Ji kerema xwe dîsa biceribîne.',
 ];

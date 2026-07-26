@@ -49,6 +49,6 @@ return [
     'invalid_options' => 'Invalid options',
 
     // Middleware
-    'recaptcha_token_required' => 'reCAPTCHA token is required',
-    'recaptcha_verification_failed' => 'reCAPTCHA verification failed',
+    'recaptcha_token_required' => "We couldn't verify your request. Please reload the page and try again.",
+    'recaptcha_verification_failed' => "We couldn't confirm you're not a bot. Please try again.",
 ];
