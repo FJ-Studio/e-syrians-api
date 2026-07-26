@@ -49,6 +49,6 @@ return [
     'invalid_options' => 'خيارات غير صالحة',
 
     // الحماية
-    'recaptcha_token_required' => 'رمز reCAPTCHA مطلوب',
-    'recaptcha_verification_failed' => 'فشل التحقق من reCAPTCHA',
+    'recaptcha_token_required' => 'تعذّر التحقق من طلبك. يرجى إعادة تحميل الصفحة والمحاولة مرة أخرى.',
+    'recaptcha_verification_failed' => 'لم نتمكن من التأكد أنك لست روبوت. يرجى المحاولة مرة أخرى.',
 ];
