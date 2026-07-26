@@ -1,0 +1,153 @@
+name: Gate AI review invocations
+
+# Guards Codex-review invocations on a public repo.
+#
+# Anyone can post `@codex ...` in a comment on our PRs, and the
+# integration picks it up regardless of who posted it — which means
+# any drive-by contributor could drain our Codex credits. This
+# workflow closes that hole with two protections:
+#
+#   1. Maintainer-only gate. Only accounts with write access or
+#      above may invoke Codex. Non-maintainer comments containing
+#      `@codex` (in any form) are auto-deleted and replaced with a
+#      friendly notice pointing at CONTRIBUTING.md.
+#
+#   2. Per-PR review cap. At most 2 successful invocations per PR.
+#      After that, further `@codex` mentions (even from maintainers)
+#      are deleted with a message asking them to bump `CAP` in this
+#      file if they truly need another review.
+#
+# Bots (dependabot, renovate, github-actions) and draft PRs never
+# trigger AI review — they're filtered out at the top of the job.
+#
+# The workflow relies on `issue_comment.created` firing before the
+# Codex integration processes the comment. If Codex ever adds a
+# faster processing path or a race appears in practice, invert the
+# design: require a proxy trigger word like `/ai-review` that this
+# workflow rewrites into `@codex review` after the auth check. For
+# now the delete-first approach is simpler and has held for other
+# projects using the same pattern.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  # We delete unauthorised comments and post a friendly notice in
+  # their place. Both operations need `issues: write` since PR
+  # comments are technically issue comments on the GitHub API.
+  issues: write
+  pull-requests: write
+
+jobs:
+  gate:
+    # Trigger only for PR comments (not general issue comments) that
+    # mention Codex, and never for bot-authored comments. The bot
+    # filter is critical — dependabot / renovate PRs generate a lot
+    # of noise and we don't want any of it to accidentally invoke a
+    # paid review.
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '@codex') &&
+      !endsWith(github.event.comment.user.login, '[bot]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Block on draft PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.issue.number,
+            });
+            if (!pr.draft) return;
+            await github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+            });
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: "⏳ AI reviews aren't triggered on draft PRs. Mark this PR ready for review first, then a maintainer can request one.",
+            });
+            core.setFailed('Draft PR — AI review blocked');
+
+      - name: Enforce maintainer-only invocation
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // `getCollaboratorPermissionLevel` returns one of:
+            //   admin | maintain | write | triage | read | none
+            // We accept the top three — anything below `write` means
+            // the user can't merge, so they shouldn't be spending
+            // Codex credits either.
+            const { data: perm } = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              username: context.payload.comment.user.login,
+            });
+            const allowed = ['admin', 'maintain', 'write'];
+            if (allowed.includes(perm.permission)) return;
+
+            await github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+            });
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `👋 Hi @${context.payload.comment.user.login} — AI reviews are limited to repo maintainers. A maintainer will request one during review if the change warrants it. See [CONTRIBUTING.md](../blob/develop/CONTRIBUTING.md#ai-review-policy) for the policy.`,
+            });
+            core.setFailed('Non-maintainer tried to invoke Codex');
+
+      - name: Enforce per-PR review cap
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Soft cap on how many times Codex may review a single PR.
+            // Two rounds is usually enough — first pass surfaces issues,
+            // second pass verifies the fixes. If a genuinely complex PR
+            // needs another round, bump this value and note why in the
+            // commit message.
+            const CAP = 2;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              per_page: 100,
+            });
+
+            // Count prior maintainer invocations. Non-maintainer @codex
+            // comments never survive the previous step, so any @codex
+            // mention still present is either a legitimate invocation
+            // or a maintainer typing @codex in prose. Both count against
+            // the cap — safer to over-count than under-count on a paid
+            // service. If maintainers frequently reference @codex in
+            // prose, wrap the mention in backticks to sidestep GitHub's
+            // notification parsing entirely.
+            const priorInvocations = comments.filter(c =>
+              c.id !== context.payload.comment.id &&
+              c.body.includes('@codex') &&
+              !c.user.login.endsWith('[bot]')
+            ).length;
+
+            if (priorInvocations < CAP) return;
+
+            await github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+            });
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+              body: `⚠️ This PR has already been reviewed by AI ${CAP} times. Please address the outstanding feedback before requesting another review. If you truly need another pass, bump \`CAP\` in \`.github/workflows/gate-codex-review.yml\` and note why in the commit message.`,
+            });
+            core.setFailed(`Review cap reached (${CAP} per PR)`);
