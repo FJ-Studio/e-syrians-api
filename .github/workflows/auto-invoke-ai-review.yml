@@ -1,0 +1,148 @@
+name: Auto-invoke AI review
+
+# Posts an `@codex review` comment automatically on every non-draft
+# PR opened by a non-bot author, with the standard focus block. The
+# author's PR then gets one Codex review pass without requiring a
+# maintainer to remember the trigger.
+#
+# Cost model:
+#   - Every PR → 1 auto-invocation → 1 Codex review.
+#   - Maintainers may follow up with up to 2 more manual
+#     `@codex review` comments, gated by gate-codex-review.yml.
+#   - So the ceiling is 3 reviews per PR (1 auto + 2 manual).
+#   - Contributors who try to invoke manually still get blocked +
+#     comment-deleted by the gate workflow (with the caveat noted
+#     in that file's header about the race window).
+#
+# Trigger choice:
+#   Uses `pull_request_target`, NOT `pull_request`. For PRs opened
+#   from forks (the normal external-contributor path), `pull_request`
+#   downgrades GITHUB_TOKEN to read-only and refuses to expose repo
+#   secrets — createComment would silently fail and the fork PR
+#   would never get its automated review. `pull_request_target`
+#   runs in the base-repo context with full permissions.
+#
+#   The usual pull_request_target caveat (fork can hijack the
+#   workflow via poisoned code) does NOT apply here: this workflow
+#   never checks out the PR head, never runs anything from it. It
+#   only calls the REST API from a runner with base-repo secrets.
+#
+# Abuse protection:
+#   - If a contributor opens dozens of trash PRs, each burns one
+#     auto-review. Real defence is to BLOCK the user (repo or org
+#     level) once the pattern is clear. GitHub → user profile →
+#     Block, or Repo Settings → Moderation → Blocked users.
+#   - Bot-authored PRs (dependabot, renovate, github-actions) are
+#     excluded — they generate mechanical bumps that don't benefit
+#     from AI review.
+#   - Draft PRs are excluded. The workflow re-fires when the PR is
+#     marked ready for review (`ready_for_review` event).
+#
+# Idempotency:
+#   Auto-posted comments carry the hidden HTML marker
+#   `<!-- ai-review-auto-invoked -->`. The idempotency check
+#   searches for that marker rather than the raw `@codex` string,
+#   which avoids false positives when someone quotes the focus
+#   block inside a code fence (GitHub suppresses @-mentions in
+#   code fences, but a naive `includes('@codex')` doesn't).
+#
+# Concurrency:
+#   A per-PR concurrency group (without cancellation) serialises
+#   multiple runs of this workflow on the same PR. Without it, a
+#   fast draft → ready → draft → ready toggle can race two runs
+#   past the idempotency check before either posts, causing
+#   duplicate paid reviews.
+#
+# Comment authorship:
+#   Posted via a fine-grained PAT stored in the CODEX_INVOKER_TOKEN
+#   secret. Owner: a real user account (Codex ignores mentions from
+#   github-actions[bot] because bots don't have ChatGPT
+#   subscriptions). Scope: pull_requests:write + issues:write on
+#   this repo. If the secret is missing the step falls back to
+#   GITHUB_TOKEN — which will post but Codex won't respond.
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+concurrency:
+  # Serialise per-PR without cancelling in-flight runs; the second
+  # run's idempotency check will find the first run's marker and
+  # skip.
+  group: ai-review-auto-invoke-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  invoke:
+    if: |
+      !github.event.pull_request.draft &&
+      !endsWith(github.event.pull_request.user.login, '[bot]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip if this PR already has an auto-invoked marker
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Paginate through ALL comments — `listComments` alone
+            // returns at most 100, so a busy PR could bypass the
+            // idempotency check on the second run.
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                per_page: 100,
+              },
+            );
+            const MARKER = '<!-- ai-review-auto-invoked -->';
+            const already = comments.some(c => c.body.includes(MARKER));
+            core.setOutput('already', already ? 'true' : 'false');
+
+      - name: Post AI review invocation
+        # See CODEX_INVOKER_TOKEN rationale in the file header.
+        # Fallback to GITHUB_TOKEN if the secret is missing — the
+        # comment will post but Codex won't respond.
+        if: steps.check.outputs.already != 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CODEX_INVOKER_TOKEN || secrets.GITHUB_TOKEN }}
+          script: |
+            // Focus block — keep in sync with CONTRIBUTING.md's
+            // "AI Review Policy" section so a maintainer requesting
+            // a manual re-review pastes the same instructions.
+            //
+            // The trailing HTML comment marker is invisible to
+            // humans but lets the idempotency check identify
+            // this comment on subsequent runs without matching
+            // arbitrary `@codex` text that might appear elsewhere.
+            const body = [
+              '@codex review',
+              '',
+              'Focus especially on:',
+              '- SOLID: is business logic in services, not controllers?',
+              '- N+1: any eager-load misses in list endpoints?',
+              '- FormRequest validation: rules for every write; error keys are raw strings (not `__()` calls)',
+              '- PII: no plaintext `national_id` / `address` in responses, logs, or seeder output',
+              '- reCAPTCHA middleware present on every state-changing route',
+              '- Sanctum: bearer-token guard on protected endpoints (not the web guard)',
+              '- Soft-delete: relevant queries respect `SoftDeletingScope`; global scopes not bypassed silently',
+              '- Pest coverage: happy path AND at least one 4xx path per endpoint',
+              '- Backwards compat: API envelope (`success` / `messages` / `data`) and existing keys untouched',
+              '',
+              '_Auto-invoked by `.github/workflows/auto-invoke-ai-review.yml`. Maintainers can request up to 2 additional passes; further attempts are auto-declined by the gate workflow._',
+              '',
+              '<!-- ai-review-auto-invoked -->',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });

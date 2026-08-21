@@ -13,6 +13,7 @@ use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use App\Contracts\AudienceServiceContract;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -215,6 +216,17 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     public function polls()
     {
         return $this->hasMany(Poll::class, 'created_by', 'id');
+    }
+
+    /**
+     * Reusable audience lists this user has created (mixed
+     * email + national_id identifiers). Attached to a poll via
+     * `polls.audience_id` to delegate the allow-list to a saved
+     * list instead of re-pasting the same identifiers each time.
+     */
+    public function audiences()
+    {
+        return $this->hasMany(Audience::class);
     }
 
     /**
@@ -478,6 +490,20 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 
     public function isInAudience(Poll $poll): array
     {
+        // Reusable audience list — short-circuits every other rule.
+        // When a poll references a saved Audience the whole gate
+        // becomes "is the caller's email / national_id / phone in
+        // the entries table". We delegate to AudienceService because
+        // it owns the hashed-lookup logic and knows how to handle
+        // soft-deleted audiences (returns false, not throws).
+        if ($poll->audience_id !== null) {
+            /** @var AudienceServiceContract $svc */
+            $svc = resolve(AudienceServiceContract::class);
+            $isMember = $svc->isUserInAudience((int) $poll->audience_id, $this);
+
+            return $isMember ? [true, []] : [false, ['not_in_allowed_voters']];
+        }
+
         if (! $poll->relationLoaded('audienceRules')) {
             $poll->load('audienceRules');
         }

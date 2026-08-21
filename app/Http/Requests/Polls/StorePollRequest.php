@@ -11,7 +11,9 @@ use App\Enums\EthnicityEnum;
 use App\Services\StrService;
 use App\Enums\RevealResultsEnum;
 use App\Enums\ReligiousAffiliationEnum;
+use App\Contracts\AudienceServiceContract;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 class StorePollRequest extends FormRequest
@@ -88,6 +90,73 @@ class StorePollRequest extends FormRequest
             // specific voters (national IDs or emails, one per entry)
             'allowed_voters' => ['nullable', 'array', 'max:500'],
             'allowed_voters.*' => ['required', 'string', 'max:255', 'regex:/^([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}|[0-9]{5,20})$/'],
+            // Reusable audience list — accepted as the UUID exposed
+            // by the audience API (not the internal DB id). Must
+            // belong to the current user. Mutually exclusive with
+            // `allowed_voters` AND with demographic criteria (see
+            // withValidator).
+            'audience_uuid' => ['nullable', 'string', 'uuid'],
         ];
+    }
+
+    /**
+     * Enforce cross-field rules that don't fit the flat rules array:
+     *
+     *   1. `audience_uuid` and `allowed_voters` are mutually
+     *      exclusive. Both funnel into the same audience-gating
+     *      pathway; accepting both would create ambiguity about
+     *      which list wins at vote time.
+     *
+     *   2. `audience_uuid` is also mutually exclusive with the
+     *      demographic criteria block (gender, min_age, max_age,
+     *      country, religious_affiliation, hometown, ethnicity,
+     *      province). A poll gated by a saved audience list has
+     *      no meaning for "must be under 30 AND on the list" —
+     *      the two axes drive different UI + different vote-time
+     *      checks. If we ever want intersection semantics we'll
+     *      add it as an explicit combinator, not by accident.
+     *
+     *   3. `audience_uuid` must reference an audience the caller
+     *      owns. Ownership check is done via the service so a
+     *      soft-deleted audience is also rejected (matches what
+     *      the vote path already enforces).
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $v): void {
+            $audienceUuid = $this->input('audience_uuid');
+            $allowedVoters = $this->input('allowed_voters');
+
+            if ($audienceUuid === null) {
+                return;
+            }
+
+            if (is_array($allowedVoters) && count($allowedVoters) > 0) {
+                $v->errors()->add('audience_uuid', 'audience_and_allowed_voters_are_mutually_exclusive');
+
+                return;
+            }
+
+            $demographicKeys = [
+                'gender', 'min_age', 'max_age', 'country',
+                'religious_affiliation', 'hometown', 'ethnicity', 'province',
+            ];
+            foreach ($demographicKeys as $key) {
+                $value = $this->input($key);
+                $hasValue = is_array($value) ? count($value) > 0 : ($value !== null && $value !== '');
+                if ($hasValue) {
+                    $v->errors()->add('audience_uuid', 'audience_and_demographic_criteria_are_mutually_exclusive');
+
+                    return;
+                }
+            }
+
+            /** @var AudienceServiceContract $audiences */
+            $audiences = resolve(AudienceServiceContract::class);
+            $resolved = $audiences->resolveOwnedUuidToId((string) $audienceUuid, (int) $this->user()->id);
+            if ($resolved === null) {
+                $v->errors()->add('audience_uuid', 'audience_not_found_or_not_owned');
+            }
+        });
     }
 }

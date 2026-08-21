@@ -11,6 +11,7 @@ use App\Services\PollService;
 use App\Services\StatsService;
 use App\Services\DeviceService;
 use App\Services\ProfileService;
+use App\Services\AudienceService;
 use App\Services\PasswordService;
 use App\Services\UserPollService;
 use App\Services\OneSignalService;
@@ -28,6 +29,7 @@ use App\Services\FeatureRequestService;
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\DeviceServiceContract;
 use App\Contracts\ProfileServiceContract;
+use App\Contracts\AudienceServiceContract;
 use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
 use App\Contracts\OneSignalServiceContract;
@@ -48,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
      * @var array<string, string>
      */
     public array $bindings = [
+        AudienceServiceContract::class => AudienceService::class,
         AuthServiceContract::class => AuthService::class,
         DeviceServiceContract::class => DeviceService::class,
         FeatureRequestServiceContract::class => FeatureRequestService::class,

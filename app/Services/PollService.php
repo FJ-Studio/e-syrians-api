@@ -17,11 +17,36 @@ use App\Contracts\PollServiceContract;
 use App\Exceptions\PollVotingException;
 use App\Exceptions\PollReactionException;
 use Illuminate\Database\Eloquent\Builder;
+use App\Contracts\AudienceServiceContract;
 use App\Jobs\SyncPollAudienceRulesToBigQuery;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PollService implements PollServiceContract
 {
+    public function __construct(
+        private readonly AudienceServiceContract $audiences,
+    ) {
+    }
+
+    /**
+     * Translate a poll payload's `audience_uuid` (client-facing) into
+     * the internal `audience_id` used by the polls table. Returns
+     * `null` when the caller didn't send the field. Distinguishing
+     * "field absent" from "field explicitly cleared" is the caller's
+     * job (via array_key_exists on the original payload).
+     */
+    private function resolveAudienceIdFromPayload(array $data, int $userId): ?int
+    {
+        if (! array_key_exists('audience_uuid', $data) || $data['audience_uuid'] === null) {
+            return null;
+        }
+
+        // FormRequest already verified ownership, but resolving again
+        // here keeps the service safe to call from other entry points
+        // (jobs, tinker, tests) without leaking the responsibility.
+        return $this->audiences->resolveOwnedUuidToId((string) $data['audience_uuid'], $userId);
+    }
+
     /**
      * Get paginated polls, filtering audience-only polls via SQL scope.
      *
@@ -98,12 +123,24 @@ class PollService implements PollServiceContract
                 'reveal_results' => $data['reveal_results'],
                 'voters_are_visible' => $data['voters_are_visible'],
                 'audience_only' => $data['audience_only'] ?? false,
+                // Optional reference to a reusable Audience —
+                // client sends `audience_uuid`, we resolve to id.
+                'audience_id' => $this->resolveAudienceIdFromPayload($data, $userId),
             ]);
             $poll->created_by = $userId;
             $poll->save();
 
-            // Insert audience rules into normalized table
-            $this->insertAudienceRules($poll, $data);
+            // Insert audience rules into normalized table.
+            //
+            // Skip when a reusable audience list drives this poll —
+            // the two audience mechanisms are mutually exclusive
+            // (see StorePollRequest::withValidator). Storing stale
+            // demographic / allowed_voter rules alongside an
+            // audience_id would make the API display one audience
+            // while the vote check enforces another.
+            if ($poll->audience_id === null) {
+                $this->insertAudienceRules($poll, $data);
+            }
 
             $options = collect($data['options'])->map(fn ($option) => [
                 'poll_id' => $poll->id,
@@ -176,6 +213,18 @@ class PollService implements PollServiceContract
             ];
             $patch = array_intersect_key($data, array_flip($editable));
 
+            // audience_uuid — resolve to id here rather than in the
+            // rules array because the payload key ("audience_uuid")
+            // differs from the column name ("audience_id"), and
+            // because a null uuid means "clear" (needs distinguishing
+            // from "not sent").
+            $audienceChanged = array_key_exists('audience_uuid', $data);
+            if ($audienceChanged) {
+                $patch['audience_id'] = $data['audience_uuid'] === null
+                    ? null
+                    : $this->resolveAudienceIdFromPayload($data, (int) $poll->created_by);
+            }
+
             // start_date / duration → recompute end_date the same
             // way createPoll does (the bug-fixed `start + duration`
             // formula, not `now + duration`). Either field on its
@@ -211,19 +260,42 @@ class PollService implements PollServiceContract
                 PollOption::insert($rows->all());
             }
 
-            // Audience rules — full replace. We trigger the
-            // rebuild whenever ANY audience-related field is sent;
-            // sending an empty array (or no key) for a criterion
-            // means "no rule for that criterion".
+            // Audience rules — full replace.
+            //
+            // Trigger rebuild when:
+            //   • any inline demographic/allowlist field was sent, OR
+            //   • audience_uuid itself changed (attaching a reusable
+            //     audience needs to WIPE the inline rules so both
+            //     sources of truth don't disagree; detaching needs a
+            //     rebuild-from-empty for the same reason).
+            //
+            // When the poll ends up backed by a reusable audience_id
+            // we intentionally clear the PollAudienceRule rows and
+            // don't re-insert — the two audience mechanisms are
+            // mutually exclusive. See StorePollRequest::withValidator
+            // for the payload-level enforcement.
             $audienceKeys = [
                 'gender', 'min_age', 'max_age', 'country',
                 'religious_affiliation', 'hometown', 'ethnicity',
                 'province', 'allowed_voters',
             ];
             $anyAudienceChange = count(array_intersect(array_keys($data), $audienceKeys)) > 0;
-            if ($anyAudienceChange) {
+            if ($anyAudienceChange || $audienceChanged) {
                 PollAudienceRule::where('poll_id', $poll->id)->delete();
-                $this->insertAudienceRules($poll, $data);
+
+                // Resolve the effective audience_id AFTER this PATCH:
+                // if the client sent `audience_uuid`, honour the new
+                // value (including an explicit null = detach); else
+                // fall back to whatever the poll already had.
+                // `??` was wrong here because null on the left is
+                // exactly the detach signal we mustn't lose.
+                $effectiveAudienceId = array_key_exists('audience_id', $patch)
+                    ? $patch['audience_id']
+                    : $poll->audience_id;
+
+                if ($effectiveAudienceId === null) {
+                    $this->insertAudienceRules($poll, $data);
+                }
                 dispatch(new SyncPollAudienceRulesToBigQuery($poll->id));
             }
 

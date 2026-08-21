@@ -9,6 +9,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AudienceController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\TwoFactorController;
@@ -151,6 +152,39 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
         Route::post('/update/census', [ProfileController::class, 'updateCensus'])->name('users.update.census');
     });
     Route::post('/update/language', [ProfileController::class, 'updateLanguage'])->middleware(['throttle:4,1,change-language']);
+
+    /*
+    |----------------------------------------------------------------
+    | Audiences — reusable identifier lists for poll audience gating.
+    |----------------------------------------------------------------
+    | UserIsVerified gates the whole group: an unverified user has
+    | no legitimate reason to hoard other people's national IDs,
+    | and the only place these lists are useful is a poll (which
+    | already requires verification to create).
+    |
+    | Writes are throttled per-route + require recaptcha, matching
+    | the pattern used by profile updates and poll creation. Reads
+    | are throttled but not recaptcha-gated.
+    */
+    Route::prefix('audiences')->middleware([UserIsVerified::class])->group(function (): void {
+        Route::get('/', [AudienceController::class, 'index'])
+            ->middleware(['throttle:60,1,audiences_list']);
+        Route::post('/', [AudienceController::class, 'store'])
+            ->middleware(['throttle:10,1,audience_create', 'recaptcha']);
+        Route::get('/{uuid}', [AudienceController::class, 'show'])
+            ->middleware(['throttle:120,1,audiences_show']);
+        Route::patch('/{uuid}', [AudienceController::class, 'update'])
+            ->middleware(['throttle:20,1,audience_update', 'recaptcha']);
+        Route::delete('/{uuid}', [AudienceController::class, 'destroy'])
+            ->middleware(['throttle:10,1,audience_delete', 'recaptcha']);
+        Route::post('/{uuid}/entries', [AudienceController::class, 'addEntries'])
+            ->middleware(['throttle:30,1,audience_entries_add', 'recaptcha']);
+        Route::delete('/{uuid}/entries/{entry}', [AudienceController::class, 'removeEntry'])
+            ->middleware(['throttle:60,1,audience_entries_remove', 'recaptcha'])
+            ->whereNumber('entry');
+        Route::post('/{uuid}/resolve', [AudienceController::class, 'refreshResolution'])
+            ->middleware(['throttle:5,1,audience_resolve', 'recaptcha']);
+    });
 });
 
 /*
