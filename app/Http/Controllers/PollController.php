@@ -303,11 +303,36 @@ class PollController extends Controller
 
         $pollId = (int) $request->input('poll_id');
 
-        $audience = Cache::rememberForever("poll:{$pollId}:audience", function () use ($pollId) {
+        // Cache-decision branch: the historical `rememberForever`
+        // was safe because inline demographic rules on a poll are
+        // effectively immutable after creation. Saved audiences
+        // (`polls.audience_id`) are a LIVE reference — the owner
+        // can rename the list or add/remove entries at any time,
+        // and the vote gate honours those edits on the next vote
+        // attempt. A stale forever-cached snapshot would show the
+        // wrong name / entry counts and mislead the client.
+        //
+        // Rather than layer invalidation on top of AudienceService
+        // writes (fragile: every mutation would need to remember
+        // to bust the key across every referencing poll), we skip
+        // the cache entirely for saved-audience polls. Latency
+        // impact is small — the accessor already batches the
+        // withCount aggregate — and consistency is worth more
+        // here than the cache hit.
+        $pollHasSavedAudience = Poll::query()
+            ->whereKey($pollId)
+            ->whereNotNull('audience_id')
+            ->exists();
+
+        $loadAudience = function () use ($pollId): array {
             $poll = Poll::with('audienceRules')->findOrFail($pollId);
 
             return $poll->audience;
-        });
+        };
+
+        $audience = $pollHasSavedAudience
+            ? $loadAudience()
+            : Cache::rememberForever("poll:{$pollId}:audience", $loadAudience);
 
         // `allowed_voters` is the author's hand-picked invite list and is
         // never exposed via this public-audience endpoint — not even to

@@ -74,6 +74,15 @@ class PollResource extends JsonResource
         //     surface stays clean.
         $audience = $this->resource->audience;
         $isExplicitListAudience = isset($audience['allowed_voters']);
+
+        // A saved-audience poll: `audience_id` is set → the accessor
+        // returns `['audience' => { uuid, name, entries_total_count, … }]`.
+        // Exposing the summary is safe (name + counts, no identifiers)
+        // and required so the client can render "Gated by list: <name>"
+        // instead of falling into the demographic / explicit-list
+        // branches with empty data.
+        $isSavedAudience = isset($audience['audience']);
+
         $exposeAudience = ! $isExplicitListAudience || $this->exposeFullAudience;
 
         return [
@@ -96,6 +105,11 @@ class PollResource extends JsonResource
             // render the right summary row ("You're in / You're not in")
             // without trying to enumerate criteria it doesn't have.
             'audience_is_explicit_list' => $isExplicitListAudience,
+            // True iff the poll is gated by a reusable saved audience
+            // (`polls.audience_id` set). Client uses this to render a
+            // "Gated by list" summary instead of the demographic
+            // criteria sheet.
+            'audience_is_saved_list' => $isSavedAudience,
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn () => $this->deleted_at->toISOString()),

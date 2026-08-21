@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Polls;
 
+use App\Models\Poll;
 use App\Enums\GenderEnum;
 use App\Enums\CountryEnum;
 use App\Enums\HometownEnum;
@@ -11,7 +12,9 @@ use App\Enums\EthnicityEnum;
 use App\Services\StrService;
 use App\Enums\RevealResultsEnum;
 use App\Enums\ReligiousAffiliationEnum;
+use App\Contracts\AudienceServiceContract;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
@@ -124,6 +127,115 @@ class UpdatePollRequest extends FormRequest
             'province.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
             'allowed_voters' => ['sometimes', 'nullable', 'array', 'max:500'],
             'allowed_voters.*' => ['required', 'string', 'max:255', 'regex:/^([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}|[0-9]{5,20})$/'],
+            // Reusable audience list. `nullable` allows clearing.
+            // Accepted as UUID (matches the audience API surface);
+            // PollService resolves it to the internal id.
+            'audience_uuid' => ['sometimes', 'nullable', 'string', 'uuid'],
         ];
+    }
+
+    /**
+     * Cross-field validation for audience wiring.
+     *
+     * Mirrors StorePollRequest: `audience_uuid` is mutually
+     * exclusive with `allowed_voters` AND with the demographic
+     * criteria block, and must reference an audience the caller
+     * owns. On PATCH we only apply these checks when the client
+     * actually sent `audience_uuid` — a bare `{ "question": "…" }`
+     * PATCH must not fail just because the poll already has an
+     * audience attached.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $v): void {
+            $demographicKeys = [
+                'gender', 'min_age', 'max_age', 'country',
+                'religious_affiliation', 'hometown', 'ethnicity', 'province',
+            ];
+            $sentInlineCriteria = function () use ($demographicKeys): bool {
+                $allowedVoters = $this->input('allowed_voters');
+                if (is_array($allowedVoters) && count($allowedVoters) > 0) {
+                    return true;
+                }
+                foreach ($demographicKeys as $key) {
+                    if (! $this->has($key)) {
+                        continue;
+                    }
+                    $value = $this->input($key);
+                    $hasValue = is_array($value) ? count($value) > 0 : ($value !== null && $value !== '');
+                    if ($hasValue) {
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            // Case 1 — poll already backed by a saved audience, and
+            // the client PATCH ships inline criteria WITHOUT also
+            // detaching the audience. Under the old code the request
+            // succeeded but the inline changes were silently dropped
+            // because PollService still gates on `audience_id`.
+            // Reject the request so the client either sends
+            // `"audience_uuid": null` (explicit detach + inline) or
+            // omits the inline fields.
+            /** @var Poll|null $existingPoll */
+            $existingPoll = $this->route('poll');
+            $pollHasAudience = $existingPoll !== null && $existingPoll->audience_id !== null;
+            $sendingDetach = $this->has('audience_uuid') && $this->input('audience_uuid') === null;
+
+            if ($pollHasAudience && ! $sendingDetach && $sentInlineCriteria()) {
+                $v->errors()->add(
+                    'audience_uuid',
+                    'poll_uses_saved_audience_detach_before_setting_inline_criteria',
+                );
+
+                return;
+            }
+
+            // Case 2 — the client is attaching or replacing the
+            // saved audience. Enforce mutual exclusion with inline
+            // criteria (same rules as StorePollRequest) and verify
+            // ownership.
+            if (! $this->has('audience_uuid')) {
+                return;
+            }
+
+            $audienceUuid = $this->input('audience_uuid');
+            if ($audienceUuid === null) {
+                // Explicit detach — no conflict / ownership checks
+                // needed. Inline criteria alongside are allowed
+                // because PollService will rebuild rules from
+                // scratch once `audience_id` is cleared.
+                return;
+            }
+
+            $allowedVoters = $this->input('allowed_voters');
+            if (is_array($allowedVoters) && count($allowedVoters) > 0) {
+                $v->errors()->add('audience_uuid', 'audience_and_allowed_voters_are_mutually_exclusive');
+
+                return;
+            }
+
+            foreach ($demographicKeys as $key) {
+                if (! $this->has($key)) {
+                    continue;
+                }
+                $value = $this->input($key);
+                $hasValue = is_array($value) ? count($value) > 0 : ($value !== null && $value !== '');
+                if ($hasValue) {
+                    $v->errors()->add('audience_uuid', 'audience_and_demographic_criteria_are_mutually_exclusive');
+
+                    return;
+                }
+            }
+
+            /** @var AudienceServiceContract $audiences */
+            $audiences = resolve(AudienceServiceContract::class);
+            $resolved = $audiences->resolveOwnedUuidToId((string) $audienceUuid, (int) $this->user()->id);
+            if ($resolved === null) {
+                $v->errors()->add('audience_uuid', 'audience_not_found_or_not_owned');
+            }
+        });
     }
 }

@@ -9,24 +9,35 @@ name: Gate AI review invocations
 #
 #   1. Maintainer-only gate. Only accounts with write access or
 #      above may invoke Codex. Non-maintainer comments containing
-#      `@codex` (in any form) are auto-deleted and replaced with a
-#      friendly notice pointing at CONTRIBUTING.md.
+#      `@codex` are auto-deleted and replaced with a friendly notice
+#      pointing at CONTRIBUTING.md.
 #
-#   2. Per-PR review cap. At most 2 successful invocations per PR.
-#      After that, further `@codex` mentions (even from maintainers)
-#      are deleted with a message asking them to bump `CAP` in this
-#      file if they truly need another review.
+#   2. Per-PR review cap. At most 3 total invocations per PR
+#      (1 automatic + 2 manual maintainer follow-ups). After that,
+#      further `@codex` mentions are deleted with a message asking
+#      the invoker to bump `CAP` in this file if they truly need
+#      another review.
 #
 # Bots (dependabot, renovate, github-actions) and draft PRs never
 # trigger AI review — they're filtered out at the top of the job.
 #
-# The workflow relies on `issue_comment.created` firing before the
-# Codex integration processes the comment. If Codex ever adds a
-# faster processing path or a race appears in practice, invert the
-# design: require a proxy trigger word like `/ai-review` that this
-# workflow rewrites into `@codex review` after the auth check. For
-# now the delete-first approach is simpler and has held for other
-# projects using the same pattern.
+# KNOWN RACE (P1, accepted): the gate can only delete a comment
+# AFTER GitHub has delivered `issue_comment.created` to both this
+# workflow AND Codex. If Codex processes its event before the
+# runner spins up and deletes, the review and credit spend still
+# happen. Mitigations:
+#   - Delete is fast (workflow usually completes in ~2-5s).
+#   - Codex response is typically slower than delete.
+#   - True defence against determined abusers is user-level
+#     blocking (GitHub → user profile → Block). See CONTRIBUTING.md
+#     "Handling abusive PRs" for details.
+# A "true fix" would require OpenAI/Codex to support a
+# per-invoker allowlist on their side. Until then, this gate is
+# best-effort but effective in the common case.
+#
+# The gate matches on the broad `@codex` substring rather than a
+# specific `@codex review` phrase, so any current or future Codex
+# invocation form is covered by the same rule.
 
 on:
   issue_comment:
@@ -109,28 +120,35 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            // Soft cap on how many times Codex may review a single PR.
-            // Two rounds is usually enough — first pass surfaces issues,
-            // second pass verifies the fixes. If a genuinely complex PR
-            // needs another round, bump this value and note why in the
-            // commit message.
-            const CAP = 2;
+            // Hard cap on total invocations per PR. Counted:
+            //   - 1 automatic invocation (marker-tagged, from PAT)
+            //   - N maintainer manual invocations
+            //
+            // 3 = 1 auto + 2 manual. If a genuinely complex PR
+            // needs another round, bump this value and note why
+            // in the commit message.
+            const CAP = 3;
 
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.payload.issue.number,
-              per_page: 100,
-            });
+            // Paginate — `listComments` returns only the first
+            // page (100 comments). On busy PRs that would let the
+            // cap be bypassed silently.
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                per_page: 100,
+              },
+            );
 
-            // Count prior maintainer invocations. Non-maintainer @codex
-            // comments never survive the previous step, so any @codex
-            // mention still present is either a legitimate invocation
-            // or a maintainer typing @codex in prose. Both count against
-            // the cap — safer to over-count than under-count on a paid
-            // service. If maintainers frequently reference @codex in
-            // prose, wrap the mention in backticks to sidestep GitHub's
-            // notification parsing entirely.
+            // Count all prior invocations (auto + manual). Any
+            // `@codex` from a non-bot user represents a
+            // successful invocation — non-maintainer attempts
+            // were already deleted by the previous step, so
+            // survivors are legitimate. This includes the
+            // auto-invocation posted by the invoker PAT, which
+            // is what makes the total cap "1 auto + 2 manual".
             const priorInvocations = comments.filter(c =>
               c.id !== context.payload.comment.id &&
               c.body.includes('@codex') &&
@@ -148,6 +166,6 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.issue.number,
-              body: `⚠️ This PR has already been reviewed by AI ${CAP} times. Please address the outstanding feedback before requesting another review. If you truly need another pass, bump \`CAP\` in \`.github/workflows/gate-codex-review.yml\` and note why in the commit message.`,
+              body: `⚠️ This PR has already been reviewed by AI ${CAP} times (1 automatic + ${CAP - 1} manual). Please address the outstanding feedback before requesting another review. If you truly need another pass, bump \`CAP\` in \`.github/workflows/gate-codex-review.yml\` and note why in the commit message.`,
             });
             core.setFailed(`Review cap reached (${CAP} per PR)`);
