@@ -148,4 +148,92 @@ return [
     'url' => 'Fielda :attribute divê URL-ya rast be.',
     'ulid' => 'Fielda :attribute divê ULID-ya rast be.',
     'uuid' => 'Fielda :attribute divê UUID-ya rast be.',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Validation Language Lines
+    |--------------------------------------------------------------------------
+    */
+
+    'custom' => [
+        'gender' => [
+            'in' => 'Ji kerema xwe zayendek derbasdar hilbijêrin.',
+        ],
+        'ethnicity' => [
+            'in' => 'Ji kerema xwe nijadek derbasdar hilbijêrin.',
+        ],
+        'hometown' => [
+            'in' => 'Ji kerema xwe bajarekî derbasdar hilbijêrin.',
+        ],
+        'country' => [
+            'in' => 'Ji kerema xwe welatekî derbasdar hilbijêrin.',
+        ],
+        'province' => [
+            'in' => 'Ji kerema xwe parêzgehek derbasdar hilbijêrin.',
+            'required_if' => 'Parêzgeh pêdivî ye dema welat Sûriye be.',
+        ],
+        'education_level' => [
+            'in' => 'Ji kerema xwe asteke perwerdehiyê ya derbasdar hilbijêrin.',
+        ],
+        'source_of_income' => [
+            'in' => 'Ji kerema xwe çavkaniyeke dahatê ya derbasdar hilbijêrin.',
+        ],
+        'health_status' => [
+            'in' => 'Ji kerema xwe rewşeke tenduristiyê ya derbasdar hilbijêrin.',
+        ],
+        'religious_affiliation' => [
+            'in' => 'Ji kerema xwe girêdaneke olî ya derbasdar hilbijêrin.',
+        ],
+        'marital_status' => [
+            'in' => 'Ji kerema xwe rewşeke zewacê ya derbasdar hilbijêrin.',
+        ],
+        'other_nationalities.*' => [
+            'in' => 'Yek an çend ji welatîyên hilbijartî derbasdar nînin.',
+        ],
+        'languages.*' => [
+            'in' => 'Yek an çend ji zimanên hilbijartî derbasdar nînin.',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Validation Attributes
+    |--------------------------------------------------------------------------
+    */
+
+    'attributes' => [
+        // Daneyên bingehîn
+        'name' => 'navê yekem',
+        'surname' => 'paşnav',
+        'birth_date' => 'roja jidayikbûnê',
+        'gender' => 'zayend',
+        'ethnicity' => 'nijad',
+        'hometown' => 'bajarê jidayikbûnê',
+        'national_id' => 'nasnameya niştimanî',
+        'record_id' => 'jimareya tomarê',
+
+        // Navnîşan
+        'country' => 'welat',
+        'province' => 'parêzgeh',
+
+        // Serjimêrî
+        'middle_name' => 'navê bav',
+        'religious_affiliation' => 'girêdana olî',
+        'other_nationalities' => 'welatîyên din',
+        'address' => 'navnîşan',
+        'shelter' => 'rewşa stargeh',
+        'education_level' => 'asta perwerdehiyê',
+        'languages' => 'zimanên axaftinê',
+        'skills' => 'jêhatîyên',
+        'source_of_income' => 'çavkaniya dahatê',
+        'estimated_monthly_income' => 'dahata mehane ya texmînkirî',
+        'number_of_dependents' => 'hejmara kesên bindest',
+        'health_status' => 'rewşa tenduristiyê',
+        'health_insurance' => 'sîgorteya tenduristiyê',
+        'easy_access_to_healthcare_services' => 'gihîştina hêsan a karûbarên tenduristiyê',
+        'more_info' => 'agahdariya zêde',
+        'marital_status' => 'rewşa zewacê',
+        'communication' => 'tercîhên ragihandinê',
+    ],
+
 ];

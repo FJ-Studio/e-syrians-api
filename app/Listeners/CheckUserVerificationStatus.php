@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
-use App\Events\VerificationReceived;
 use App\Mail\UserAccountVerified;
-use App\Mail\UserReceivedVerification;
+use App\Events\VerificationReceived;
 use Illuminate\Support\Facades\Mail;
+use App\Mail\UserReceivedVerification;
 
 class CheckUserVerificationStatus
 {

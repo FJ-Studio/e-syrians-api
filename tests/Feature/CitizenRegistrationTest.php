@@ -2,11 +2,11 @@
 
 use Illuminate\Support\Facades\Mail;
 
-beforeEach(function () {
+beforeEach(function (): void {
     Mail::fake();
 });
 
-it('Guests registration with minimal info', function () {
+it('Guests registration with minimal info', function (): void {
     $response = $this->postJson(route('users.register'), [
         'name' => 'John',
         'surname' => 'Doe',
@@ -28,7 +28,7 @@ it('Guests registration with minimal info', function () {
     ]);
 });
 
-it('Assert users in SY provides their province', function () {
+it('Assert users in SY provides their province', function (): void {
     $response = $this->postJson(route('users.register'), [
         'name' => 'John',
         'surname' => 'Doe',
@@ -45,6 +45,6 @@ it('Assert users in SY provides their province', function () {
     // asset response status (validation error)
     $response->assertStatus(422);
     // assert response has error messages regarding the city (at least)
-    expect($response['messages'])->toHaveKey('city_inside_syria');
+    expect($response['messages'])->toHaveKey('province');
 
 });

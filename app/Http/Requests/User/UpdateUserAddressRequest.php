@@ -7,6 +7,7 @@ namespace App\Http\Requests\User;
 use App\Enums\CountryEnum;
 use App\Enums\HometownEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class UpdateUserAddressRequest extends FormRequest
 {
@@ -21,7 +22,7 @@ class UpdateUserAddressRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -30,11 +31,18 @@ class UpdateUserAddressRequest extends FormRequest
                 'required',
                 'in:'.implode(',', array_map(fn ($case) => $case->value, CountryEnum::cases())),
             ],
-            'city_inside_syria' => [
+            'province' => [
                 'nullable', // still allows null when not required
                 'required_if:country,SY',
                 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases())),
             ],
+            // Optional street/mailing address. Stored encrypted on
+            // the User model (see `address` in the `encrypted` cast
+            // block) and surfaced only on the owner-only block of
+            // UserResource. Collected on registration too — exposing
+            // it here closes the parity gap so users can update it
+            // after sign-up without going through the Census form.
+            'address' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

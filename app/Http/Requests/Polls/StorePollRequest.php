@@ -4,23 +4,37 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Polls;
 
-use App\Enums\CountryEnum;
-use App\Enums\EthnicityEnum;
 use App\Enums\GenderEnum;
+use App\Enums\CountryEnum;
 use App\Enums\HometownEnum;
-use App\Enums\ReligiousAffiliationEnum;
-use App\Enums\RevealResultsEnum;
+use App\Enums\EthnicityEnum;
 use App\Services\StrService;
+use App\Enums\RevealResultsEnum;
+use App\Enums\ReligiousAffiliationEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class StorePollRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'duration' => StrService::mapArabicNumbers($this->input('duration')),
-            'max_selections' => StrService::mapArabicNumbers($this->input('max_selections')),
+            'duration' => StrService::mapArabicNumbers((string) $this->input('duration', '')),
+            'max_selections' => StrService::mapArabicNumbers((string) $this->input('max_selections', '')),
         ]);
+
+        // Normalize allowed_voters: trim whitespace, convert Arabic numbers to Latin
+        if ($this->has('allowed_voters') && is_array($this->input('allowed_voters'))) {
+            $this->merge([
+                'allowed_voters' => array_values(array_filter(
+                    array_map(
+                        fn ($v) => strtolower(trim(StrService::mapArabicNumbers((string) $v))),
+                        $this->input('allowed_voters')
+                    ),
+                    fn ($v) => $v !== ''
+                )),
+            ]);
+        }
     }
 
     /**
@@ -34,7 +48,7 @@ class StorePollRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -46,6 +60,7 @@ class StorePollRequest extends FormRequest
             'audience_can_add_options' => ['required', 'boolean'],
             'reveal_results' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, RevealResultsEnum::cases()))],
             'voters_are_visible' => ['required', 'boolean'],
+            'audience_only' => ['nullable', 'boolean'],
             // options
             'options' => ['required', 'array', 'min:2', 'max:100'],
             'options.*' => ['required', 'string', 'max:255'],
@@ -67,6 +82,12 @@ class StorePollRequest extends FormRequest
             // ethnicity
             'ethnicity' => ['nullable', 'array'],
             'ethnicity.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, EthnicityEnum::cases()))],
+            // province (only relevant when country is SY)
+            'province' => ['nullable', 'array'],
+            'province.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
+            // specific voters (national IDs or emails, one per entry)
+            'allowed_voters' => ['nullable', 'array', 'max:500'],
+            'allowed_voters.*' => ['required', 'string', 'max:255', 'regex:/^([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}|[0-9]{5,20})$/'],
         ];
     }
 }

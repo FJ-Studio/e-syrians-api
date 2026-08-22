@@ -173,8 +173,42 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'custom-message',
+        'gender' => [
+            'in' => 'Please select a valid gender.',
+        ],
+        'ethnicity' => [
+            'in' => 'Please select a valid ethnicity.',
+        ],
+        'hometown' => [
+            'in' => 'Please select a valid hometown.',
+        ],
+        'country' => [
+            'in' => 'Please select a valid country.',
+        ],
+        'province' => [
+            'in' => 'Please select a valid province.',
+            'required_if' => 'Province is required when country is Syria.',
+        ],
+        'education_level' => [
+            'in' => 'Please select a valid education level.',
+        ],
+        'source_of_income' => [
+            'in' => 'Please select a valid source of income.',
+        ],
+        'health_status' => [
+            'in' => 'Please select a valid health status.',
+        ],
+        'religious_affiliation' => [
+            'in' => 'Please select a valid religious affiliation.',
+        ],
+        'marital_status' => [
+            'in' => 'Please select a valid marital status.',
+        ],
+        'other_nationalities.*' => [
+            'in' => 'One or more selected nationalities are invalid.',
+        ],
+        'languages.*' => [
+            'in' => 'One or more selected languages are invalid.',
         ],
     ],
 
@@ -189,6 +223,39 @@ return [
     |
     */
 
-    'attributes' => [],
+    'attributes' => [
+        // Basic profile
+        'name' => 'first name',
+        'surname' => 'last name',
+        'birth_date' => 'date of birth',
+        'gender' => 'gender',
+        'ethnicity' => 'ethnicity',
+        'hometown' => 'hometown',
+        'national_id' => 'national ID',
+        'record_id' => 'record ID',
+
+        // Address
+        'country' => 'country',
+        'province' => 'province',
+
+        // Census
+        'middle_name' => 'middle name',
+        'religious_affiliation' => 'religious affiliation',
+        'other_nationalities' => 'other nationalities',
+        'address' => 'address',
+        'shelter' => 'shelter status',
+        'education_level' => 'education level',
+        'languages' => 'spoken languages',
+        'skills' => 'skills',
+        'source_of_income' => 'source of income',
+        'estimated_monthly_income' => 'estimated monthly income',
+        'number_of_dependents' => 'number of dependents',
+        'health_status' => 'health status',
+        'health_insurance' => 'health insurance',
+        'easy_access_to_healthcare_services' => 'easy access to healthcare services',
+        'more_info' => 'additional information',
+        'marital_status' => 'marital status',
+        'communication' => 'communication preferences',
+    ],
 
 ];

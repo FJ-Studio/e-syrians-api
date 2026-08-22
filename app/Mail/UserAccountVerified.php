@@ -8,12 +8,14 @@ use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Attachment;
 
 class UserAccountVerified extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * Create a new message instance.
@@ -41,7 +43,7 @@ class UserAccountVerified extends Mailable
         return new Content(
             markdown: 'mail.user-account-verified',
             with: [
-                'url' => env('FRONTEND_URL').'/account',
+                'url' => config('app.frontend_url').'/account',
             ]
         );
     }
@@ -49,7 +51,7 @@ class UserAccountVerified extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

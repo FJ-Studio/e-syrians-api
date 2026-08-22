@@ -8,22 +8,21 @@ use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Attachment;
 
 class UserReceivedVerification extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable;
+    use SerializesModels;
 
     /**
      * Create a new message instance.
      */
     public function __construct(public User $sender, public User $recipient)
     {
-        $this->sender = $sender;
-        $this->recipient = $recipient;
-        // Set the application locale to the recipient's preferred locale
-        app()->setLocale($recipient?->language ?? config('app.locale'));
+        $this->locale($recipient->language ?? config('app.locale'));
     }
 
     /**
@@ -46,7 +45,7 @@ class UserReceivedVerification extends Mailable
             with: [
                 'sender' => $this->sender,
                 'recipient' => $this->recipient,
-                'url' => env('FRONTEND_URL').'/account/verifications/',
+                'url' => config('app.frontend_url').'/account/verifications/',
             ]
         );
     }
@@ -54,7 +53,7 @@ class UserReceivedVerification extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

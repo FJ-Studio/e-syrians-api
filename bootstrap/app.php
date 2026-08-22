@@ -1,35 +1,83 @@
 <?php
 
-use App\Http\Middleware\SetAppLocalization;
 use App\Services\ApiService;
+use Illuminate\Http\Request;
+use App\Http\Middleware\Recaptcha;
+use App\Http\Middleware\InternalApi;
 use Illuminate\Foundation\Application;
+use App\Http\Middleware\SetAppLocalization;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Middleware\PermissionMiddleware;
 use Symfony\Component\HttpKernel\Exception\HttpException;
+use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',
+        commands: __DIR__ . '/../routes/console.php',
         apiPrefix: '',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware) {
+    ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
         $middleware->append(SetAppLocalization::class);
+
+        // Spatie Permission v6 no longer auto-registers these aliases in
+        // Laravel 11's bootstrap structure — register them explicitly so
+        // `role:admin` / `permission:…` can be used in route middleware.
+        $middleware->alias([
+            'role' => RoleMiddleware::class,
+            'permission' => PermissionMiddleware::class,
+            'role_or_permission' => RoleOrPermissionMiddleware::class,
+            'recaptcha' => Recaptcha::class,
+            'internal-api' => InternalApi::class,
+        ]);
     })
-    ->withExceptions(function (Exceptions $exceptions) {
+    ->withExceptions(function (Exceptions $exceptions): void {
+        // The ApiService JSON envelope (success / messages / data) is
+        // the contract for API clients — mobile and web talk to this
+        // Laravel app via `Accept: application/json` and rely on the
+        // envelope shape.
+        //
+        // Filament panels (and any future server-rendered surface)
+        // are ALSO Laravel routes. Without the `expectsJson()` gate,
+        // an unauthenticated browser hit on `/admin` throws
+        // AuthenticationException — which we override into a JSON
+        // blob, so the admin sees `{"success":false,...}` instead
+        // of being redirected to the login page.
+        //
+        // Gate every renderer on `expectsJson()`: API clients keep
+        // the envelope, browser navigation falls through to Laravel's
+        // default handlers (unauth redirect, HTML 404, etc.), which
+        // is what Filament + any other web surface expects.
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
+            return ApiService::error(401, __('api.unauthenticated'));
+        });
         $exceptions->render(function (ValidationException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
             return ApiService::error(422, $e->errors());
         });
         $exceptions->render(function (NotFoundHttpException $e, Request $request) {
+            if (! $request->expectsJson()) {
+                return null;
+            }
             return ApiService::error(404, $e->getMessage());
         });
         $exceptions->render(function (HttpException $e, Request $request) {
-            return ApiService::error(500, $e->getMessage());
+            if (! $request->expectsJson()) {
+                return null;
+            }
+            return ApiService::error($e->getStatusCode(), $e->getMessage());
         });
     })->create();

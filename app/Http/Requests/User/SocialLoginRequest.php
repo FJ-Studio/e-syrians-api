@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\User;
 
 use App\Enums\UserProviderEnum;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\ValidationRule;
 
 class SocialLoginRequest extends FormRequest
 {
@@ -21,7 +22,7 @@ class SocialLoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -31,6 +32,11 @@ class SocialLoginRequest extends FormRequest
                 new Enum(UserProviderEnum::class),
             ],
             'token' => ['required', 'string'],
+            // Optional. Apple sends the user's name only on the first sign-in
+            // (it isn't in the JWT — it comes from the client SDK separately).
+            // We accept it here so the user record gets a real name on creation
+            // instead of the email-derived fallback.
+            'name' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

@@ -40,8 +40,72 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    'apple' => [
+        'client_id' => env('APPLE_CLIENT_ID'),
+        'web_client_id' => env('APPLE_WEB_CLIENT_ID'),
+        'client_secret' => env('APPLE_CLIENT_SECRET'),
+        'redirect' => env('APPLE_REDIRECT_URI'),
+    ],
+
+    /*
+    | reCAPTCHA Enterprise — verified via Google Cloud's Assessments API,
+    | not the legacy `siteverify` endpoint. The frontend (mobile + web)
+    | uses `grecaptcha.enterprise.execute(...)` which produces tokens that
+    | `siteverify` rejects with `browser-error`. The middleware calls:
+    |
+    |   POST https://recaptchaenterprise.googleapis.com/v1/projects/
+    |        {project_id}/assessments?key={api_key}
+    |
+    | Required env vars. Get them from GCP Console:
+    |   - RECAPTCHA_PROJECT_ID  → Project picker top-bar → "Project ID"
+    |   - RECAPTCHA_API_KEY     → APIs & Services → Credentials → API key
+    |                             with reCAPTCHA Enterprise API enabled
+    |   - RECAPTCHA_SITE_KEY    → Security → reCAPTCHA Enterprise → your
+    |                             key (same value as mobile's
+    |                             EXPO_PUBLIC_RECAPTCHA_SITE_KEY)
+    |   - RECAPTCHA_MIN_SCORE   → optional, defaults to 0.7
+    |
+    | The legacy `RECAPTCHA_SECRET` field has been retired — it's
+    | meaningless for Enterprise tokens and was the source of the
+    | `browser-error` we hit during migration.
+    */
     'recaptcha' => [
-        'secret' => env('RECAPTCHA_SECRET'),
+        'project_id' => env('RECAPTCHA_PROJECT_ID'),
+        'api_key' => env('RECAPTCHA_API_KEY'),
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+        'min_score' => (float) env('RECAPTCHA_MIN_SCORE', 0.7),
+    ],
+
+    /*
+    | OneSignal push notifications — server-side credentials. The
+    | mobile SDK reads its own EXPO_PUBLIC_ONESIGNAL_APP_ID at build
+    | time; that value goes into the JS bundle. The REST API key here
+    | is SEPARATE — it's the server-side key used by our
+    | `OneSignalService` to fan out push sends. NEVER bundle it into
+    | the mobile JS or expose it to the browser.
+    |
+    | Both come from the OneSignal dashboard → Settings → Keys & IDs.
+    | The modern OneSignal API uses keys prefixed `os_v2_…`; older
+    | keys still work but use a different Authorization header format
+    | (auto-detected in `OneSignalService::isV2Key`).
+    */
+    'onesignal' => [
+        'app_id' => env('ONESIGNAL_APP_ID'),
+        'rest_api_key' => env('ONESIGNAL_REST_API_KEY'),
+    ],
+
+    'internal_api_key' => env('INTERNAL_API_KEY'),
+
+    'bigquery' => [
+        'enabled' => env('BIGQUERY_ENABLED', false),
+        'project_id' => env('BIGQUERY_PROJECT_ID'),
+        'dataset' => env('BIGQUERY_DATASET', 'e_syrians_audit'),
+        'credentials' => env('BIGQUERY_CREDENTIALS'),
+        'tables' => [
+            'profile_changes' => 'profile_changes',
+            'poll_votes' => 'poll_votes',
+            'poll_audience_rules' => 'poll_audience_rules',
+        ],
     ],
 
 ];

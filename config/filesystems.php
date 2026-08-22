@@ -40,12 +40,47 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
 
+        /*
+        | Active object storage — DigitalOcean Spaces (S3-compatible).
+        |
+        | The `s3` disk name is retained so application code
+        | (Storage::disk('s3'), UserVerificationResource, avatar
+        | signing in FileUploadService) keeps working with zero
+        | changes. The underlying backend is Spaces; the AWS SDK
+        | speaks Spaces' S3-compatible API without knowing the
+        | difference.
+        |
+        | Env vars use the DO_SPACES_* prefix so the values don't
+        | visually blur with the retained AWS_* creds below. See
+        | .env.example for how each maps to a Spaces dashboard field.
+        */
         's3' => [
+            'driver' => 's3',
+            'key' => env('DO_SPACES_KEY'),
+            'secret' => env('DO_SPACES_SECRET'),
+            'region' => env('DO_SPACES_REGION'),
+            'bucket' => env('DO_SPACES_BUCKET'),
+            'url' => env('DO_SPACES_URL'),
+            'endpoint' => env('DO_SPACES_ENDPOINT'),
+            'use_path_style_endpoint' => false,
+            'throw' => true,
+        ],
+
+        /*
+        | Legacy AWS S3 — retained for rollback + read-only access
+        | to any objects that haven't been migrated to DO Spaces
+        | yet. Application code does NOT reference this disk
+        | directly; only migration / verification scripts should
+        | resolve `Storage::disk('aws')`. Safe to delete this
+        | block (and the AWS_* env vars) once the retention
+        | window for the S3 bucket has passed.
+        */
+        'aws' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),

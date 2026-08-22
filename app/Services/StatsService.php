@@ -5,52 +5,52 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Cache;
+use App\Contracts\StatsServiceContract;
 
-class StatsService
+class StatsService implements StatsServiceContract
 {
-    public static function getDailyUsersStats(): array
+    public function getDailyUsersStats(): array
     {
-
-        return Cache::get(config('e-syrians.cache.daily_registrants'), (new self)->calculateDailyUsersStats());
+        return Cache::get(config('e-syrians.cache.daily_registrants'), self::calculateDailyUsersStats());
     }
 
-    public static function getGenderStats(): array
+    public function getGenderStats(): array
     {
-        return Cache::get(config('e-syrians.cache.gender'), (new self)->calculateGenderStats());
+        return Cache::get(config('e-syrians.cache.gender'), self::calculateGenderStats());
     }
 
-    public static function getAgeStats(): array
+    public function getAgeStats(): array
     {
-        return Cache::get(config('e-syrians.cache.age'), (new self)->calculateAgeStats());
+        return Cache::get(config('e-syrians.cache.age'), self::calculateAgeStats());
     }
 
-    public static function getEthnicityStats(): array
+    public function getEthnicityStats(): array
     {
-        return Cache::get(config('e-syrians.cache.ethnicity'), (new self)->calculateEthnicityStats());
+        return Cache::get(config('e-syrians.cache.ethnicity'), self::calculateEthnicityStats());
     }
 
-    public static function getCountryStats(): array
+    public function getCountryStats(): array
     {
-        return Cache::get(config('e-syrians.cache.country'), (new self)->calculateCountryStats());
+        return Cache::get(config('e-syrians.cache.country'), self::calculateCountryStats());
     }
 
-    public static function getHometownStats(): array
+    public function getHometownStats(): array
     {
-        return Cache::get(config('e-syrians.cache.hometown'), (new self)->calculateHometownStats());
+        return Cache::get(config('e-syrians.cache.hometown'), self::calculateHometownStats());
     }
 
-    public static function getReligionStats(): array
+    public function getReligionStats(): array
     {
-        return Cache::get(config('e-syrians.cache.religion'), (new self)->calculateReligionStats());
+        return Cache::get(config('e-syrians.cache.religion'), self::calculateReligionStats());
     }
 
     public static function calculateDailyUsersStats()
     {
         // Get the current date
-        $dateKey = Carbon::now()->toDateString();
+        $dateKey = Date::now()->toDateString();
         // Get the cache key
         $usersKey = config('e-syrians.cache.daily_registrants');
         // Get the statistics from the cache
@@ -125,7 +125,7 @@ class StatsService
     public static function calculateEthnicityStats()
     {
         $ethnicityKey = config('e-syrians.cache.ethnicity');
-        $ethnicityStats = (new self)->groupUsersByField('ethnicity', true);
+        $ethnicityStats = (new self())->groupUsersByField('ethnicity', true);
         Cache::forever($ethnicityKey, $ethnicityStats);
 
         return $ethnicityStats;
@@ -135,7 +135,7 @@ class StatsService
     {
         // Get the cache key
         $religionKey = config('e-syrians.cache.religion');
-        $religionStatistics = (new self)->groupUsersByField('religious_affiliation', true);
+        $religionStatistics = (new self())->groupUsersByField('religious_affiliation', true);
         Cache::forever($religionKey, $religionStatistics);
 
         return $religionStatistics;
@@ -144,7 +144,7 @@ class StatsService
     public static function calculateCountryStats()
     {
         $countryKey = config('e-syrians.cache.country');
-        $countryStatistics = (new self)->groupUsersByField('country', true);
+        $countryStatistics = (new self())->groupUsersByField('country', true);
         Cache::forever($countryKey, $countryStatistics);
 
         return $countryStatistics;
@@ -153,7 +153,7 @@ class StatsService
     public static function calculateHometownStats()
     {
         $hometownKey = config('e-syrians.cache.hometown');
-        $hometownStatistics = (new self)->groupUsersByField('hometown', true);
+        $hometownStatistics = (new self())->groupUsersByField('hometown', true);
         Cache::forever($hometownKey, $hometownStatistics);
 
         return $hometownStatistics;

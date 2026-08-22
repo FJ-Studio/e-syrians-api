@@ -23,7 +23,7 @@ class UpdateStatistics
     public function handle(Registered $event): void
     {
         $cache_keys = config('e-syrians.cache', []);
-        foreach ($cache_keys as $key => $value) {
+        foreach ($cache_keys as $value) {
             if ($value !== 'daily_registrants') {
                 Cache::forget($value);
 
