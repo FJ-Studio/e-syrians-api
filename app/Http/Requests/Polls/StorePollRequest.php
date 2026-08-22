@@ -24,19 +24,6 @@ class StorePollRequest extends FormRequest
             'duration' => StrService::mapArabicNumbers((string) $this->input('duration', '')),
             'max_selections' => StrService::mapArabicNumbers((string) $this->input('max_selections', '')),
         ]);
-
-        // Normalize allowed_voters: trim whitespace, convert Arabic numbers to Latin
-        if ($this->has('allowed_voters') && is_array($this->input('allowed_voters'))) {
-            $this->merge([
-                'allowed_voters' => array_values(array_filter(
-                    array_map(
-                        fn ($v) => strtolower(trim(StrService::mapArabicNumbers((string) $v))),
-                        $this->input('allowed_voters')
-                    ),
-                    fn ($v) => $v !== ''
-                )),
-            ]);
-        }
     }
 
     /**
@@ -87,27 +74,32 @@ class StorePollRequest extends FormRequest
             // province (only relevant when country is SY)
             'province' => ['nullable', 'array'],
             'province.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
-            // specific voters (national IDs or emails, one per entry)
-            'allowed_voters' => ['nullable', 'array', 'max:500'],
-            'allowed_voters.*' => ['required', 'string', 'max:255', 'regex:/^([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}|[0-9]{5,20})$/'],
             // Reusable audience list — accepted as the UUID exposed
             // by the audience API (not the internal DB id). Must
             // belong to the current user. Mutually exclusive with
-            // `allowed_voters` AND with demographic criteria (see
-            // withValidator).
+            // demographic criteria (see withValidator).
             'audience_uuid' => ['nullable', 'string', 'uuid'],
+            // Legacy pasted voter lists were replaced by reusable
+            // audiences. Reject the old field explicitly instead of
+            // silently ignoring it for non-web clients.
+            'allowed_voters' => ['missing'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'allowed_voters.missing' => 'allowed_voters_no_longer_supported',
         ];
     }
 
     /**
      * Enforce cross-field rules that don't fit the flat rules array:
      *
-     *   1. `audience_uuid` and `allowed_voters` are mutually
-     *      exclusive. Both funnel into the same audience-gating
-     *      pathway; accepting both would create ambiguity about
-     *      which list wins at vote time.
-     *
-     *   2. `audience_uuid` is also mutually exclusive with the
+     *   1. `audience_uuid` is mutually exclusive with the
      *      demographic criteria block (gender, min_age, max_age,
      *      country, religious_affiliation, hometown, ethnicity,
      *      province). A poll gated by a saved audience list has
@@ -116,7 +108,7 @@ class StorePollRequest extends FormRequest
      *      checks. If we ever want intersection semantics we'll
      *      add it as an explicit combinator, not by accident.
      *
-     *   3. `audience_uuid` must reference an audience the caller
+     *   2. `audience_uuid` must reference an audience the caller
      *      owns. Ownership check is done via the service so a
      *      soft-deleted audience is also rejected (matches what
      *      the vote path already enforces).
@@ -125,15 +117,8 @@ class StorePollRequest extends FormRequest
     {
         $validator->after(function (Validator $v): void {
             $audienceUuid = $this->input('audience_uuid');
-            $allowedVoters = $this->input('allowed_voters');
 
             if ($audienceUuid === null) {
-                return;
-            }
-
-            if (is_array($allowedVoters) && count($allowedVoters) > 0) {
-                $v->errors()->add('audience_uuid', 'audience_and_allowed_voters_are_mutually_exclusive');
-
                 return;
             }
 

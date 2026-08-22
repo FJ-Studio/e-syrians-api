@@ -179,6 +179,13 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
             ->middleware(['throttle:10,1,audience_delete', 'recaptcha']);
         Route::post('/{uuid}/entries', [AudienceController::class, 'addEntries'])
             ->middleware(['throttle:30,1,audience_entries_add', 'recaptcha']);
+        // Bulk-remove — one request per user action instead of N.
+        // Kept separate from the per-id DELETE below because DELETE
+        // with a request body is technically allowed but tooling-hostile;
+        // POST /_bulk-remove signals intent and lets browsers, proxies,
+        // and clients handle a body without surprise.
+        Route::post('/{uuid}/entries/_bulk-remove', [AudienceController::class, 'removeEntries'])
+            ->middleware(['throttle:20,1,audience_entries_bulk_remove', 'recaptcha']);
         Route::delete('/{uuid}/entries/{entry}', [AudienceController::class, 'removeEntry'])
             ->middleware(['throttle:60,1,audience_entries_remove', 'recaptcha'])
             ->whereNumber('entry');
@@ -197,13 +204,10 @@ Route::prefix('polls')->group(function (): void {
     Route::middleware(['auth:sanctum'])->group(function (): void {
         Route::get('/option-voters', [PollController::class, 'optionVoters']);
         Route::post('/', [PollController::class, 'store'])->middleware('recaptcha');
-        // Creator-only edit payload. Mirrors `show()` but exposes
-        // the full audience block (incl. allowed_voters) that the
-        // public show endpoint intentionally suppresses — the
-        // edit form would otherwise wipe the allowlist on save.
-        // Must be declared BEFORE `/{poll}` so the literal segment
-        // doesn't get swallowed by the dynamic show route. Sits
-        // under auth:sanctum; the controller checks ownership.
+        // Creator-only edit payload. Must be declared BEFORE
+        // `/{poll}` so the literal segment doesn't get swallowed by
+        // the dynamic show route. Sits under auth:sanctum; the
+        // controller checks ownership.
         Route::get('/{poll}/edit', [PollController::class, 'editPayload']);
         // Edit gate is in UpdatePollRequest::authorize (ownership +
         // zero-votes). Must be PATCH not POST so it doesn't collide

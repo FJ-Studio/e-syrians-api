@@ -351,10 +351,10 @@ it('honors LIVE audience changes at vote time', function (): void {
 // Create poll — validation for audience_id
 // ───────────────────────────────────────────────
 
-it('rejects a create-poll payload with both audience_uuid and allowed_voters', function (): void {
+it('rejects legacy allowed_voters even when audience_uuid is present', function (): void {
     $audience = createAudience(test()->creator, 'Mix', ['a@x.test']);
 
-    $this->postJson('/polls', [
+    $response = $this->postJson('/polls', [
         'question' => 'Conflict?',
         'start_date' => now()->toDateString(),
         'duration' => 3,
@@ -365,7 +365,10 @@ it('rejects a create-poll payload with both audience_uuid and allowed_voters', f
         'options' => ['Yes', 'No'],
         'audience_uuid' => $audience->uuid,
         'allowed_voters' => ['someone@x.test'],
-    ], authHeader(test()->creator))->assertStatus(422);
+    ], authHeader(test()->creator));
+
+    $response->assertStatus(422);
+    expect($response->json('messages'))->toHaveKey('allowed_voters');
 });
 
 it('renders a saved-audience poll with the audience summary, not empty demographics', function (): void {
@@ -388,7 +391,6 @@ it('renders a saved-audience poll with the audience summary, not empty demograph
     $response->assertOk();
     // Saved-list flag surfaced so the client picks the right branch.
     $response->assertJsonPath('data.audience_is_saved_list', true);
-    $response->assertJsonPath('data.audience_is_explicit_list', false);
     // Summary fields: name + counts, no identifiers.
     $response->assertJsonPath('data.audience.audience.name', 'Renders');
     $response->assertJsonPath('data.audience.audience.uuid', $audience->uuid);

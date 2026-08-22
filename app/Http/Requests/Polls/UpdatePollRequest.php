@@ -52,17 +52,6 @@ class UpdatePollRequest extends FormRequest
             $this->merge($merge);
         }
 
-        if ($this->has('allowed_voters') && is_array($this->input('allowed_voters'))) {
-            $this->merge([
-                'allowed_voters' => array_values(array_filter(
-                    array_map(
-                        fn ($v) => strtolower(trim(StrService::mapArabicNumbers((string) $v))),
-                        $this->input('allowed_voters')
-                    ),
-                    fn ($v) => $v !== ''
-                )),
-            ]);
-        }
     }
 
     public function authorize(): bool
@@ -125,12 +114,24 @@ class UpdatePollRequest extends FormRequest
             'ethnicity.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, EthnicityEnum::cases()))],
             'province' => ['sometimes', 'nullable', 'array'],
             'province.*' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, HometownEnum::cases()))],
-            'allowed_voters' => ['sometimes', 'nullable', 'array', 'max:500'],
-            'allowed_voters.*' => ['required', 'string', 'max:255', 'regex:/^([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}|[0-9]{5,20})$/'],
             // Reusable audience list. `nullable` allows clearing.
             // Accepted as UUID (matches the audience API surface);
             // PollService resolves it to the internal id.
             'audience_uuid' => ['sometimes', 'nullable', 'string', 'uuid'],
+            // Legacy pasted voter lists were replaced by reusable
+            // audiences. Reject the old field explicitly instead of
+            // silently ignoring it for non-web clients.
+            'allowed_voters' => ['missing'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'allowed_voters.missing' => 'allowed_voters_no_longer_supported',
         ];
     }
 
@@ -138,12 +139,11 @@ class UpdatePollRequest extends FormRequest
      * Cross-field validation for audience wiring.
      *
      * Mirrors StorePollRequest: `audience_uuid` is mutually
-     * exclusive with `allowed_voters` AND with the demographic
-     * criteria block, and must reference an audience the caller
-     * owns. On PATCH we only apply these checks when the client
-     * actually sent `audience_uuid` — a bare `{ "question": "…" }`
-     * PATCH must not fail just because the poll already has an
-     * audience attached.
+     * exclusive with the demographic criteria block, and must
+     * reference an audience the caller owns. On PATCH we only apply
+     * these checks when the client actually sent `audience_uuid` — a
+     * bare `{ "question": "…" }` PATCH must not fail just because the
+     * poll already has an audience attached.
      */
     public function withValidator(Validator $validator): void
     {
@@ -153,10 +153,6 @@ class UpdatePollRequest extends FormRequest
                 'religious_affiliation', 'hometown', 'ethnicity', 'province',
             ];
             $sentInlineCriteria = function () use ($demographicKeys): bool {
-                $allowedVoters = $this->input('allowed_voters');
-                if (is_array($allowedVoters) && count($allowedVoters) > 0) {
-                    return true;
-                }
                 foreach ($demographicKeys as $key) {
                     if (! $this->has($key)) {
                         continue;
@@ -207,13 +203,6 @@ class UpdatePollRequest extends FormRequest
                 // needed. Inline criteria alongside are allowed
                 // because PollService will rebuild rules from
                 // scratch once `audience_id` is cleared.
-                return;
-            }
-
-            $allowedVoters = $this->input('allowed_voters');
-            if (is_array($allowedVoters) && count($allowedVoters) > 0) {
-                $v->errors()->add('audience_uuid', 'audience_and_allowed_voters_are_mutually_exclusive');
-
                 return;
             }
 

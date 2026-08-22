@@ -94,10 +94,9 @@ class Poll extends Model
     /**
      * Reusable audience list gating this poll's vote eligibility.
      *
-     * Nullable — legacy polls (and polls that use the inline
-     * `allowed_voters` list or demographic criteria) leave this
-     * column NULL. When present, {@see User::isInAudience()}
-     * short-circuits every other rule and asks
+     * Nullable — demographic-criteria polls leave this column NULL.
+     * When present, {@see User::isInAudience()} short-circuits every
+     * other rule and asks
      * {@see AudienceServiceContract::isUserInAudience()}
      * whether the caller's hashed identifiers match an entry.
      *
@@ -169,11 +168,8 @@ class Poll extends Model
      *      dedicated shape so the client can render "gated by
      *      audience: <name>" instead of the demographic scaffold.
      *      Also loads a small view-only summary (uuid + name +
-     *      entry counts). We deliberately return an OBJECT under
-     *      `audience` (not `allowed_voters`) so the client can
-     *      distinguish "one saved list" from "an ad-hoc paste".
-     *   2. Inline `allowed_voters` list.
-     *   3. Demographic rules (the historical default shape).
+     *      entry counts).
+     *   2. Demographic rules (the historical default shape).
      */
     protected function getAudienceAttribute(): array
     {
@@ -219,11 +215,6 @@ class Poll extends Model
         }
 
         $rules = $this->audienceRules;
-
-        $allowedVoters = $rules->where('criterion', 'allowed_voter')->pluck('value')->all();
-        if (count($allowedVoters) > 0) {
-            return ['allowed_voters' => $allowedVoters];
-        }
 
         return [
             'gender' => $rules->where('criterion', 'gender')->pluck('value')->all(),

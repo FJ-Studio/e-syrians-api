@@ -32,13 +32,12 @@ return new class () extends Migration {
      *     the service, not the schema, because the "active poll"
      *     window is a temporal check that a FK can't express.
      *
-     * Mutual exclusion with the existing audience surfaces
-     * (`allowed_voters` written to `poll_allowed_voters`, and the
-     * demographic rules in `poll_audience_rules`) is enforced in
-     * StorePollRequest / UpdatePollRequest — at most one branch
-     * per poll. That validation lives at the request layer, not
-     * the schema, because the choice is behavioural (which branch
-     * PollService reads) not structural.
+     * Mutual exclusion with demographic rules in
+     * `poll_audience_rules` is enforced in StorePollRequest /
+     * UpdatePollRequest — at most one branch per poll. That
+     * validation lives at the request layer, not the schema, because
+     * the choice is behavioural (which branch PollService reads) not
+     * structural.
      *
      * Nullable + nullOnDelete rather than a hard constraint so we
      * can drop the column later without a data migration if the

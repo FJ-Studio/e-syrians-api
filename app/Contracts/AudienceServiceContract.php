@@ -58,6 +58,22 @@ interface AudienceServiceContract
     public function removeEntry(string $uuid, int $userId, int $entryId): void;
 
     /**
+     * Bulk-remove multiple entries in a single call. Returns the
+     * number of rows actually deleted (unknown ids in the input
+     * are silently ignored — mirrors the per-single-entry behavior
+     * which 404s only one at a time, but bulk callers care about
+     * "how many succeeded", not which id in the batch didn't exist).
+     *
+     * Emits ONE AudienceAudit row iff any entries were deleted AND
+     * the audience is referenced by an active poll — never multiple
+     * rows per bulk call, because the semantic operation is one
+     * user action, not N.
+     *
+     * @param array<int, int> $entryIds
+     */
+    public function removeEntries(string $uuid, int $userId, array $entryIds): int;
+
+    /**
      * Manually re-check every entry against the users table and
      * refresh `resolved_user_id`. User-triggered from the audience
      * detail page. Doesn't emit an AudienceAudit row — the

@@ -8,6 +8,7 @@ use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollVote;
 use App\Models\PollOption;
+use InvalidArgumentException;
 use App\Enums\RevealResultsEnum;
 use App\Models\PollAudienceRule;
 use Illuminate\Support\Facades\DB;
@@ -45,6 +46,19 @@ class PollService implements PollServiceContract
         // here keeps the service safe to call from other entry points
         // (jobs, tinker, tests) without leaking the responsibility.
         return $this->audiences->resolveOwnedUuidToId((string) $data['audience_uuid'], $userId);
+    }
+
+    /**
+     * The legacy pasted-list payload was replaced by reusable
+     * audiences. Keep this guard at the service boundary so non-HTTP
+     * callers fail loudly instead of silently writing unsupported
+     * audience state.
+     */
+    private function rejectLegacyAllowedVoters(array $data): void
+    {
+        if (array_key_exists('allowed_voters', $data)) {
+            throw new InvalidArgumentException('allowed_voters_no_longer_supported');
+        }
     }
 
     /**
@@ -103,6 +117,8 @@ class PollService implements PollServiceContract
 
     public function createPoll(array $data, int $userId): Poll
     {
+        $this->rejectLegacyAllowedVoters($data);
+
         return DB::transaction(function () use ($data, $userId) {
             // BUG FIX (2026-06-22): `end_date` was previously
             // computed from `now()` instead of the start date, so
@@ -135,8 +151,8 @@ class PollService implements PollServiceContract
             // Skip when a reusable audience list drives this poll —
             // the two audience mechanisms are mutually exclusive
             // (see StorePollRequest::withValidator). Storing stale
-            // demographic / allowed_voter rules alongside an
-            // audience_id would make the API display one audience
+            // demographic rules alongside an audience_id would make
+            // the API display one audience
             // while the vote check enforces another.
             if ($poll->audience_id === null) {
                 $this->insertAudienceRules($poll, $data);
@@ -173,6 +189,8 @@ class PollService implements PollServiceContract
      */
     public function updatePoll(Poll $poll, array $data): Poll
     {
+        $this->rejectLegacyAllowedVoters($data);
+
         return DB::transaction(function () use ($poll, $data) {
             // Re-acquire the poll WITH a row-level write lock.
             // Concurrent vote() calls also lockForUpdate the poll
@@ -263,7 +281,7 @@ class PollService implements PollServiceContract
             // Audience rules — full replace.
             //
             // Trigger rebuild when:
-            //   • any inline demographic/allowlist field was sent, OR
+            //   • any inline demographic field was sent, OR
             //   • audience_uuid itself changed (attaching a reusable
             //     audience needs to WIPE the inline rules so both
             //     sources of truth don't disagree; detaching needs a
@@ -277,7 +295,7 @@ class PollService implements PollServiceContract
             $audienceKeys = [
                 'gender', 'min_age', 'max_age', 'country',
                 'religious_affiliation', 'hometown', 'ethnicity',
-                'province', 'allowed_voters',
+                'province',
             ];
             $anyAudienceChange = count(array_intersect(array_keys($data), $audienceKeys)) > 0;
             if ($anyAudienceChange || $audienceChanged) {
@@ -449,73 +467,55 @@ class PollService implements PollServiceContract
     {
         $rules = [];
         $now = now();
-        $allowedVoters = $data['allowed_voters'] ?? [];
 
-        if (count($allowedVoters) > 0) {
-            $allowedVoters = array_values(array_unique(array_filter(
-                array_map(fn ($v): string => strtolower(trim((string) $v)), $allowedVoters),
+        $arrayCriteria = [
+            'gender',
+            'country',
+            'religious_affiliation',
+            'hometown',
+            'ethnicity',
+            'province',
+        ];
+
+        foreach ($arrayCriteria as $criterion) {
+            $values = array_values(array_unique(array_filter(
+                array_map('strval', $data[$criterion] ?? []),
                 fn (string $v): bool => $v !== '',
             )));
 
-            foreach ($allowedVoters as $voter) {
+            foreach ($values as $value) {
                 $rules[] = [
                     'poll_id' => $poll->id,
-                    'criterion' => 'allowed_voter',
-                    'value' => $voter,
+                    'criterion' => $criterion,
+                    'value' => $value,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
             }
-        } else {
-            $arrayCriteria = [
-                'gender',
-                'country',
-                'religious_affiliation',
-                'hometown',
-                'ethnicity',
-                'province',
+        }
+
+        // Age range — only store if not default
+        $minAge = $data['min_age'] ?? null;
+        $maxAge = $data['max_age'] ?? null;
+
+        if ($minAge !== null && (int) $minAge !== 13) {
+            $rules[] = [
+                'poll_id' => $poll->id,
+                'criterion' => 'age_min',
+                'value' => (string) $minAge,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
+        }
 
-            foreach ($arrayCriteria as $criterion) {
-                $values = array_values(array_unique(array_filter(
-                    array_map('strval', $data[$criterion] ?? []),
-                    fn (string $v): bool => $v !== '',
-                )));
-
-                foreach ($values as $value) {
-                    $rules[] = [
-                        'poll_id' => $poll->id,
-                        'criterion' => $criterion,
-                        'value' => $value,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ];
-                }
-            }
-
-            // Age range — only store if not default
-            $minAge = $data['min_age'] ?? null;
-            $maxAge = $data['max_age'] ?? null;
-
-            if ($minAge !== null && (int) $minAge !== 13) {
-                $rules[] = [
-                    'poll_id' => $poll->id,
-                    'criterion' => 'age_min',
-                    'value' => (string) $minAge,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-
-            if ($maxAge !== null && (int) $maxAge !== 120) {
-                $rules[] = [
-                    'poll_id' => $poll->id,
-                    'criterion' => 'age_max',
-                    'value' => (string) $maxAge,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
+        if ($maxAge !== null && (int) $maxAge !== 120) {
+            $rules[] = [
+                'poll_id' => $poll->id,
+                'criterion' => 'age_max',
+                'value' => (string) $maxAge,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
         }
 
         if (count($rules) > 0) {
