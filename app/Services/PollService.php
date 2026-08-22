@@ -299,6 +299,31 @@ class PollService implements PollServiceContract
             ];
             $anyAudienceChange = count(array_intersect(array_keys($data), $audienceKeys)) > 0;
             if ($anyAudienceChange || $audienceChanged) {
+                // Legacy safety net: `allowed_voter` rules created
+                // by the pre-refactor pasted-list flow still gate
+                // votes on existing polls. If the client edits
+                // demographic fields on such a poll, the naïve
+                // wipe-and-reinsert below would silently turn a
+                // restricted poll into an open one — the payload
+                // has no `allowed_voters` key (that surface has
+                // been removed), so `insertAudienceRules` would
+                // rebuild only demographics and the allowlist
+                // would vanish.
+                //
+                // Snapshot the legacy allowlist BEFORE deleting
+                // and re-insert it after — but only when the
+                // effective audience is still inline (no saved
+                // audience_id). When the poll ends up backed by
+                // audience_id we intentionally drop the legacy
+                // rules because the saved list is now the source
+                // of truth (StorePollRequest / UpdatePollRequest
+                // enforce mutual exclusion, so this branch fires
+                // only via explicit user intent).
+                $legacyAllowedVoters = PollAudienceRule::where('poll_id', $poll->id)
+                    ->where('criterion', 'allowed_voter')
+                    ->pluck('value')
+                    ->all();
+
                 PollAudienceRule::where('poll_id', $poll->id)->delete();
 
                 // Resolve the effective audience_id AFTER this PATCH:
@@ -313,6 +338,17 @@ class PollService implements PollServiceContract
 
                 if ($effectiveAudienceId === null) {
                     $this->insertAudienceRules($poll, $data);
+
+                    if ($legacyAllowedVoters !== []) {
+                        $now = now();
+                        PollAudienceRule::insert(array_map(fn (string $voter): array => [
+                            'poll_id' => $poll->id,
+                            'criterion' => 'allowed_voter',
+                            'value' => $voter,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ], $legacyAllowedVoters));
+                    }
                 }
                 dispatch(new SyncPollAudienceRulesToBigQuery($poll->id));
             }

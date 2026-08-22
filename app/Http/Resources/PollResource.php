@@ -41,6 +41,15 @@ class PollResource extends JsonResource
         // instead of falling into the demographic branch with empty data.
         $isSavedAudience = isset($audience['audience']);
 
+        // Legacy inline `allowed_voters` polls — created before
+        // reusable audiences shipped. Their PollAudienceRule rows
+        // still gate voting server-side, and older mobile/web
+        // builds branch on this key to render the "invite-only"
+        // summary. Kept as a stable discriminator alongside
+        // `audience_is_saved_list` during the deprecation window;
+        // for saved-list and demographic polls it stays `false`.
+        $isExplicitListAudience = isset($audience['allowed_voters']);
+
         return [
             'id' => $this->id,
             'question' => $this->question,
@@ -56,6 +65,11 @@ class PollResource extends JsonResource
             // "Gated by list" summary instead of the demographic
             // criteria sheet.
             'audience_is_saved_list' => $isSavedAudience,
+            // True iff the poll is gated by a legacy inline
+            // `allowed_voters` list. Preserved during the deprecation
+            // window so older mobile / web builds don't crash when
+            // the discriminator key disappears from responses.
+            'audience_is_explicit_list' => $isExplicitListAudience,
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn () => $this->deleted_at->toISOString()),

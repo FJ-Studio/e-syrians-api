@@ -316,9 +316,28 @@ class PollController extends Controller
             return $poll->audience;
         };
 
+        // Cache-key is versioned (`v2`) so legacy entries populated
+        // by the pre-refactor code — which stored the pasted
+        // `allowed_voters` list as plaintext in the forever cache —
+        // are effectively invalidated: `rememberForever` on a new
+        // key ignores the old entry entirely. The old `poll:{id}:audience`
+        // key will simply age out of Redis (or stay dormant on file
+        // cache with no reader).
         $audience = $pollHasSavedAudience
             ? $loadAudience()
-            : Cache::rememberForever("poll:{$pollId}:audience", $loadAudience);
+            : Cache::rememberForever("poll:v2:{$pollId}:audience", $loadAudience);
+
+        // Defensive scrub. In addition to the cache-key version bump
+        // above, strip `allowed_voters` from the response on the way
+        // out so any residual cache entry (or a legacy poll whose
+        // rules are still in `poll_audience_rules`) never leaks the
+        // hand-picked invite list on the public endpoint. The
+        // accessor + cache always return an array here, so no
+        // `is_array` guard is needed — PHPStan flags it as an
+        // already-narrowed type check.
+        if (! empty($audience['allowed_voters'])) {
+            $audience['allowed_voters'] = [];
+        }
 
         return ApiService::success($audience);
     }

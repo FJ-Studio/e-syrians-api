@@ -169,7 +169,16 @@ class Poll extends Model
      *      audience: <name>" instead of the demographic scaffold.
      *      Also loads a small view-only summary (uuid + name +
      *      entry counts).
-     *   2. Demographic rules (the historical default shape).
+     *   2. Legacy inline `allowed_voters` list — polls created
+     *      before reusable audiences shipped may still have rows
+     *      with criterion `allowed_voter` in `poll_audience_rules`.
+     *      We surface them so older mobile / web builds keep
+     *      rendering the invite-only summary correctly. The write
+     *      surface for this shape has been removed (StorePoll /
+     *      UpdatePoll no longer accept `allowed_voters`), so this
+     *      branch is read-only. The endpoint scrubs the values on
+     *      the way out for privacy — see PollController::audience.
+     *   3. Demographic rules (the historical default shape).
      */
     protected function getAudienceAttribute(): array
     {
@@ -215,6 +224,11 @@ class Poll extends Model
         }
 
         $rules = $this->audienceRules;
+
+        $allowedVoters = $rules->where('criterion', 'allowed_voter')->pluck('value')->all();
+        if (count($allowedVoters) > 0) {
+            return ['allowed_voters' => $allowedVoters];
+        }
 
         return [
             'gender' => $rules->where('criterion', 'gender')->pluck('value')->all(),

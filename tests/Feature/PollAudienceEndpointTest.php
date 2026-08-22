@@ -169,7 +169,11 @@ it('returns a full demographic structure with empty arrays when poll has no rule
 it('caches the audience data after the first request', function (): void {
     $poll = createAudienceEndpointDemographicPoll(test()->creator);
 
-    $cacheKey = "poll:{$poll->id}:audience";
+    // v2 cache key — bumped in the audiences refactor so any legacy
+    // entries populated by the pre-refactor code (which stored the
+    // pasted `allowed_voters` list as plaintext) are effectively
+    // invalidated. See PollController::audience for the rationale.
+    $cacheKey = "poll:v2:{$poll->id}:audience";
     expect(Cache::has($cacheKey))->toBeFalse();
 
     $this->getJson("/polls/audience?poll_id={$poll->id}")->assertOk();

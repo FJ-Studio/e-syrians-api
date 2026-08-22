@@ -8,7 +8,9 @@ use App\Models\Audience;
 use App\Models\PollOption;
 use App\Models\AudienceAudit;
 use App\Models\AudienceEntry;
+use App\Models\PollAudienceRule;
 use App\Enums\AudienceEntryTypeEnum;
+use Illuminate\Support\Facades\Cache;
 use App\Contracts\AudienceServiceContract;
 
 /*
@@ -552,6 +554,109 @@ it('rejects a create-poll payload with both audience_uuid and demographic criter
         // Demographic criterion — must be rejected alongside audience.
         'gender' => ['f'],
     ], authHeader(test()->creator))->assertStatus(422);
+});
+
+it('keeps the audience_is_explicit_list flag on the poll resource', function (): void {
+    // Legacy poll with inline allowed_voter rules — clients (older
+    // web + mobile builds still in the field) branch on this key
+    // to render the invite-only summary. If it disappears they
+    // fall into the demographic branch and crash reading missing
+    // fields; keep the discriminator in place during the
+    // deprecation window.
+    $poll = Poll::forceCreate([
+        'question' => 'Legacy flag',
+        'start_date' => now()->addDay(),
+        'end_date' => now()->addDays(3),
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'created_by' => test()->creator->id,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'is_private' => false,
+    ]);
+    $now = now();
+    PollAudienceRule::insert([
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'alice@x.test', 'created_at' => $now, 'updated_at' => $now],
+    ]);
+
+    $response = $this->getJson("/polls/{$poll->id}", authHeader(test()->creator));
+
+    $response->assertOk();
+    $response->assertJsonPath('data.audience_is_explicit_list', true);
+    $response->assertJsonPath('data.audience_is_saved_list', false);
+});
+
+it('scrubs allowed_voters from cached responses on GET /polls/audience', function (): void {
+    // Simulate a warm cache entry populated by the pre-refactor
+    // code, which stored the pasted allowlist as plaintext under
+    // this key. After deploy, the endpoint must never leak those
+    // identifiers even if the cached row survived the refactor.
+    $poll = Poll::forceCreate([
+        'question' => 'Cached leaky',
+        'start_date' => now()->addDay(),
+        'end_date' => now()->addDays(3),
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'created_by' => test()->creator->id,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'is_private' => false,
+    ]);
+
+    // Plant a stale entry under the versioned key the new code
+    // reads. Even so, the scrub-on-read must strip the plaintext
+    // before responding.
+    Cache::forever("poll:v2:{$poll->id}:audience", [
+        'allowed_voters' => ['alice@x.test', 'bob@x.test'],
+    ]);
+
+    $response = $this->getJson('/polls/audience?poll_id=' . $poll->id, authHeader(test()->creator));
+
+    $response->assertOk();
+    // The array is preserved as a "this poll uses an invite list,
+    // but you don't get to see it" signal — the values inside are
+    // scrubbed.
+    $response->assertJsonPath('data.allowed_voters', []);
+});
+
+it('preserves legacy allowed_voter rules on a poll when demographic fields are patched', function (): void {
+    // Legacy poll: no saved audience_id, no demographic rules —
+    // just the pre-refactor pasted `allowed_voters` stored as
+    // PollAudienceRule rows with criterion `allowed_voter`.
+    $poll = Poll::forceCreate([
+        'question' => 'Legacy allowlist',
+        'start_date' => now()->addDay(),
+        'end_date' => now()->addDays(3),
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'created_by' => test()->creator->id,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'is_private' => false,
+    ]);
+    $now = now();
+    PollAudienceRule::insert([
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'alice@x.test', 'created_at' => $now, 'updated_at' => $now],
+        ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'bob@x.test', 'created_at' => $now, 'updated_at' => $now],
+    ]);
+
+    // Client PATCHes a demographic field (e.g. narrowing gender)
+    // without mentioning allowed_voters — the payload can't send
+    // that key anymore because the surface was removed. Under the
+    // old rebuild path this would silently wipe the allowlist and
+    // turn a restricted poll into an open one.
+    $this->patchJson("/polls/{$poll->id}", [
+        'gender' => ['f'],
+        'recaptcha_token' => 'test',
+    ], authHeader(test()->creator))->assertOk();
+
+    // Both original allowlist rows must still be there, and the
+    // new demographic rule sits alongside them.
+    $rules = PollAudienceRule::where('poll_id', $poll->id)->get();
+    $allowedVoters = $rules->where('criterion', 'allowed_voter')->pluck('value')->all();
+    sort($allowedVoters);
+    expect($allowedVoters)->toBe(['alice@x.test', 'bob@x.test']);
+    expect($rules->where('criterion', 'gender')->pluck('value')->all())->toBe(['f']);
 });
 
 it('rejects a create-poll payload referencing another user\'s audience', function (): void {
