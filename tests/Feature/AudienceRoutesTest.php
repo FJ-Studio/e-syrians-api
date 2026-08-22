@@ -232,6 +232,112 @@ it('does not emit an audit when there is no active poll', function (): void {
 });
 
 // ───────────────────────────────────────────────
+// Bulk-remove entries
+// ───────────────────────────────────────────────
+//
+// The web UI used to fan out N parallel DELETEs against the
+// per-id endpoint; that path was replaced with a single
+// POST /users/audiences/{uuid}/entries/_bulk-remove call. These
+// tests lock in the batching semantics:
+//   - one HTTP request removes N rows in one transaction,
+//   - unknown ids in the batch are silently ignored,
+//   - ONE audit row is emitted for the whole operation (not N),
+//   - a caller cannot bulk-delete another user's audience entries
+//     by guessing ids.
+
+it('bulk-removes multiple entries in a single request', function (): void {
+    $audience = createAudience(test()->creator, 'BulkPlain', ['a@x.test', 'b@x.test', 'c@x.test']);
+    $ids = AudienceEntry::query()->where('audience_id', $audience->id)->pluck('id')->all();
+
+    $response = $this->postJson(
+        "/users/audiences/{$audience->uuid}/entries/_bulk-remove",
+        ['entry_ids' => $ids],
+        authHeader(test()->creator),
+    );
+
+    $response->assertOk();
+    $response->assertJsonPath('data.removed_count', 3);
+    expect(AudienceEntry::query()->where('audience_id', $audience->id)->count())->toBe(0);
+});
+
+it('silently ignores unknown entry ids in a bulk-remove batch', function (): void {
+    $audience = createAudience(test()->creator, 'BulkPartial', ['a@x.test', 'b@x.test']);
+    /** @var array<int, int> $realIds */
+    $realIds = AudienceEntry::query()->where('audience_id', $audience->id)->pluck('id')->all();
+
+    // Two real ids + one fabricated id that isn't in this audience
+    // (or any audience). The endpoint should remove the two real
+    // rows and pretend the third one never happened — the client
+    // reloads audience state afterwards so any drift heals itself.
+    $response = $this->postJson(
+        "/users/audiences/{$audience->uuid}/entries/_bulk-remove",
+        ['entry_ids' => [...$realIds, 999_999]],
+        authHeader(test()->creator),
+    );
+
+    $response->assertOk();
+    $response->assertJsonPath('data.removed_count', 2);
+});
+
+it('emits exactly one audit row for a bulk-remove during an active poll', function (): void {
+    $audience = createAudience(test()->creator, 'BulkActive', ['a@x.test', 'b@x.test', 'c@x.test']);
+    $ids = AudienceEntry::query()->where('audience_id', $audience->id)->pluck('id')->all();
+
+    Poll::forceCreate([
+        'question' => 'Bulk ballot?',
+        'start_date' => now()->subDay(),
+        'end_date' => now()->addDay(),
+        'max_selections' => 1,
+        'audience_can_add_options' => false,
+        'created_by' => test()->creator->id,
+        'reveal_results' => 'before-voting',
+        'voters_are_visible' => true,
+        'is_private' => false,
+        'audience_id' => $audience->id,
+    ]);
+
+    $this->postJson(
+        "/users/audiences/{$audience->uuid}/entries/_bulk-remove",
+        ['entry_ids' => $ids],
+        authHeader(test()->creator),
+    )->assertOk();
+
+    $audits = AudienceAudit::query()->where('audience_id', $audience->id)->get();
+    expect($audits)->toHaveCount(1);
+    // The one row must count ALL removed entries, not just the
+    // first, and must NOT record any adds.
+    expect($audits->first()->entries_removed_count)->toBe(3);
+    expect($audits->first()->entries_added_count)->toBe(0);
+});
+
+it('refuses to bulk-remove from an audience owned by another user', function (): void {
+    $foreign = createAudience(test()->outsider, 'Foreign', ['x@x.test']);
+    $foreignEntryId = AudienceEntry::query()->where('audience_id', $foreign->id)->value('id');
+
+    // Caller is the creator, targeting the outsider's audience uuid.
+    // Backend responds 404 (ownership-scoped findOwnedOrFail) —
+    // deliberately opaque so the caller can't probe which uuids
+    // exist. The foreign entry must still be present afterwards.
+    $this->postJson(
+        "/users/audiences/{$foreign->uuid}/entries/_bulk-remove",
+        ['entry_ids' => [$foreignEntryId]],
+        authHeader(test()->creator),
+    )->assertNotFound();
+
+    expect(AudienceEntry::query()->whereKey($foreignEntryId)->exists())->toBeTrue();
+});
+
+it('rejects a bulk-remove request without entry_ids', function (): void {
+    $audience = createAudience(test()->creator, 'BulkNoIds', ['a@x.test']);
+
+    $this->postJson(
+        "/users/audiences/{$audience->uuid}/entries/_bulk-remove",
+        [],
+        authHeader(test()->creator),
+    )->assertStatus(422);
+});
+
+// ───────────────────────────────────────────────
 // Soft delete — refuses while a poll is active
 // ───────────────────────────────────────────────
 
