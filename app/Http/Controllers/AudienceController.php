@@ -13,6 +13,7 @@ use App\Contracts\AudienceServiceContract;
 use App\Http\Requests\Audiences\StoreAudienceRequest;
 use App\Http\Requests\Audiences\UpdateAudienceRequest;
 use App\Http\Requests\Audiences\AddAudienceEntriesRequest;
+use App\Http\Requests\Audiences\RemoveAudienceEntriesRequest;
 
 class AudienceController extends Controller
 {
@@ -116,6 +117,34 @@ class AudienceController extends Controller
             );
 
             return ApiService::success(null, 'audience_entry_removed');
+        } catch (AudienceException $e) {
+            return ApiService::error($e->getCode(), $e->getMessage(), $e->getDetails());
+        }
+    }
+
+    /**
+     * Bulk-remove multiple entries in one request. Web/mobile
+     * bulk-selection UIs point here instead of firing N parallel
+     * DELETEs against `removeEntry`, which would multiply the
+     * per-request throttle + recaptcha cost and easily produce
+     * partial-delete outcomes on transient failures.
+     *
+     * Payload: `{ "entry_ids": [12, 34, 56], "recaptcha_token": "…" }`
+     * Response: `{ removed_count: int }`.
+     */
+    public function removeEntries(RemoveAudienceEntriesRequest $request, string $uuid): mixed
+    {
+        try {
+            /** @var array<int, int> $entryIds */
+            $entryIds = array_map('intval', (array) $request->input('entry_ids', []));
+
+            $removed = $this->audiences->removeEntries(
+                uuid: $uuid,
+                userId: (int) $request->user()->id,
+                entryIds: $entryIds,
+            );
+
+            return ApiService::success(['removed_count' => $removed], 'audience_entries_removed');
         } catch (AudienceException $e) {
             return ApiService::error($e->getCode(), $e->getMessage(), $e->getDetails());
         }

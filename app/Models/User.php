@@ -490,11 +490,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 
     public function isInAudience(Poll $poll): array
     {
-        // Reusable audience list — short-circuits every other rule.
-        // When a poll references a saved Audience the whole gate
-        // becomes "is the caller's email / national_id / phone in
-        // the entries table". We delegate to AudienceService because
-        // it owns the hashed-lookup logic and knows how to handle
+        // Reusable audience list — short-circuits every demographic
+        // rule. When a poll references a saved Audience the whole
+        // gate becomes "is the caller's email or national_id in the
+        // entries table". We delegate to AudienceService because it
+        // owns the hashed-lookup logic and knows how to handle
         // soft-deleted audiences (returns false, not throws).
         if ($poll->audience_id !== null) {
             /** @var AudienceServiceContract $svc */
@@ -511,7 +511,10 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         $rules = $poll->audienceRules;
         $failures = [];
 
-        // Allowed voters check — if specified, only match by email or national_id
+        // Legacy safety: already-existing `allowed_voter` rows still
+        // restrict voting, even though new API requests can no longer
+        // create this rule type. Removing this before data cleanup
+        // would accidentally open old restricted polls.
         $allowedVoters = $rules->where('criterion', 'allowed_voter')->pluck('value')->all();
         if (count($allowedVoters) > 0) {
             $allowed = array_map('strtolower', $allowedVoters);

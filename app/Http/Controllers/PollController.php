@@ -93,16 +93,13 @@ class PollController extends Controller
 
     /**
      * Creator-only edit payload — the data the edit form needs to
-     * hydrate, including the audience block with `allowed_voters`.
+     * hydrate.
      *
      * Why this exists separately from `show()`: the public show
-     * endpoint deliberately suppresses the `audience` key on
-     * explicit-list polls for every viewer (creator included),
-     * because surfacing the guest list on a public URL would leak
-     * who else the author invited. The edit form however needs
-     * that list back — otherwise it can't tell the poll is
-     * allowlisted and silently wipes the audience on save. This
-     * endpoint is the supported way to fetch it.
+     * endpoint can be inaccessible for audience-only polls when the
+     * owner no longer matches the current audience criteria. The edit
+     * surface is creator-owned, so it needs a direct ownership-gated
+     * read path.
      *
      * Gates: auth (sanctum guard via route group) + ownership
      * check below. We don't apply the vote-lock here because the
@@ -126,9 +123,7 @@ class PollController extends Controller
             $request->user()->id,
         );
 
-        return ApiService::success(
-            (new PollResource($enriched))->withFullAudience(),
-        );
+        return ApiService::success(new PollResource($enriched));
     }
 
     /**
@@ -279,21 +274,12 @@ class PollController extends Controller
      * polls), so the audience snapshot returned here is cached
      * indefinitely (until the cache store evicts it).
      *
-     * Audience exposure rule (tightened 2026-06):
+     * Audience exposure rule:
      *   • Demographic criteria (gender / age / country / …) — exposed
      *     to every viewer so the audience-criteria sheet can render
      *     the actual targeting rules.
-     *   • Explicit-list audience (`allowed_voters`) — never exposed
-     *     via this endpoint, not even to the creator. The list is a
-     *     hand-picked guest list of voter identifiers; surfacing it
-     *     here would leak who else was invited. The creator only
-     *     needs the list when editing the poll, which goes through a
-     *     dedicated creator-only edit endpoint (TBD); the cache still
-     *     holds the full audience array internally, but every
-     *     response strips `allowed_voters` to an empty list before
-     *     sending. Non-creators learn membership via the boolean
-     *     `is_in_audience` / `audience_failures` fields on
-     *     /polls/{id}, not this endpoint.
+     *   • Saved reusable audience list — exposed as a small summary
+     *     only (name + counts, no identifiers).
      */
     public function audience(Request $request): JsonResponse
     {
@@ -330,19 +316,25 @@ class PollController extends Controller
             return $poll->audience;
         };
 
+        // Cache-key is versioned (`v2`) so legacy entries populated
+        // by the pre-refactor code — which stored the pasted
+        // `allowed_voters` list as plaintext in the forever cache —
+        // are effectively invalidated: `rememberForever` on a new
+        // key ignores the old entry entirely. The old `poll:{id}:audience`
+        // key will simply age out of Redis (or stay dormant on file
+        // cache with no reader).
         $audience = $pollHasSavedAudience
             ? $loadAudience()
-            : Cache::rememberForever("poll:{$pollId}:audience", $loadAudience);
+            : Cache::rememberForever("poll:v2:{$pollId}:audience", $loadAudience);
 
-        // `allowed_voters` is the author's hand-picked invite list and is
-        // never exposed via this public-audience endpoint — not even to
-        // the creator. The creator only needs the list when editing the
-        // poll, which goes through a dedicated creator-only edit
-        // endpoint (TBD); the public surface uses the empty array as a
-        // "this poll uses an invite list, but you don't get to see it"
-        // signal. Non-creators learn membership via the boolean
-        // `is_in_audience` / failure-code `audience_failures` returned
-        // by /polls/{id}, not this endpoint.
+        // Defensive scrub. In addition to the cache-key version bump
+        // above, strip `allowed_voters` from the response on the way
+        // out so any residual cache entry (or a legacy poll whose
+        // rules are still in `poll_audience_rules`) never leaks the
+        // hand-picked invite list on the public endpoint. The
+        // accessor + cache always return an array here, so no
+        // `is_array` guard is needed — PHPStan flags it as an
+        // already-narrowed type check.
         if (! empty($audience['allowed_voters'])) {
             $audience['allowed_voters'] = [];
         }

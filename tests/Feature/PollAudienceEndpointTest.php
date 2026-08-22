@@ -163,57 +163,17 @@ it('returns a full demographic structure with empty arrays when poll has no rule
 });
 
 // ───────────────────────────────────────────────
-// Allowed-voters audience — hidden from EVERYONE
-//
-// Tightened 2026-06: the `/polls/audience` endpoint never surfaces
-// the explicit invite list, not even to the poll creator. The
-// creator only needs the list when editing the poll, which goes
-// through a dedicated creator-only edit endpoint (TBD). Here we
-// always return an empty `allowed_voters` array so the frontend can
-// render a generic "invite-only" message without leaking voter PII.
-// ───────────────────────────────────────────────
-
-it('returns empty allowed_voters array to the creator', function (): void {
-    $poll = createAudienceEndpointAllowedVotersPoll(test()->creator, ['user1@test.com', 'user2@test.com', 'user3@test.com']);
-
-    $response = $this->getJson("/polls/audience?poll_id={$poll->id}", authHeader(test()->creator));
-
-    $response->assertOk();
-    $data = $response->json('data');
-    expect($data)->toHaveKey('allowed_voters');
-    expect($data['allowed_voters'])->toBe([]);
-});
-
-it('returns empty allowed_voters array to a non-creator', function (): void {
-    $poll = createAudienceEndpointAllowedVotersPoll(test()->creator, ['user1@test.com', 'user2@test.com']);
-
-    $response = $this->getJson("/polls/audience?poll_id={$poll->id}", authHeader(test()->otherUser));
-
-    $response->assertOk();
-    $data = $response->json('data');
-    expect($data)->toHaveKey('allowed_voters');
-    expect($data['allowed_voters'])->toBe([]);
-});
-
-it('returns empty allowed_voters array to a guest', function (): void {
-    $poll = createAudienceEndpointAllowedVotersPoll(test()->creator, ['user1@test.com']);
-
-    $response = $this->getJson("/polls/audience?poll_id={$poll->id}");
-
-    $response->assertOk();
-    $data = $response->json('data');
-    expect($data)->toHaveKey('allowed_voters');
-    expect($data['allowed_voters'])->toBe([]);
-});
-
-// ───────────────────────────────────────────────
 // Caching
 // ───────────────────────────────────────────────
 
 it('caches the audience data after the first request', function (): void {
     $poll = createAudienceEndpointDemographicPoll(test()->creator);
 
-    $cacheKey = "poll:{$poll->id}:audience";
+    // v2 cache key — bumped in the audiences refactor so any legacy
+    // entries populated by the pre-refactor code (which stored the
+    // pasted `allowed_voters` list as plaintext) are effectively
+    // invalidated. See PollController::audience for the rationale.
+    $cacheKey = "poll:v2:{$poll->id}:audience";
     expect(Cache::has($cacheKey))->toBeFalse();
 
     $this->getJson("/polls/audience?poll_id={$poll->id}")->assertOk();
@@ -237,36 +197,6 @@ it('serves cached audience data on subsequent requests', function (): void {
     // The cached response should still contain the original rules
     expect($second->json('data.gender'))->toBe(['m']);
     expect($second->json('data.country'))->toBe(['TR']);
-});
-
-it('strips allowed_voters from every response regardless of cache state', function (): void {
-    $poll = createAudienceEndpointAllowedVotersPoll(test()->creator, ['secret@test.com']);
-
-    // First request (creator) populates the cache. The cache stores
-    // the full audience array internally; the controller strips
-    // `allowed_voters` before responding.
-    $creatorResponse = $this->getJson("/polls/audience?poll_id={$poll->id}", authHeader(test()->creator));
-    $creatorResponse->assertOk();
-    expect($creatorResponse->json('data.allowed_voters'))->toBe([]);
-
-    // Verify the cache actually holds the full list — this is what
-    // makes the "every response strips it" guarantee meaningful.
-    $cached = Cache::get("poll:{$poll->id}:audience");
-    expect($cached['allowed_voters'])->toBe(['secret@test.com']);
-
-    // Reset the resolved guard so the next request picks up the new token.
-    auth('sanctum')->forgetUser();
-
-    // Non-creator hitting the warm cache still gets empty allowed_voters.
-    $otherResponse = $this->getJson("/polls/audience?poll_id={$poll->id}", authHeader(test()->otherUser));
-    $otherResponse->assertOk();
-    expect($otherResponse->json('data.allowed_voters'))->toBe([]);
-
-    // Guest hitting the warm cache also gets empty allowed_voters.
-    auth('sanctum')->forgetUser();
-    $guestResponse = $this->getJson("/polls/audience?poll_id={$poll->id}");
-    $guestResponse->assertOk();
-    expect($guestResponse->json('data.allowed_voters'))->toBe([]);
 });
 
 // ───────────────────────────────────────────────
@@ -295,39 +225,6 @@ function createAudienceEndpointDemographicPoll(User $user): Poll
         ['poll_id' => $poll->id, 'criterion' => 'age_min', 'value' => '18', 'created_at' => $now, 'updated_at' => $now],
         ['poll_id' => $poll->id, 'criterion' => 'age_max', 'value' => '50', 'created_at' => $now, 'updated_at' => $now],
     ]);
-
-    PollOption::insert([
-        ['poll_id' => $poll->id, 'option_text' => 'Yes', 'created_by' => $user->id, 'created_at' => $now, 'updated_at' => $now],
-        ['poll_id' => $poll->id, 'option_text' => 'No', 'created_by' => $user->id, 'created_at' => $now, 'updated_at' => $now],
-    ]);
-
-    return $poll->fresh()->load(['options', 'audienceRules']);
-}
-
-function createAudienceEndpointAllowedVotersPoll(User $user, array $voters): Poll
-{
-    $poll = Poll::forceCreate([
-        'question' => 'Allowed voters poll?',
-        'start_date' => now()->subDays(1),
-        'end_date' => now()->addDays(7),
-        'max_selections' => 1,
-        'audience_can_add_options' => false,
-        'created_by' => $user->id,
-        'reveal_results' => 'before-voting',
-        'voters_are_visible' => true,
-        'audience_only' => true,
-        'is_private' => false,
-    ]);
-
-    $now = now();
-    $rules = array_map(fn (string $voter) => [
-        'poll_id' => $poll->id,
-        'criterion' => 'allowed_voter',
-        'value' => $voter,
-        'created_at' => $now,
-        'updated_at' => $now,
-    ], $voters);
-    PollAudienceRule::insert($rules);
 
     PollOption::insert([
         ['poll_id' => $poll->id, 'option_text' => 'Yes', 'created_by' => $user->id, 'created_at' => $now, 'updated_at' => $now],

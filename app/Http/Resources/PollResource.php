@@ -11,30 +11,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PollResource extends JsonResource
 {
     /**
-     * When true the `audience` payload is exposed in full even for
-     * explicit-list polls (which include `allowed_voters`). Default
-     * is false — see the comment in `toArray()` for the policy
-     * rationale and `withFullAudience()` for how the creator-only
-     * edit endpoint opts into this.
-     */
-    public bool $exposeFullAudience = false;
-
-    /**
-     * Expose the full audience block (including `allowed_voters`)
-     * for the creator-only edit endpoint
-     * (PollController::editPayload). The public show endpoint
-     * never sets this flag, so explicit-list polls keep their
-     * "audience is suppressed for everyone" guarantee on the
-     * public surface — see PollAudienceOnlyTest.
-     */
-    public function withFullAudience(): self
-    {
-        $this->exposeFullAudience = true;
-
-        return $this;
-    }
-
-    /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
@@ -50,40 +26,29 @@ class PollResource extends JsonResource
 
         [$isInAudience, $audienceFailures] = $this->resource->audienceCheckFor($user);
 
-        // Audience exposure rule (tightened 2026-06):
-        //   - Demographic audience (gender / age / country / …) — exposed
-        //     to ALL viewers so the mobile/web audience-criteria sheet
-        //     can render the actual targeting rules next to per-row
-        //     match / doesn't-match pills. Not sensitive (the
-        //     `AudienceLine` on the poll detail already broadcasts that
-        //     the poll IS audience-restricted; the rules don't reveal
-        //     anything about individual voters).
-        //   - Explicit-list audience (`allowed_voters`) — **never**
-        //     exposed via this resource on the public show endpoint,
-        //     including to the creator. The list is a hand-picked
-        //     guest list; surfacing it on the public poll page would
-        //     leak who else the author invited.
-        //
-        //     Creators DO need the list back when editing the poll
-        //     (otherwise the edit form falls into the criteria
-        //     branch and wipes the audience on save). That data
-        //     comes from the dedicated creator-only edit endpoint
-        //     `GET /polls/{poll}/edit` — see
-        //     PollController::editPayload — which constructs this
-        //     resource with `withFullAudience()` set. The public
-        //     surface stays clean.
+        // Audience exposure rule:
+        //   - Demographic audience (gender / age / country / …) is
+        //     exposed to all viewers so clients can render the actual
+        //     targeting rules.
+        //   - Saved reusable audience lists expose only a small
+        //     summary (uuid, name, counts), never entry identifiers.
         $audience = $this->resource->audience;
-        $isExplicitListAudience = isset($audience['allowed_voters']);
 
         // A saved-audience poll: `audience_id` is set → the accessor
         // returns `['audience' => { uuid, name, entries_total_count, … }]`.
         // Exposing the summary is safe (name + counts, no identifiers)
         // and required so the client can render "Gated by list: <name>"
-        // instead of falling into the demographic / explicit-list
-        // branches with empty data.
+        // instead of falling into the demographic branch with empty data.
         $isSavedAudience = isset($audience['audience']);
 
-        $exposeAudience = ! $isExplicitListAudience || $this->exposeFullAudience;
+        // Legacy inline `allowed_voters` polls — created before
+        // reusable audiences shipped. Their PollAudienceRule rows
+        // still gate voting server-side, and older mobile/web
+        // builds branch on this key to render the "invite-only"
+        // summary. Kept as a stable discriminator alongside
+        // `audience_is_saved_list` during the deprecation window;
+        // for saved-list and demographic polls it stays `false`.
+        $isExplicitListAudience = isset($audience['allowed_voters']);
 
         return [
             'id' => $this->id,
@@ -94,22 +59,17 @@ class PollResource extends JsonResource
             'audience_can_add_options' => $this->audience_can_add_options,
             'is_in_audience' => $isInAudience,
             'audience_failures' => $audienceFailures,
-            // See the `$exposeAudience` rationale above. When the poll
-            // has an explicit-voter-list audience, the key is omitted
-            // entirely for every viewer (creator included) — the
-            // client falls back to the `is_in_audience` /
-            // `audience_failures` signal.
-            'audience' => $this->when($exposeAudience, fn () => $audience),
-            // True iff the poll uses an explicit-voter-list audience.
-            // Exposed to everyone so the mobile/web audience sheet can
-            // render the right summary row ("You're in / You're not in")
-            // without trying to enumerate criteria it doesn't have.
-            'audience_is_explicit_list' => $isExplicitListAudience,
+            'audience' => $audience,
             // True iff the poll is gated by a reusable saved audience
             // (`polls.audience_id` set). Client uses this to render a
             // "Gated by list" summary instead of the demographic
             // criteria sheet.
             'audience_is_saved_list' => $isSavedAudience,
+            // True iff the poll is gated by a legacy inline
+            // `allowed_voters` list. Preserved during the deprecation
+            // window so older mobile / web builds don't crash when
+            // the discriminator key disappears from responses.
+            'audience_is_explicit_list' => $isExplicitListAudience,
             'deletion_reason' => $this->deletion_reason,
             'created_at' => $this->created_at->toISOString(),
             'deleted_at' => $this->when($this->deleted_at, fn () => $this->deleted_at->toISOString()),

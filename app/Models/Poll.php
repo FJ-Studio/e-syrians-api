@@ -94,10 +94,9 @@ class Poll extends Model
     /**
      * Reusable audience list gating this poll's vote eligibility.
      *
-     * Nullable — legacy polls (and polls that use the inline
-     * `allowed_voters` list or demographic criteria) leave this
-     * column NULL. When present, {@see User::isInAudience()}
-     * short-circuits every other rule and asks
+     * Nullable — demographic-criteria polls leave this column NULL.
+     * When present, {@see User::isInAudience()} short-circuits every
+     * other rule and asks
      * {@see AudienceServiceContract::isUserInAudience()}
      * whether the caller's hashed identifiers match an entry.
      *
@@ -169,10 +168,16 @@ class Poll extends Model
      *      dedicated shape so the client can render "gated by
      *      audience: <name>" instead of the demographic scaffold.
      *      Also loads a small view-only summary (uuid + name +
-     *      entry counts). We deliberately return an OBJECT under
-     *      `audience` (not `allowed_voters`) so the client can
-     *      distinguish "one saved list" from "an ad-hoc paste".
-     *   2. Inline `allowed_voters` list.
+     *      entry counts).
+     *   2. Legacy inline `allowed_voters` list — polls created
+     *      before reusable audiences shipped may still have rows
+     *      with criterion `allowed_voter` in `poll_audience_rules`.
+     *      We surface them so older mobile / web builds keep
+     *      rendering the invite-only summary correctly. The write
+     *      surface for this shape has been removed (StorePoll /
+     *      UpdatePoll no longer accept `allowed_voters`), so this
+     *      branch is read-only. The endpoint scrubs the values on
+     *      the way out for privacy — see PollController::audience.
      *   3. Demographic rules (the historical default shape).
      */
     protected function getAudienceAttribute(): array

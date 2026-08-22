@@ -44,8 +44,8 @@ enum AudienceEntryTypeEnum: string
      *     as Email and then handed it downstream to the DB. The
      *     built-in filter is the same one Laravel's `email` rule
      *     uses, so acceptance stays consistent with the poll form.
-     *   - Otherwise 5-20 digit strings map to national IDs (matches
-     *     StorePollRequest's `allowed_voters` regex).
+     *   - Otherwise 5-20 digit strings map to national IDs (same
+     *     policy the audience form exposes to clients).
      *   - Returns `null` for anything that fits neither — the
      *     FormRequest translates that into a validation error.
      */

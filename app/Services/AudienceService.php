@@ -24,9 +24,8 @@ class AudienceService implements AudienceServiceContract
 
     /**
      * Cap on entries per single add / create call. Protects
-     * against a runaway paste (imagine 100k emails). Matches
-     * roughly what the create-poll allowed_voters textarea
-     * already tolerates in practice.
+     * against a runaway paste (imagine 100k emails) while keeping
+     * normal audience imports practical.
      */
     private const MAX_ENTRIES_PER_CALL = 5000;
 
@@ -134,6 +133,41 @@ class AudienceService implements AudienceServiceContract
             $entry->delete();
 
             $this->maybeEmitAudit($audience, $userId, added: 0, removed: 1);
+        });
+    }
+
+    public function removeEntries(string $uuid, int $userId, array $entryIds): int
+    {
+        // Cap per-call size to the same MAX_ENTRIES_PER_CALL used
+        // by the add path — this endpoint is throttled at the same
+        // rate and the bulk-write shape is symmetric.
+        if (count($entryIds) > self::MAX_ENTRIES_PER_CALL) {
+            throw new AudienceException('audience_too_many_entries_in_one_call', 422);
+        }
+
+        return DB::transaction(function () use ($uuid, $userId, $entryIds): int {
+            $audience = $this->findOwnedOrFail($uuid, $userId);
+
+            if ($entryIds === []) {
+                return 0;
+            }
+
+            // Scope the delete to this audience via the relation so
+            // no caller can drive-by delete entries that belong to
+            // another audience by guessing ids. Unknown / already-
+            // deleted ids are silently ignored — the count returned
+            // to the client tells them how many actually vanished.
+            $deleted = $audience->entries()
+                ->whereIn('id', $entryIds)
+                ->delete();
+
+            if ($deleted > 0) {
+                // ONE audit row per bulk call — the semantic
+                // operation is a single user action, not N.
+                $this->maybeEmitAudit($audience, $userId, added: 0, removed: (int) $deleted);
+            }
+
+            return (int) $deleted;
         });
     }
 
