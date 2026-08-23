@@ -17,7 +17,9 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\FeatureRequestController;
+use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\SuspiciousActivityController;
+use App\Http\Middleware\EnsureAccountNotPendingDeletion;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,18 +65,76 @@ Route::prefix('users')->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated User Routes
+| Authenticated User Routes — accessible EVEN with pending deletion
 |--------------------------------------------------------------------------
+| During the 15-day grace period, `EnsureAccountNotPendingDeletion` locks
+| every other authenticated route. The endpoints in this group must stay
+| reachable so a pending user can cancel deletion, terminate their
+| session, bootstrap a web NextAuth session (to land on the reactivate
+| screen), or set a password (defense-in-depth for a hypothetical
+| social-only pending flow):
+|
+|   - POST /logout                       (sign out)
+|   - GET  /session-bootstrap            (NextAuth Credentials bootstrap)
+|   - POST /password/send-otp            (set-password OTP send)
+|   - POST /password/set                 (set-password submit)
+|   - GET  /account/deletion-status      (poll deletion state)
+|   - POST /account/request-deletion     (enter grace period)
+|   - POST /account/cancel-deletion      (leave grace period)
 */
 Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
-    // Current user
-    Route::get('/me', [UserController::class, 'me'])->name('users.me');
+    // Logout stays outside the not-pending-deletion gate: a user
+    // who's requested deletion should still be able to sign out.
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Password management
-    Route::middleware(['throttle:3,1,change-password', 'recaptcha'])->post('/change-password', [PasswordController::class, 'change']);
+    // Session-bootstrap endpoint for the web NextAuth Credentials
+    // provider. Same UserResource payload as /users/me, but reachable
+    // during the pending-deletion grace period so a signing-in user
+    // can be routed to /account/deletion-pending instead of being
+    // rejected at the Credentials.authorize() stage.
+    Route::get('/session-bootstrap', [UserController::class, 'sessionBootstrap'])
+        ->middleware(['throttle:30,1,session_bootstrap'])
+        ->name('users.session-bootstrap');
+
+    // Password set-up endpoints. Exempted from the pending-deletion
+    // gate as defense-in-depth so that a social-only pending user can
+    // theoretically set a password mid-grace-period and then cancel
+    // the deletion. Not strictly reachable today (request-deletion
+    // requires a password itself, so a passwordless user can't
+    // enter the pending state), but keeping these unblocked makes
+    // the middleware layer forward-compatible if that gate ever
+    // changes.
     Route::middleware(['throttle:3,1,send-setup-otp', 'recaptcha'])->post('/password/send-otp', [PasswordController::class, 'sendSetupOtp']);
     Route::middleware(['throttle:3,1,set-password', 'recaptcha'])->post('/password/set', [PasswordController::class, 'setPassword']);
+
+    Route::prefix('account')->group(function (): void {
+        Route::get('/deletion-status', [AccountDeletionController::class, 'deletionStatus'])
+            ->middleware(['throttle:30,1,deletion_status'])
+            ->name('users.account.deletion-status');
+        Route::post('/request-deletion', [AccountDeletionController::class, 'requestDeletion'])
+            ->middleware(['throttle:5,1,request_deletion', 'recaptcha'])
+            ->name('users.account.request-deletion');
+        Route::post('/cancel-deletion', [AccountDeletionController::class, 'cancelDeletion'])
+            ->middleware(['throttle:5,1,cancel_deletion', 'recaptcha'])
+            ->name('users.account.cancel-deletion');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated User Routes — blocked during pending deletion
+|--------------------------------------------------------------------------
+*/
+Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
+    // Current user
+    Route::get('/me', [UserController::class, 'me'])->name('users.me');
+
+    // Password management. `send-otp` and `set` live in the
+    // pending-deletion-safe group above (defense-in-depth so a
+    // social-only user could theoretically set a password mid-grace
+    // period). `change-password` stays here — it needs a current
+    // password and only makes sense for accounts in normal state.
+    Route::middleware(['throttle:3,1,change-password', 'recaptcha'])->post('/change-password', [PasswordController::class, 'change']);
 
     // Email & verification
     Route::middleware(['throttle:1,1,change-email', 'recaptcha'])->post('/change-email', [ProfileController::class, 'changeEmail']);
@@ -201,7 +261,7 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
 */
 Route::prefix('polls')->group(function (): void {
     Route::get('/', [PollController::class, 'index']);
-    Route::middleware(['auth:sanctum'])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
         Route::get('/option-voters', [PollController::class, 'optionVoters']);
         Route::post('/', [PollController::class, 'store'])->middleware('recaptcha');
         // Creator-only edit payload. Must be declared BEFORE
@@ -236,7 +296,7 @@ Route::prefix('polls')->group(function (): void {
 */
 Route::prefix('feature-requests')->group(function (): void {
     Route::get('/', [FeatureRequestController::class, 'index']);
-    Route::middleware(['auth:sanctum'])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
         Route::post('/', [FeatureRequestController::class, 'store'])
             ->middleware([UserIsVerified::class, 'throttle:5,10,feature_request_store', 'recaptcha']);
         Route::post('/vote', [FeatureRequestController::class, 'vote'])

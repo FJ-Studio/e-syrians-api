@@ -13,12 +13,6 @@ parameters:
 			path: app/Http/Controllers/PollController.php
 
 		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Controllers/TwoFactorController.php
-
-		-
 			message: '#^Property App\\Http\\Controllers\\TwoFactorController\:\:\$authService is never read, only written\.$#'
 			identifier: property.onlyWritten
 			count: 1

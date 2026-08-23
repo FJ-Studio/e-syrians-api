@@ -7,6 +7,7 @@ namespace App\Models;
 use Filament\Panel;
 use Illuminate\Support\Str;
 use App\Services\StrService;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 use Database\Factories\UserFactory;
 use App\Enums\ProfileChangeTypeEnum;
@@ -21,6 +22,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+/**
+ * Docblock-declared casts so PHPStan/Larastan can resolve the
+ * runtime types on account-deletion touchpoints (UserResource,
+ * EnsureAccountNotPendingDeletion middleware,
+ * AccountDeletionService). The values are set through the
+ * `casts()` method below — this block only mirrors those casts
+ * for static analysis. Add new @property entries alongside new
+ * casts as they're introduced.
+ *
+ * @property Carbon|null $deletion_requested_at
+ * @property Carbon|null $deletion_scheduled_for
+ * @property Carbon|null $email_verified_at
+ * @property Carbon|null $phone_verified_at
+ * @property Carbon|null $two_factor_confirmed_at
+ * @property string|null $password
+ */
 class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
     use HasApiTokens;
@@ -127,6 +144,13 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         // count(recovery_codes) to display "N of M remaining". Set in
         // RecoveryCodeService::issueFor() — never mutated on consumption.
         'recovery_codes_total',
+        // Two-stage account-deletion timestamps. Set together when the
+        // user requests deletion; cleared together on cancel. The
+        // `EnsureAccountNotPendingDeletion` middleware reads them to
+        // block every authenticated route except cancel-deletion /
+        // deletion-status / logout during the 15-day grace period.
+        'deletion_requested_at',
+        'deletion_scheduled_for',
     ];
 
     public function getRouteKeyName()
@@ -162,7 +186,24 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
             'recovery_codes' => 'array',
             'two_factor_enabled' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
+            'deletion_requested_at' => 'datetime',
+            'deletion_scheduled_for' => 'datetime',
         ];
+    }
+
+    /**
+     * True when the user has an active deletion request in flight
+     * (both timestamps are always set/cleared together — checking
+     * one is a defensive-check safety net).
+     *
+     * Read by `EnsureAccountNotPendingDeletion` on every authenticated
+     * request and by `HardDeleteExpiredAccountsJob` before hard-
+     * deleting rows.
+     */
+    public function hasPendingDeletion(): bool
+    {
+        return $this->deletion_requested_at !== null
+            && $this->deletion_scheduled_for !== null;
     }
 
     /**

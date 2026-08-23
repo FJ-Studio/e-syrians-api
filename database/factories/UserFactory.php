@@ -43,4 +43,21 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Indicate that the model has no password on file — social-only signup
+     * (Google / Apple, no password ever set). We can't just pass
+     * `['password' => null]` at `->create()` time because the model's
+     * `password => 'hashed'` cast + the factory's default `Hash::make(...)`
+     * conspire to write a non-null hash back to the row. Setting via
+     * `afterCreating` + `forceFill(['password' => null])->saveQuietly()`
+     * bypasses both — the row on disk really has NULL.
+     */
+    public function passwordless(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $user->forceFill(['password' => null])->saveQuietly();
+            $user->refresh();
+        });
+    }
 }

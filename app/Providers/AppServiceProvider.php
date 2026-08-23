@@ -28,6 +28,7 @@ use App\Contracts\StatsServiceContract;
 use App\Services\FeatureRequestService;
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\DeviceServiceContract;
+use App\Services\AccountDeletionService;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\AudienceServiceContract;
 use App\Contracts\PasswordServiceContract;
@@ -38,6 +39,7 @@ use App\Contracts\VerificationServiceContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
+use App\Contracts\AccountDeletionServiceContract;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use SocialiteProviders\Apple\Provider as AppleProvider;
 use SocialiteProviders\Google\Provider as GoogleProvider;
@@ -50,6 +52,7 @@ class AppServiceProvider extends ServiceProvider
      * @var array<string, string>
      */
     public array $bindings = [
+        AccountDeletionServiceContract::class => AccountDeletionService::class,
         AudienceServiceContract::class => AudienceService::class,
         AuthServiceContract::class => AuthService::class,
         DeviceServiceContract::class => DeviceService::class,
