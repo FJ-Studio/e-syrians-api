@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use Exception;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Date;
 use App\Contracts\FileUploadServiceContract;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @property-read User $resource
+ */
 class UserResource extends JsonResource
 {
     /**
@@ -176,6 +180,23 @@ class UserResource extends JsonResource
                  * re-implementing the rule.
                  */
                 'profile_completeness' => $this->resource->getProfileCompleteness(),
+
+                /*
+                 * Two-stage account-deletion timestamps — OWNER-ONLY.
+                 * Previously exposed on every UserResource, which
+                 * leaked whether any particular user had scheduled
+                 * deletion (and its exact date) via public / peer
+                 * endpoints that embed a UserResource
+                 * (`/users/verify/{uuid}`, nested user objects on
+                 * polls & verifications, etc.). Gating them behind
+                 * $isOwner keeps the pending-deletion banner working
+                 * for the owner's own /users/me + owner-viewed
+                 * payloads while hiding them from every other caller.
+                 * The canonical machine-readable read for the owner
+                 * is GET /users/account/deletion-status.
+                 */
+                'deletion_requested_at' => $this->resource->deletion_requested_at?->toIso8601String(),
+                'deletion_scheduled_for' => $this->resource->deletion_scheduled_for?->toIso8601String(),
             ]),
 
         ];

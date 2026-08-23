@@ -17,7 +17,9 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\FeatureRequestController;
+use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\SuspiciousActivityController;
+use App\Http\Middleware\EnsureAccountNotPendingDeletion;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,13 +65,39 @@ Route::prefix('users')->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated User Routes
+| Authenticated User Routes — accessible EVEN with pending deletion
 |--------------------------------------------------------------------------
+| During the 15-day grace period, `EnsureAccountNotPendingDeletion` locks
+| every other authenticated route. These three (deletion-status,
+| request-deletion, cancel-deletion) and /logout must remain reachable
+| so the user can cancel the deletion or terminate their session.
 */
 Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
+    // Logout stays outside the not-pending-deletion gate: a user
+    // who's requested deletion should still be able to sign out.
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::prefix('account')->group(function (): void {
+        Route::get('/deletion-status', [AccountDeletionController::class, 'deletionStatus'])
+            ->middleware(['throttle:30,1,deletion_status'])
+            ->name('users.account.deletion-status');
+        Route::post('/request-deletion', [AccountDeletionController::class, 'requestDeletion'])
+            ->middleware(['throttle:5,1,request_deletion', 'recaptcha'])
+            ->name('users.account.request-deletion');
+        Route::post('/cancel-deletion', [AccountDeletionController::class, 'cancelDeletion'])
+            ->middleware(['throttle:5,1,cancel_deletion', 'recaptcha'])
+            ->name('users.account.cancel-deletion');
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated User Routes — blocked during pending deletion
+|--------------------------------------------------------------------------
+*/
+Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
     // Current user
     Route::get('/me', [UserController::class, 'me'])->name('users.me');
-    Route::post('/logout', [AuthController::class, 'logout']);
 
     // Password management
     Route::middleware(['throttle:3,1,change-password', 'recaptcha'])->post('/change-password', [PasswordController::class, 'change']);
@@ -201,7 +229,7 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
 */
 Route::prefix('polls')->group(function (): void {
     Route::get('/', [PollController::class, 'index']);
-    Route::middleware(['auth:sanctum'])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
         Route::get('/option-voters', [PollController::class, 'optionVoters']);
         Route::post('/', [PollController::class, 'store'])->middleware('recaptcha');
         // Creator-only edit payload. Must be declared BEFORE
@@ -236,7 +264,7 @@ Route::prefix('polls')->group(function (): void {
 */
 Route::prefix('feature-requests')->group(function (): void {
     Route::get('/', [FeatureRequestController::class, 'index']);
-    Route::middleware(['auth:sanctum'])->group(function (): void {
+    Route::middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
         Route::post('/', [FeatureRequestController::class, 'store'])
             ->middleware([UserIsVerified::class, 'throttle:5,10,feature_request_store', 'recaptcha']);
         Route::post('/vote', [FeatureRequestController::class, 'vote'])
