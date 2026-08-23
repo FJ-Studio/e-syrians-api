@@ -299,6 +299,66 @@ it('allows the deletion-status endpoint for a user pending deletion', function (
 });
 
 // ───────────────────────────────────────────────
+// GET /users/session-bootstrap
+// ───────────────────────────────────────────────
+// Pending-safe UserResource endpoint used by the web NextAuth Credentials
+// provider to build a session from a Sanctum token without the /users/me
+// round-trip (which is blocked by EnsureAccountNotPendingDeletion). Must
+// stay reachable during the grace period so a pending user can land on
+// /account/deletion-pending; /users/me itself must still 403.
+
+it('rejects session-bootstrap when unauthenticated', function (): void {
+    $response = $this->getJson(route('users.session-bootstrap'));
+
+    $response->assertStatus(401);
+});
+
+it('returns the current user on session-bootstrap for a normal authenticated user', function (): void {
+    $user = User::factory()->create();
+
+    $response = $this->getJson(route('users.session-bootstrap'), authHeader($user));
+
+    $response->assertOk();
+    // Cast to string — the model attribute is a LazyUuidFromString
+    // and assertJsonPath uses strict equality, which would reject
+    // even a value-equal Uuid instance against the plain-string JSON.
+    $response->assertJsonPath('data.uuid', (string) $user->uuid);
+});
+
+it('allows the session-bootstrap endpoint for a user pending deletion', function (): void {
+    $user = User::factory()->create([
+        'deletion_requested_at' => now(),
+        'deletion_scheduled_for' => now()->addDays(15),
+    ]);
+
+    $response = $this->getJson(route('users.session-bootstrap'), authHeader($user));
+
+    $response->assertOk();
+    $response->assertJsonPath('data.uuid', (string) $user->uuid);
+    // Owner-only fields are exposed (same shape as /users/me) — the pair
+    // of deletion timestamps must appear so the NextAuth session mirror
+    // has what it needs for the middleware guard.
+    expect($response->json('data.deletion_requested_at'))->not->toBeNull();
+    expect($response->json('data.deletion_scheduled_for'))->not->toBeNull();
+});
+
+it('keeps /users/me blocked with 403 for a user pending deletion (contract with session-bootstrap)', function (): void {
+    // Regression check: the pending-safe session-bootstrap MUST NOT
+    // relax the /users/me contract. If someone accidentally moves
+    // /users/me into the pending-safe group while refactoring, this
+    // test fails and points at the exact contract that broke.
+    $user = User::factory()->create([
+        'deletion_requested_at' => now(),
+        'deletion_scheduled_for' => now()->addDays(15),
+    ]);
+
+    $response = $this->getJson(route('users.me'), authHeader($user));
+
+    $response->assertStatus(403);
+    $response->assertJsonPath('messages.0', 'you_are_pending_deletion');
+});
+
+// ───────────────────────────────────────────────
 // HardDeleteExpiredAccountsJob
 // ───────────────────────────────────────────────
 

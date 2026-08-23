@@ -22,6 +22,31 @@ class UserController extends Controller
     }
 
     /**
+     * Session-bootstrap variant of `me()` that stays reachable during
+     * the pending-deletion grace period.
+     *
+     * Motivation: the web NextAuth `Credentials` provider bootstraps a
+     * session by exchanging an already-issued Sanctum token for the
+     * user record. That's normally `/users/me`, but /users/me lives
+     * behind `EnsureAccountNotPendingDeletion` — so a pending user
+     * couldn't sign in and land on the reactivate screen. Rather than
+     * hand-roll trust of a client-supplied user payload (which would
+     * let a browser forge a session shape by pairing a random token
+     * with arbitrary user JSON), we expose this endpoint outside the
+     * pending gate but still behind `auth:sanctum`. The token itself
+     * is the authority; the response body is a UserResource for the
+     * authenticated user — regardless of deletion state.
+     *
+     * Kept explicitly separate from `me()` so the pending-deletion
+     * contract on the normal endpoint stays intact for every other
+     * consumer.
+     */
+    public function sessionBootstrap(Request $request): JsonResponse
+    {
+        return ApiService::success(new UserResource($request->user()));
+    }
+
+    /**
      * Display a specific user by UUID (public profile)
      */
     public function show(User $user): JsonResponse
