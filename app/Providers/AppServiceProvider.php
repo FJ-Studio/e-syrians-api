@@ -10,7 +10,9 @@ use App\Services\AuthService;
 use App\Services\PollService;
 use App\Services\StatsService;
 use App\Services\DeviceService;
+use App\Services\ReportService;
 use App\Services\ProfileService;
+use App\Services\AudienceService;
 use App\Services\PasswordService;
 use App\Services\UserPollService;
 use App\Services\OneSignalService;
@@ -27,7 +29,10 @@ use App\Contracts\StatsServiceContract;
 use App\Services\FeatureRequestService;
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\DeviceServiceContract;
+use App\Contracts\ReportServiceContract;
+use App\Services\AccountDeletionService;
 use App\Contracts\ProfileServiceContract;
+use App\Contracts\AudienceServiceContract;
 use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
 use App\Contracts\OneSignalServiceContract;
@@ -36,6 +41,7 @@ use App\Contracts\VerificationServiceContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
+use App\Contracts\AccountDeletionServiceContract;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use SocialiteProviders\Apple\Provider as AppleProvider;
 use SocialiteProviders\Google\Provider as GoogleProvider;
@@ -48,6 +54,8 @@ class AppServiceProvider extends ServiceProvider
      * @var array<string, string>
      */
     public array $bindings = [
+        AccountDeletionServiceContract::class => AccountDeletionService::class,
+        AudienceServiceContract::class => AudienceService::class,
         AuthServiceContract::class => AuthService::class,
         DeviceServiceContract::class => DeviceService::class,
         FeatureRequestServiceContract::class => FeatureRequestService::class,
@@ -56,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,
         ProfileServiceContract::class => ProfileService::class,
+        ReportServiceContract::class => ReportService::class,
         StatsServiceContract::class => StatsService::class,
         UserPollServiceContract::class => UserPollService::class,
         VerificationServiceContract::class => VerificationService::class,

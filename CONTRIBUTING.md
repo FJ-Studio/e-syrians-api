@@ -143,6 +143,75 @@ php artisan test
 
 6. Wait for CI to pass and a maintainer to review.
 
+## AI Review Policy
+
+Every non-draft, non-bot PR gets one AI review pass (Codex)
+automatically on open. Maintainers can request up to **2 additional
+passes** if needed for follow-ups. Beyond that, further invocations
+are auto-declined until you address the outstanding feedback.
+
+Ceiling: **3 reviews per PR** (1 auto + 2 manual). Non-maintainers
+cannot invoke Codex — their `@codex` comments are auto-deleted
+with a friendly notice.
+
+Bot-authored comments and draft PRs never trigger Codex. If you
+open a draft, the auto-invocation fires when you mark the PR ready
+for review (not on `opened`).
+
+Workflows involved:
+- `.github/workflows/auto-invoke-ai-review.yml` — posts the initial
+  `@codex review` comment on PR open / ready-for-review, once per PR.
+- `.github/workflows/gate-codex-review.yml` — enforces maintainer-only
+  for manual re-invocations and caps them at 2.
+
+### If you're a contributor
+
+You don't need to do anything. When you open a PR, the auto-invoker
+will post an `@codex review` comment within seconds and Codex will
+review your changes. Address the feedback the same way you'd address
+a human reviewer's — reply where you disagree, push commits for the
+rest. If you want a second look after your fixes, ask a maintainer
+in a normal comment (don't try `@codex review` yourself; the gate
+will delete it).
+
+### For maintainers: requesting a follow-up review
+
+Post a **new comment** on the PR (not an edit to any existing
+comment — that path doesn't fire the workflow) containing the focus
+block below. GitHub suppresses `@` mentions inside code fences, so
+the snippet is safe to copy from here:
+
+```
+@codex review
+
+Focus especially on:
+- SOLID: is business logic in services, not controllers?
+- N+1: any eager-load misses in list endpoints?
+- FormRequest validation: rules for every write; error keys are raw
+  strings (not `__()` calls)
+- PII: no plaintext `national_id` / `address` in responses, logs, or
+  seeder output
+- reCAPTCHA middleware present on every state-changing route
+- Sanctum: bearer-token guard on protected endpoints (not the web
+  guard)
+- Soft-delete: relevant queries respect `SoftDeletingScope`; global
+  scopes not bypassed silently
+- Pest coverage: happy path AND at least one 4xx path per endpoint
+- Backwards compat: API envelope (`success` / `messages` / `data`)
+  and existing keys untouched
+```
+
+Tune the focus list per PR — remove bullets that don't apply, add
+change-specific concerns (e.g. "check that the new migration is
+rollback-safe under concurrent writes").
+
+### Handling abusive PRs
+
+If a contributor opens many low-value PRs to farm AI reviews,
+block them at the repo or org level (GitHub → user profile → Block).
+Blocked users can't open PRs or comment; the auto-invocation
+naturally stops firing for them.
+
 ## Rector (Optional)
 
 Rector is configured for automated refactoring but is not part of the pre-commit hook. You can run it manually to modernize code:

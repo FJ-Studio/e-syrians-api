@@ -7,19 +7,38 @@ namespace App\Models;
 use Filament\Panel;
 use Illuminate\Support\Str;
 use App\Services\StrService;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 use Database\Factories\UserFactory;
 use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use App\Contracts\AudienceServiceContract;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+/**
+ * Docblock-declared casts so PHPStan/Larastan can resolve the
+ * runtime types on account-deletion touchpoints (UserResource,
+ * EnsureAccountNotPendingDeletion middleware,
+ * AccountDeletionService). The values are set through the
+ * `casts()` method below — this block only mirrors those casts
+ * for static analysis. Add new @property entries alongside new
+ * casts as they're introduced.
+ *
+ * @property Carbon|null $deletion_requested_at
+ * @property Carbon|null $deletion_scheduled_for
+ * @property Carbon|null $email_verified_at
+ * @property Carbon|null $phone_verified_at
+ * @property Carbon|null $two_factor_confirmed_at
+ * @property string|null $password
+ */
 class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 {
     use HasApiTokens;
@@ -126,7 +145,20 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         // count(recovery_codes) to display "N of M remaining". Set in
         // RecoveryCodeService::issueFor() — never mutated on consumption.
         'recovery_codes_total',
+        // Two-stage account-deletion timestamps. Set together when the
+        // user requests deletion; cleared together on cancel. The
+        // `EnsureAccountNotPendingDeletion` middleware reads them to
+        // block every authenticated route except cancel-deletion /
+        // deletion-status / logout during the 15-day grace period.
+        'deletion_requested_at',
+        'deletion_scheduled_for',
     ];
+
+    /** @return MorphMany<Report, $this> */
+    public function reports(): MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
+    }
 
     public function getRouteKeyName()
     {
@@ -161,7 +193,24 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
             'recovery_codes' => 'array',
             'two_factor_enabled' => 'boolean',
             'two_factor_confirmed_at' => 'datetime',
+            'deletion_requested_at' => 'datetime',
+            'deletion_scheduled_for' => 'datetime',
         ];
+    }
+
+    /**
+     * True when the user has an active deletion request in flight
+     * (both timestamps are always set/cleared together — checking
+     * one is a defensive-check safety net).
+     *
+     * Read by `EnsureAccountNotPendingDeletion` on every authenticated
+     * request and by `HardDeleteExpiredAccountsJob` before hard-
+     * deleting rows.
+     */
+    public function hasPendingDeletion(): bool
+    {
+        return $this->deletion_requested_at !== null
+            && $this->deletion_scheduled_for !== null;
     }
 
     /**
@@ -215,6 +264,17 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     public function polls()
     {
         return $this->hasMany(Poll::class, 'created_by', 'id');
+    }
+
+    /**
+     * Reusable audience lists this user has created (mixed
+     * email + national_id identifiers). Attached to a poll via
+     * `polls.audience_id` to delegate the allow-list to a saved
+     * list instead of re-pasting the same identifiers each time.
+     */
+    public function audiences()
+    {
+        return $this->hasMany(Audience::class);
     }
 
     /**
@@ -478,6 +538,20 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
 
     public function isInAudience(Poll $poll): array
     {
+        // Reusable audience list — short-circuits every demographic
+        // rule. When a poll references a saved Audience the whole
+        // gate becomes "is the caller's email or national_id in the
+        // entries table". We delegate to AudienceService because it
+        // owns the hashed-lookup logic and knows how to handle
+        // soft-deleted audiences (returns false, not throws).
+        if ($poll->audience_id !== null) {
+            /** @var AudienceServiceContract $svc */
+            $svc = resolve(AudienceServiceContract::class);
+            $isMember = $svc->isUserInAudience((int) $poll->audience_id, $this);
+
+            return $isMember ? [true, []] : [false, ['not_in_allowed_voters']];
+        }
+
         if (! $poll->relationLoaded('audienceRules')) {
             $poll->load('audienceRules');
         }
@@ -485,7 +559,10 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         $rules = $poll->audienceRules;
         $failures = [];
 
-        // Allowed voters check — if specified, only match by email or national_id
+        // Legacy safety: already-existing `allowed_voter` rows still
+        // restrict voting, even though new API requests can no longer
+        // create this rule type. Removing this before data cleanup
+        // would accidentally open old restricted polls.
         $allowedVoters = $rules->where('criterion', 'allowed_voter')->pluck('value')->all();
         if (count($allowedVoters) > 0) {
             $allowed = array_map('strtolower', $allowedVoters);

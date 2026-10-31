@@ -271,11 +271,11 @@ it('hides results for after-voting polls when user has not voted', function (): 
 });
 
 // ───────────────────────────────────────────────
-// Create Poll — Audience with allowed_voters
+// Create Poll — legacy allowed_voters rejection
 // ───────────────────────────────────────────────
 
-it('stores allowed_voters in audience when provided', function (): void {
-    $poll = test()->pollService->createPoll([
+it('rejects legacy allowed_voters payloads at the service boundary', function (): void {
+    expect(fn () => test()->pollService->createPoll([
         'question' => 'Allowed voters poll?',
         'start_date' => now()->toDateString(),
         'duration' => 7,
@@ -285,17 +285,11 @@ it('stores allowed_voters in audience when provided', function (): void {
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
         'allowed_voters' => ['user1@gmail.com', '12345678'],
-    ], test()->user->id);
-
-    $poll->load('audienceRules');
-    expect($poll->audience)->toHaveKey('allowed_voters');
-    expect($poll->audience['allowed_voters'])->toContain('user1@gmail.com')->toContain('12345678');
-    expect($poll->audience)->not->toHaveKey('gender');
-    expect($poll->audience)->not->toHaveKey('country');
+    ], test()->user->id))->toThrow(InvalidArgumentException::class, 'allowed_voters_no_longer_supported');
 });
 
-it('stores criteria-based audience when allowed_voters is empty', function (): void {
-    $poll = test()->pollService->createPoll([
+it('rejects empty legacy allowed_voters payloads at the service boundary', function (): void {
+    expect(fn () => test()->pollService->createPoll([
         'question' => 'Criteria poll?',
         'start_date' => now()->toDateString(),
         'duration' => 7,
@@ -307,15 +301,10 @@ it('stores criteria-based audience when allowed_voters is empty', function (): v
         'allowed_voters' => [],
         'gender' => ['m'],
         'country' => ['SY'],
-    ], test()->user->id);
-
-    $poll->load('audienceRules');
-    expect($poll->audience)->not->toHaveKey('allowed_voters');
-    expect($poll->audience['gender'])->toBe(['m']);
-    expect($poll->audience['country'])->toBe(['SY']);
+    ], test()->user->id))->toThrow(InvalidArgumentException::class, 'allowed_voters_no_longer_supported');
 });
 
-it('stores criteria-based audience when allowed_voters is not provided', function (): void {
+it('stores criteria-based audience when legacy allowed_voters is not provided', function (): void {
     $poll = test()->pollService->createPoll([
         'question' => 'No voters poll?',
         'start_date' => now()->toDateString(),
@@ -329,31 +318,7 @@ it('stores criteria-based audience when allowed_voters is not provided', functio
     ], test()->user->id);
 
     $poll->load('audienceRules');
-    expect($poll->audience)->not->toHaveKey('allowed_voters');
     expect($poll->audience['gender'])->toBe(['f']);
-});
-
-it('ignores criteria fields when allowed_voters is provided', function (): void {
-    $poll = test()->pollService->createPoll([
-        'question' => 'Override poll?',
-        'start_date' => now()->toDateString(),
-        'duration' => 7,
-        'max_selections' => 1,
-        'audience_can_add_options' => false,
-        'reveal_results' => 'before-voting',
-        'voters_are_visible' => true,
-        'options' => ['Yes', 'No'],
-        'allowed_voters' => ['specific@gmail.com'],
-        'gender' => ['m'],
-        'country' => ['SY'],
-        'hometown' => ['damascus'],
-    ], test()->user->id);
-
-    $poll->load('audienceRules');
-    expect($poll->audience)->toHaveKey('allowed_voters');
-    expect($poll->audience)->not->toHaveKey('gender');
-    expect($poll->audience)->not->toHaveKey('country');
-    expect($poll->audience)->not->toHaveKey('hometown');
 });
 
 // ───────────────────────────────────────────────

@@ -119,12 +119,12 @@ it('returns 422 when poll has less than 2 options', function (): void {
 });
 
 // ───────────────────────────────────────────────
-// Store — allowed_voters validation
+// Store — legacy allowed_voters rejection
 // ───────────────────────────────────────────────
 
-it('creates a poll with valid allowed_voters emails', function (): void {
+it('rejects legacy allowed_voters when creating a poll', function (): void {
     $response = $this->postJson('/polls', [
-        'question' => 'Allowed voters poll?',
+        'question' => 'Legacy voters poll?',
         'start_date' => now()->toDateString(),
         'duration' => 7,
         'max_selections' => 1,
@@ -135,13 +135,14 @@ it('creates a poll with valid allowed_voters emails', function (): void {
         'allowed_voters' => ['user1@gmail.com', 'user2@test.org'],
     ], authHeader(test()->user));
 
-    $response->assertOk();
-    $this->assertDatabaseHas('polls', ['question' => 'Allowed voters poll?']);
+    $response->assertStatus(422);
+    expect($response->json('messages'))->toHaveKey('allowed_voters');
+    $this->assertDatabaseMissing('polls', ['question' => 'Legacy voters poll?']);
 });
 
-it('creates a poll with valid allowed_voters national IDs', function (): void {
+it('rejects legacy allowed_voters even when the array is empty', function (): void {
     $response = $this->postJson('/polls', [
-        'question' => 'National ID voters poll?',
+        'question' => 'Empty legacy voters poll?',
         'start_date' => now()->toDateString(),
         'duration' => 7,
         'max_selections' => 1,
@@ -149,94 +150,11 @@ it('creates a poll with valid allowed_voters national IDs', function (): void {
         'reveal_results' => 'before-voting',
         'voters_are_visible' => true,
         'options' => ['Yes', 'No'],
-        'allowed_voters' => ['12345678', '98765432100'],
-    ], authHeader(test()->user));
-
-    $response->assertOk();
-});
-
-it('creates a poll with mixed emails and national IDs in allowed_voters', function (): void {
-    $response = $this->postJson('/polls', [
-        'question' => 'Mixed voters poll?',
-        'start_date' => now()->toDateString(),
-        'duration' => 7,
-        'max_selections' => 1,
-        'audience_can_add_options' => false,
-        'reveal_results' => 'before-voting',
-        'voters_are_visible' => true,
-        'options' => ['Yes', 'No'],
-        'allowed_voters' => ['user@gmail.com', '12345678'],
-    ], authHeader(test()->user));
-
-    $response->assertOk();
-});
-
-it('rejects allowed_voters with invalid entries', function (): void {
-    $response = $this->postJson('/polls', [
-        'question' => 'Invalid voters poll?',
-        'start_date' => now()->toDateString(),
-        'duration' => 7,
-        'max_selections' => 1,
-        'audience_can_add_options' => false,
-        'reveal_results' => 'before-voting',
-        'voters_are_visible' => true,
-        'options' => ['Yes', 'No'],
-        'allowed_voters' => ['not-an-email-or-id', 'abc'],
+        'allowed_voters' => [],
     ], authHeader(test()->user));
 
     $response->assertStatus(422);
-});
-
-it('rejects allowed_voters with short national IDs', function (): void {
-    $response = $this->postJson('/polls', [
-        'question' => 'Short ID poll?',
-        'start_date' => now()->toDateString(),
-        'duration' => 7,
-        'max_selections' => 1,
-        'audience_can_add_options' => false,
-        'reveal_results' => 'before-voting',
-        'voters_are_visible' => true,
-        'options' => ['Yes', 'No'],
-        'allowed_voters' => ['1234'], // less than 5 digits
-    ], authHeader(test()->user));
-
-    $response->assertStatus(422);
-});
-
-it('rejects allowed_voters exceeding max 500 entries', function (): void {
-    $voters = array_map(fn ($i) => "user{$i}@gmail.com", range(1, 501));
-
-    $response = $this->postJson('/polls', [
-        'question' => 'Too many voters poll?',
-        'start_date' => now()->toDateString(),
-        'duration' => 7,
-        'max_selections' => 1,
-        'audience_can_add_options' => false,
-        'reveal_results' => 'before-voting',
-        'voters_are_visible' => true,
-        'options' => ['Yes', 'No'],
-        'allowed_voters' => $voters,
-    ], authHeader(test()->user));
-
-    $response->assertStatus(422);
-});
-
-it('accepts allowed_voters with exactly 500 entries', function (): void {
-    $voters = array_map(fn ($i) => "user{$i}@gmail.com", range(1, 500));
-
-    $response = $this->postJson('/polls', [
-        'question' => 'Max voters poll?',
-        'start_date' => now()->toDateString(),
-        'duration' => 7,
-        'max_selections' => 1,
-        'audience_can_add_options' => false,
-        'reveal_results' => 'before-voting',
-        'voters_are_visible' => true,
-        'options' => ['Yes', 'No'],
-        'allowed_voters' => $voters,
-    ], authHeader(test()->user));
-
-    $response->assertOk();
+    expect($response->json('messages'))->toHaveKey('allowed_voters');
 });
 
 // ───────────────────────────────────────────────
@@ -511,6 +429,23 @@ it('accepts a partial PATCH that only touches the question', function (): void {
     expect(Poll::find($poll->id)->max_selections)->toEqual(2);
 });
 
+it('rejects legacy allowed_voters when editing a poll', function (): void {
+    $poll = createActivePollForFeature(test()->user);
+
+    $response = $this->patchJson(
+        "/polls/{$poll->id}",
+        [
+            'allowed_voters' => ['someone@example.com'],
+            'recaptcha_token' => 'test',
+        ],
+        authHeader(test()->user),
+    );
+
+    $response->assertStatus(422);
+    expect($response->json('messages'))->toHaveKey('allowed_voters');
+    expect(PollAudienceRule::where('poll_id', $poll->id)->where('criterion', 'allowed_voter')->exists())->toBeFalse();
+});
+
 // Regression: poll already started — `start_date` is intentionally
 // omitted from the PATCH so the `after_or_equal:today` rule doesn't
 // fire. The backend reuses the existing start_date when computing
@@ -567,11 +502,11 @@ it('still 404s a private poll for a non-creator viewer', function (): void {
     $response->assertStatus(404);
 });
 
-// Regression: allowlist preservation — editing a poll that has an
-// explicit-voter-list audience without sending audience keys must
-// leave the allowlist intact. (The web edit form used to wipe it
-// because PollResource hid `allowed_voters`.)
-it('leaves the allowlist intact on a scalar-only PATCH', function (): void {
+// Legacy safety: scalar-only edits must not delete historical
+// `allowed_voter` rows. New API requests cannot create this rule
+// type anymore, but existing restricted polls should not be opened
+// accidentally by an unrelated edit.
+it('leaves legacy allowed_voter rules intact on a scalar-only PATCH', function (): void {
     $poll = createActivePollForFeature(test()->user);
     PollAudienceRule::insert([
         ['poll_id' => $poll->id, 'criterion' => 'allowed_voter', 'value' => 'someone@example.com', 'created_at' => now(), 'updated_at' => now()],
@@ -580,17 +515,17 @@ it('leaves the allowlist intact on a scalar-only PATCH', function (): void {
 
     $response = $this->patchJson(
         "/polls/{$poll->id}",
-        ['question' => 'Edited but allowlist stays', 'recaptcha_token' => 'test'],
+        ['question' => 'Edited but legacy restrictions stay', 'recaptcha_token' => 'test'],
         authHeader(test()->user),
     );
 
     $response->assertOk();
-    $allowlist = PollAudienceRule::where('poll_id', $poll->id)
+    $legacyRules = PollAudienceRule::where('poll_id', $poll->id)
         ->where('criterion', 'allowed_voter')
         ->pluck('value')
         ->all();
-    expect($allowlist)->toContain('someone@example.com')
-        ->and($allowlist)->toContain('other@example.com');
+    expect($legacyRules)->toContain('someone@example.com')
+        ->and($legacyRules)->toContain('other@example.com');
 });
 
 // ───────────────────────────────────────────────

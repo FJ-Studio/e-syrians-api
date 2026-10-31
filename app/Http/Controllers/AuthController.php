@@ -96,6 +96,7 @@ class AuthController extends Controller
             $request->provider,
             $request->token,
             $request->input('name'),
+            $request->input('authorization_code'),
         );
 
         if (! $result) {

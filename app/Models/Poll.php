@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use App\Contracts\AudienceServiceContract;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
@@ -34,6 +36,7 @@ class Poll extends Model
         'voters_are_visible',
         'is_private',
         'audience_only',
+        'audience_id',
     ];
 
     protected $casts = [
@@ -44,9 +47,16 @@ class Poll extends Model
         'voters_are_visible' => 'boolean',
         'is_private' => 'boolean',
         'audience_only' => 'boolean',
+        'audience_id' => 'integer',
     ];
 
     protected $appends = ['ups_count', 'downs_count'];
+
+    /** @return MorphMany<Report, $this> */
+    public function reports(): MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
+    }
 
     protected static function booted(): void
     {
@@ -86,6 +96,30 @@ class Poll extends Model
     public function audienceRules(): HasMany
     {
         return $this->hasMany(PollAudienceRule::class);
+    }
+
+    /**
+     * Reusable audience list gating this poll's vote eligibility.
+     *
+     * Nullable — demographic-criteria polls leave this column NULL.
+     * When present, {@see User::isInAudience()} short-circuits every
+     * other rule and asks
+     * {@see AudienceServiceContract::isUserInAudience()}
+     * whether the caller's hashed identifiers match an entry.
+     *
+     * The relation is intentionally named `savedAudience` — NOT
+     * `audience` — because {@see self::getAudienceAttribute()}
+     * already owns the `audience` attribute name for the API
+     * payload. Colocating a relation and an accessor under the
+     * same name works at runtime (accessor wins for bare property
+     * access) but confuses PHPStan into inferring `Audience|null`
+     * for `$poll->audience` reads.
+     *
+     * @return BelongsTo<Audience, $this>
+     */
+    public function savedAudience(): BelongsTo
+    {
+        return $this->belongsTo(Audience::class, 'audience_id');
     }
 
     /**
@@ -135,9 +169,63 @@ class Poll extends Model
 
     /**
      * Build the audience array from normalized rules for API responses.
+     *
+     * Precedence:
+     *   1. Reusable saved Audience (`audience_id`) — return a
+     *      dedicated shape so the client can render "gated by
+     *      audience: <name>" instead of the demographic scaffold.
+     *      Also loads a small view-only summary (uuid + name +
+     *      entry counts).
+     *   2. Legacy inline `allowed_voters` list — polls created
+     *      before reusable audiences shipped may still have rows
+     *      with criterion `allowed_voter` in `poll_audience_rules`.
+     *      We surface them so older mobile / web builds keep
+     *      rendering the invite-only summary correctly. The write
+     *      surface for this shape has been removed (StorePoll /
+     *      UpdatePoll no longer accept `allowed_voters`), so this
+     *      branch is read-only. The endpoint scrubs the values on
+     *      the way out for privacy — see PollController::audience.
+     *   3. Demographic rules (the historical default shape).
      */
     protected function getAudienceAttribute(): array
     {
+        if ($this->audience_id !== null) {
+            // Relation is `savedAudience()` (see note on the method),
+            // not `audience()` — accessing `$this->audience` here
+            // would re-enter THIS accessor and blow the stack.
+            if (! $this->relationLoaded('savedAudience')) {
+                $this->load(['savedAudience' => function ($q): void {
+                    // Same aggregate columns AudienceService::list uses,
+                    // so PollResource can render an entry-count badge
+                    // without a second round-trip.
+                    $q->withCount([
+                        'entries as entries_total_count',
+                        'entries as entries_resolved_count' => function ($sub): void {
+                            $sub->whereNotNull('resolved_user_id');
+                        },
+                    ]);
+                }]);
+            }
+
+            /** @var Audience|null $audience */
+            $audience = $this->getRelation('savedAudience');
+
+            return [
+                'audience' => $audience === null
+                    // Trashed / detached FK — surface an explicit
+                    // "missing" marker rather than pretending the
+                    // poll has no audience. Vote check treats a
+                    // trashed audience as empty anyway.
+                    ? ['status' => 'missing']
+                    : [
+                        'uuid' => $audience->uuid,
+                        'name' => $audience->name,
+                        'entries_total_count' => (int) ($audience->entries_total_count ?? 0),
+                        'entries_resolved_count' => (int) ($audience->entries_resolved_count ?? 0),
+                    ],
+            ];
+        }
+
         if (! $this->relationLoaded('audienceRules')) {
             $this->load('audienceRules');
         }

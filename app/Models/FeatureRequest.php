@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class FeatureRequest extends Model
 {
@@ -33,6 +34,12 @@ class FeatureRequest extends Model
     ];
 
     protected $appends = ['ups_count', 'downs_count', 'score', 'status'];
+
+    /** @return MorphMany<Report, $this> */
+    public function reports(): MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
+    }
 
     /**
      * User who submitted the feature request.

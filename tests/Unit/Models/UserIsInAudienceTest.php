@@ -111,10 +111,10 @@ it('fails province alongside other criteria when city does not match', function 
 });
 
 // ───────────────────────────────────────────────
-// Allowed Voters
+// Legacy allowed_voter rules
 // ───────────────────────────────────────────────
 
-it('passes when user email is in allowed_voters', function (): void {
+it('passes when user email is in a legacy allowed_voter rule', function (): void {
     $poll = createPollWithRules([
         ['criterion' => 'allowed_voter', 'value' => 'audience_test@gmail.com'],
         ['criterion' => 'allowed_voter', 'value' => 'other@gmail.com'],
@@ -126,7 +126,7 @@ it('passes when user email is in allowed_voters', function (): void {
     expect($failures)->toBeEmpty();
 });
 
-it('passes when user national_id is in allowed_voters', function (): void {
+it('passes when user national_id is in a legacy allowed_voter rule', function (): void {
     $poll = createPollWithRules([
         ['criterion' => 'allowed_voter', 'value' => '12345678'],
         ['criterion' => 'allowed_voter', 'value' => '99999999'],
@@ -138,7 +138,7 @@ it('passes when user national_id is in allowed_voters', function (): void {
     expect($failures)->toBeEmpty();
 });
 
-it('passes with case-insensitive email match in allowed_voters', function (): void {
+it('passes with case-insensitive email match in a legacy allowed_voter rule', function (): void {
     $poll = createPollWithRules([
         ['criterion' => 'allowed_voter', 'value' => 'AUDIENCE_TEST@gmail.com'],
     ]);
@@ -149,7 +149,7 @@ it('passes with case-insensitive email match in allowed_voters', function (): vo
     expect($failures)->toBeEmpty();
 });
 
-it('fails when user is not in allowed_voters', function (): void {
+it('fails when user is not in legacy allowed_voter rules', function (): void {
     $poll = createPollWithRules([
         ['criterion' => 'allowed_voter', 'value' => 'unknown@gmail.com'],
         ['criterion' => 'allowed_voter', 'value' => '99999999'],
@@ -161,7 +161,7 @@ it('fails when user is not in allowed_voters', function (): void {
     expect($failures)->toContain('not_in_allowed_voters');
 });
 
-it('skips all other criteria when allowed_voters is specified', function (): void {
+it('skips all other criteria when legacy allowed_voter rules are present', function (): void {
     // User is male, but poll has gender=f and country=US rules too.
     // However, allowed_voter rules are present and user's email matches — should pass.
     $poll = createPollWithRules([

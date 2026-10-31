@@ -15,10 +15,12 @@ interface AuthServiceContract
      * user's name on the very first sign-in (and via the SDK, not the JWT),
      * so callers forward it here so the user record gets a real name on
      * creation instead of an email-derived fallback.
+     * Apple additionally requires $authorizationCode so the API can retain
+     * an encrypted refresh token for revocation on permanent account deletion.
      *
      * @return array{user: User, token: string}|null
      */
-    public function authenticateViaSocialProvider(string $provider, string $token, ?string $clientName = null): ?array;
+    public function authenticateViaSocialProvider(string $provider, string $token, ?string $clientName = null, ?string $authorizationCode = null): ?array;
 
     /**
      * Authenticate via credentials (email/phone/national_id + password)

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\User;
+use App\Models\AppleRefreshToken;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Hash;
 use App\Contracts\AuthServiceContract;
@@ -13,14 +15,19 @@ use Laravel\Socialite\Facades\Socialite;
 
 class AuthService implements AuthServiceContract
 {
-    public function authenticateViaSocialProvider(string $provider, string $token, ?string $clientName = null): ?array
+    public function authenticateViaSocialProvider(string $provider, string $token, ?string $clientName = null, ?string $authorizationCode = null): ?array
     {
-        $userData = $this->resolveSocialUserData($provider, $token);
+        $userData = $this->resolveSocialUserData($provider, $token, $authorizationCode);
 
         if (! $userData) {
             return null;
         }
 
+        return DB::transaction(fn () => $this->persistSocialLogin($provider, $userData, $clientName));
+    }
+
+    private function persistSocialLogin(string $provider, array $userData, ?string $clientName): ?array
+    {
         // Apple only returns the user's name on the very first sign-in (and
         // not in the JWT — it comes from the client SDK separately). When the
         // client passes a name through, prefer it over whatever the provider
@@ -39,6 +46,10 @@ class AuthService implements AuthServiceContract
 
         if (! $user && ! empty($userData['email'])) {
             $user = User::where('email', $userData['email'])->first();
+        }
+
+        if ($provider === 'apple' && $user && $user->apple_id && $user->apple_id !== $userData['id']) {
+            return null;
         }
 
         // resolveSocialUserData() guarantees `name` is a string (possibly empty).
@@ -79,6 +90,16 @@ class AuthService implements AuthServiceContract
             }
         }
 
+        if ($provider === 'apple') {
+            // Keep every distinct grant, including repeat logins on the same
+            // client. Do not assume revoking the latest token revokes older
+            // device/session tokens too. The hash deduplicates encrypted values.
+            AppleRefreshToken::firstOrCreate(
+                ['user_id' => $user->id, 'client_id' => $userData['client_id'], 'token_hash' => hash('sha256', $userData['refresh_token'])],
+                ['refresh_token' => $userData['refresh_token']],
+            );
+        }
+
         $plainToken = $user->createToken($provider)->plainTextToken;
 
         return [
@@ -89,17 +110,15 @@ class AuthService implements AuthServiceContract
 
     /**
      * Resolve user data from a social provider token. Apple uses a JWT
-     * identity token that we verify locally; other providers go through
-     * Laravel Socialite's userFromToken().
+     * identity token plus a code exchanged for a revocable grant; other
+     * providers go through Laravel Socialite's userFromToken().
      *
-     * @return array{id: string, name: string, email: ?string, avatar: ?string}|null
+     * @return array{id: string, name: string, email: ?string, avatar: ?string, client_id?: string, refresh_token?: string}|null
      */
-    private function resolveSocialUserData(string $provider, string $token): ?array
+    private function resolveSocialUserData(string $provider, string $token, ?string $authorizationCode): ?array
     {
         if ($provider === 'apple') {
-            $data = AppleAuthService::getUserDataFromIdentityToken($token);
-
-            return empty($data) ? null : $data;
+            return AppleAuthService::exchangeAuthorizationCode($token, $authorizationCode ?? '');
         }
 
         $socialUser = Socialite::driver($provider)->userFromToken($token);
