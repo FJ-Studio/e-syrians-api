@@ -12,6 +12,7 @@ use App\Contracts\AudienceServiceContract;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
@@ -50,6 +51,12 @@ class Poll extends Model
     ];
 
     protected $appends = ['ups_count', 'downs_count'];
+
+    /** @return MorphMany<Report, $this> */
+    public function reports(): MorphMany
+    {
+        return $this->morphMany(Report::class, 'reportable');
+    }
 
     protected static function booted(): void
     {

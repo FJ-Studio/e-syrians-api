@@ -8,6 +8,7 @@ use App\Http\Controllers\PollController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AudienceController;
 use App\Http\Controllers\PasswordController;
@@ -30,6 +31,10 @@ use App\Http\Middleware\EnsureAccountNotPendingDeletion;
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
 })->name('ping');
+
+Route::post('/reports', [ReportController::class, 'store'])
+    ->middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class, 'throttle:5,10,reports', 'recaptcha'])
+    ->name('reports.store');
 
 /*
 |--------------------------------------------------------------------------

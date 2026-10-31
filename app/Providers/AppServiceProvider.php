@@ -10,6 +10,7 @@ use App\Services\AuthService;
 use App\Services\PollService;
 use App\Services\StatsService;
 use App\Services\DeviceService;
+use App\Services\ReportService;
 use App\Services\ProfileService;
 use App\Services\AudienceService;
 use App\Services\PasswordService;
@@ -28,6 +29,7 @@ use App\Contracts\StatsServiceContract;
 use App\Services\FeatureRequestService;
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\DeviceServiceContract;
+use App\Contracts\ReportServiceContract;
 use App\Services\AccountDeletionService;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\AudienceServiceContract;
@@ -62,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,
         ProfileServiceContract::class => ProfileService::class,
+        ReportServiceContract::class => ReportService::class,
         StatsServiceContract::class => StatsService::class,
         UserPollServiceContract::class => UserPollService::class,
         VerificationServiceContract::class => VerificationService::class,
