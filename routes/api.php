@@ -19,6 +19,7 @@ use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\FeatureRequestController;
 use App\Http\Controllers\AccountDeletionController;
+use App\Http\Controllers\DonationSettingsController;
 use App\Http\Controllers\SuspiciousActivityController;
 use App\Http\Middleware\EnsureAccountNotPendingDeletion;
 
@@ -31,6 +32,10 @@ use App\Http\Middleware\EnsureAccountNotPendingDeletion;
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
 })->name('ping');
+
+Route::get('/donations/settings', DonationSettingsController::class)
+    ->middleware('throttle:60,1,donation_settings')
+    ->name('donations.settings');
 
 Route::post('/reports', [ReportController::class, 'store'])
     ->middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class, 'throttle:5,10,reports', 'recaptcha'])
