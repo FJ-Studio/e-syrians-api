@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\Poll;
 use App\Models\User;
+use Laravel\Pennant\Feature;
 use App\Services\AuthService;
 use App\Services\PollService;
 use App\Services\StatsService;
@@ -32,6 +33,7 @@ use App\Contracts\DeviceServiceContract;
 use App\Contracts\ReportServiceContract;
 use App\Services\AccountDeletionService;
 use App\Contracts\ProfileServiceContract;
+use App\Services\DonationSettingsService;
 use App\Contracts\AudienceServiceContract;
 use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
@@ -83,6 +85,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Feature::define(DonationSettingsService::CRYPTO_FEATURE, false);
+
         // Force HTTPS on every URL Laravel generates (`url()`,
         // `route()`, `asset()`, `URL::to()`, etc.).
         //
