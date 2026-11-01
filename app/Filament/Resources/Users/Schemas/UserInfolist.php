@@ -22,10 +22,6 @@ class UserInfolist
                 TextEntry::make('middle_name')
                     ->placeholder('-'),
                 TextEntry::make('surname'),
-                TextEntry::make('national_id')
-                    ->placeholder('-'),
-                TextEntry::make('national_id_hashed')
-                    ->placeholder('-'),
                 TextEntry::make('gender')
                     ->badge()
                     ->placeholder('-'),
@@ -33,11 +29,6 @@ class UserInfolist
                     ->placeholder('-'),
                 TextEntry::make('hometown')
                     ->badge()
-                    ->placeholder('-'),
-                TextEntry::make('email')
-                    ->label('Email address')
-                    ->placeholder('-'),
-                TextEntry::make('email_hashed')
                     ->placeholder('-'),
                 TextEntry::make('email_verified_at')
                     ->dateTime()
@@ -155,8 +146,6 @@ class UserInfolist
                     ->boolean(),
                 IconEntry::make('account_verified_email')
                     ->boolean(),
-                TextEntry::make('two_factor_secret')
-                    ->placeholder('-'),
                 IconEntry::make('two_factor_enabled')
                     ->boolean(),
                 TextEntry::make('two_factor_confirmed_at')
