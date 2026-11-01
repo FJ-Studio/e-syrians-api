@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 /**
  * @property bool $is_restricted Dynamically set by PollService::getPollById()
+ * @property Carbon|null $invitations_dispatched_at
+ * @property Carbon|null $closure_notified_at
  *
  * @method static Builder<static> visibleTo(?User $user)
  */
@@ -48,6 +51,8 @@ class Poll extends Model
         'is_private' => 'boolean',
         'audience_only' => 'boolean',
         'audience_id' => 'integer',
+        'invitations_dispatched_at' => 'datetime',
+        'closure_notified_at' => 'datetime',
     ];
 
     protected $appends = ['ups_count', 'downs_count'];

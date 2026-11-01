@@ -155,7 +155,7 @@ class TwoFactorController extends Controller
         }
 
         // Complete the login — create a Sanctum token
-        $plainToken = $user->createToken(date('Y-m-d-H:i:s'))->plainTextToken;
+        $plainToken = $this->authService->issueLoginToken($user, date('Y-m-d-H:i:s'));
 
         return ApiService::success([
             'user' => (new UserResource($user))->additional(['isOwner' => true]),

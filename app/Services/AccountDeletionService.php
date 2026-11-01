@@ -222,8 +222,8 @@ final class AccountDeletionService implements AccountDeletionServiceContract
         $user->notifications()->delete();
 
         // Devices — hard-delete (personal push-subscription rows).
-        // FK cascades, but call explicitly so the OneSignal
-        // subscription rows are gone before the user id vanishes
+        // FK cascades, but call explicitly so the Expo device
+        // registrations are gone before the user id vanishes
         // (avoids orphaned records if the cascade races with an
         // in-flight push write).
         $user->devices()->delete();

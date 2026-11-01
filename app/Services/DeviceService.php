@@ -6,46 +6,55 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Device;
-use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use App\Contracts\DeviceServiceContract;
+use Illuminate\Database\UniqueConstraintViolationException;
 
 class DeviceService implements DeviceServiceContract
 {
     public function registerDevice(User $user, array $payload): Device
     {
-        $subscriptionId = $payload['subscription_id'];
+        // StoreDeviceRequest requires a persistent bearer token. Recheck ownership/existence.
+        $session = $user->tokens()->findOrFail($user->currentAccessToken()->id);
 
-        // `updateOrCreate` on the unique `subscription_id` handles all
-        // three cases in one query:
-        //   - brand-new device → row created
-        //   - same user re-registering (token refresh, settings flip)
-        //     → row updated with refreshed `last_seen_at`
-        //   - device was previously someone else's → row's user_id
-        //     reassigned to the current user; the previous owner no
-        //     longer receives notifications targeted at that device.
-        //     The mobile client at logout calls DELETE first, so the
-        //     re-link path is mostly a safety net for app crashes or
-        //     misbehaving SDK builds.
-        return Device::updateOrCreate(
-            ['subscription_id' => $subscriptionId],
-            [
-                'user_id' => $user->id,
-                'platform' => $payload['platform'],
-                'model' => $payload['model'] ?? null,
-                'last_seen_at' => Date::now(),
-            ],
-        );
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            try {
+                return DB::transaction(function () use ($user, $session, $payload): Device {
+                    $hash = hash('sha256', $payload['expo_push_token']);
+                    $device = Device::query()->where('installation_id', $payload['installation_id'])
+                        ->lockForUpdate()->first();
+
+                    // The same native token must never remain routable for two installs/users.
+                    // Lock the token row as well; unique indexes guard concurrent registration.
+                    $previous = Device::query()->where('token_hash', $hash)->lockForUpdate()->first();
+                    if ($previous && $previous->id !== $device?->id) {
+                        $previous->update(['disabled_at' => now(), 'expo_push_token' => null, 'token_hash' => null]);
+                    }
+
+                    $changed = ! $device || $device->user_id !== $user->id || $device->token_hash !== $hash
+                        || $device->personal_access_token_id !== $session->id || $device->disabled_at !== null;
+                    $version = $device ? $device->registration_version + ($changed ? 1 : 0) : 1;
+                    $device ??= new Device(['uuid' => (string) Str::uuid(), 'installation_id' => $payload['installation_id']]);
+                    $device->fill(['user_id' => $user->id, 'personal_access_token_id' => $session->id,
+                        'expo_push_token' => $payload['expo_push_token'], 'token_hash' => $hash,
+                        'registration_version' => $version, 'platform' => $payload['platform'],
+                        'model' => $payload['model'] ?? null, 'locale' => $payload['locale'] ?? 'en',
+                        'disabled_at' => null, 'last_seen_at' => now()])->save();
+
+                    return $device;
+                }, 3);
+            } catch (UniqueConstraintViolationException) {
+                // A simultaneous first registration won the unique install/token index.
+                // Retry the lookup under a new transaction instead of returning a 500.
+            }
+        }
+        abort(409, 'Device registration changed concurrently. Please retry.');
     }
 
-    public function unregisterDevice(User $user, string $subscriptionId): void
+    public function unregisterDevice(User $user, string $deviceUuid): void
     {
-        // Scoped by user_id so a stolen subscription_id can't be used to
-        // unregister someone else's device. The lookup returns null
-        // silently when the device isn't ours — caller treats both
-        // "not found" and "deleted" as success per the spec.
-        Device::query()
-            ->where('user_id', $user->id)
-            ->where('subscription_id', $subscriptionId)
-            ->delete();
+        Device::query()->where('uuid', $deviceUuid)->where('user_id', $user->id)
+            ->update(['disabled_at' => now()]);
     }
 }
