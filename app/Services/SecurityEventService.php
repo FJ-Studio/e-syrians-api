@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\User;
 use Illuminate\Support\Str;
 use App\Models\SecurityEvent;
+use App\Enums\PlatformFeature;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\FanOutPlatformNotificationJob;
 
@@ -42,7 +43,7 @@ class SecurityEventService
             'device_info' => mb_substr((string) request()->header('X-Device-Info', request()->userAgent() ?? ''), 0, 255),
             'ip_address' => request()->ip()]);
         // Audit storage is unconditional. Delivery is configurable and can be disabled.
-        if ($notify && config('services.notification_events_enabled', true)) {
+        if ($notify && resolve(FeatureFlagService::class)->enabled(PlatformFeature::NotificationEvents)) {
             dispatch(new FanOutPlatformNotificationJob($event, $record->id))->afterCommit();
         }
         return $record;

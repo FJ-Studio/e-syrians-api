@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use App\Jobs\SendExpoPushJob;
 use App\Models\SecurityEvent;
 use App\Services\AuthService;
+use App\Enums\PlatformFeature;
 use App\Models\UserVerification;
 use App\Services\ExpoPushService;
 use App\Services\PasswordService;
@@ -111,7 +112,7 @@ it('delivers inbox and push independently and deduplicates even after inbox dele
 
 it('rechecks category push opt-out when a queued delivery executes', function (): void {
     Http::fake();
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     $user = User::factory()->create();
     $device = granularDevice($user);
     $job = new SendExpoPushJob($device->id, $user->id, 1, 'queued', new ExpoPushMessage(
@@ -126,7 +127,7 @@ it('rechecks category push opt-out when a queued delivery executes', function ()
 
 it('records password and two-factor audit history even when both security channels are muted', function (): void {
     Bus::fake();
-    config(['services.notification_events_enabled' => true]);
+    setPlatformFeature(PlatformFeature::NotificationEvents);
     $user = User::factory()->create();
     $preferences = resolve(NotificationPreferenceService::class);
     $preferences->update($user, NotificationCategory::Security, 'in_app', false);
@@ -153,7 +154,7 @@ it('does not report incomplete two-factor setup or a failed password change as s
 
 it('records a successful password reset without storing the reset credential in audit or jobs', function (): void {
     Bus::fake();
-    config(['services.notification_events_enabled' => true]);
+    setPlatformFeature(PlatformFeature::NotificationEvents);
     $user = User::factory()->create();
     $token = Password::broker()->createToken($user);
     $result = resolve(PasswordService::class)->resetPassword($user->email, $token, 'private-new-password');
@@ -165,7 +166,7 @@ it('records a successful password reset without storing the reset credential in 
 
 it('alerts on new installations but retains every successful sign-in in independent audit history', function (): void {
     Bus::fake();
-    config(['services.notification_events_enabled' => true]);
+    setPlatformFeature(PlatformFeature::NotificationEvents);
     $user = User::factory()->create();
     $installation = (string) Str::uuid();
     request()->headers->set('X-Installation-ID', $installation);
@@ -186,7 +187,7 @@ it('alerts on new installations but retains every successful sign-in in independ
 
 it('does not infer device trust from user-agent for clients without an installation hint', function (): void {
     Bus::fake();
-    config(['services.notification_events_enabled' => true]);
+    setPlatformFeature(PlatformFeature::NotificationEvents);
     $user = User::factory()->create();
     resolve(AuthService::class)->issueLoginToken($user, 'web');
     resolve(AuthService::class)->issueLoginToken($user, 'web');
@@ -224,7 +225,7 @@ it('scopes paginated security history to its owner and keeps it when inbox entri
 
 it('sends revocation and loss-of-status updates and allows later verification transitions again', function (): void {
     Bus::fake();
-    config(['services.notification_events_enabled' => true]);
+    setPlatformFeature(PlatformFeature::NotificationEvents);
     $user = User::factory()->create(['verified_at' => now()]);
     $verification = UserVerification::create(['user_id' => $user->id, 'verifier_id' => User::factory()->create()->id]);
     $verification->update(['cancelled_at' => now()]);

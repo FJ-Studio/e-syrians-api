@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use Laravel\Pennant\Feature;
 use Illuminate\Bus\Queueable;
 use App\Models\PollAudienceRule;
 use App\Services\BigQueryService;
@@ -30,6 +31,7 @@ class SyncPollAudienceRulesToBigQuery implements ShouldQueue
 
     public function handle(BigQueryService $bigQuery): void
     {
+        Feature::flushCache();
         if (! $bigQuery->isEnabled()) {
             return;
         }

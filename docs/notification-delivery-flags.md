@@ -23,9 +23,12 @@ transport, grant user consent, or change announcement opt-in defaults.
 
 In-app delivery requires the event's In-app flag **and** the account's category
 preference. Push requires the event's Push flag, the account's category preference,
-an active opted-in device, and `EXPO_PUSH_ENABLED=true`. Keep that environment
-switch **false in production** until credentials and physical-device tests pass.
-The Filament page shows the current transport state but cannot turn it on.
+an active opted-in device, and the global Pennant `expo-push` flag. Keep that flag
+**off in production** until credentials and physical-device tests pass. The
+Notification delivery page shows its current state and links to **Settings →
+Feature flags**, where administrators can change it without editing environment
+variables. Legacy environment values are imported only when initializing missing
+flags; they do not override saved administrator choices.
 
 Authentication OTPs, password-recovery emails and other transactional mail are
 outside this notification matrix. Security Activity is always stored independently
@@ -54,13 +57,18 @@ the same send job and policy check.
 
 Pennant clears its cache between Octane requests and completed worker jobs. Both
 fanout and push jobs also refresh state explicitly, including retries after failed
-jobs. A
-currently running fanout can finish its batch using the flags it already read;
+jobs. A currently running fanout can finish its batch using the flags it already read;
 every queued push still checks fresh state at execution. Flags cannot recall a
 request already accepted by Expo.
 
 ## Deployment
 
-No new schema migration or dependency is needed: this reuses the Pennant `features`
-table. Reload Octane and restart Horizon after deploying the new code. Configure
-the event/channel switches in Filament while keeping `EXPO_PUSH_ENABLED=false`.
+This reuses the existing Pennant `features` table and adds no dependency. Refresh
+Laravel's cached configuration and run migrations: the platform feature flags have
+a one-time initialization migration that preserves existing switch values. Reload
+Octane and restart Horizon after deploying the new code. Configure the event/channel
+switches in Filament while keeping the `expo-push` feature off until device tests pass.
+
+See [the environment/feature-flag audit](environment-feature-flag-audit.md) for
+upgrade defaults and the new administration page. Later feature-flag changes do
+not require a restart or deployment.

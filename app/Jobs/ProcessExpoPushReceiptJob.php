@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\Device;
+use Laravel\Pennant\Feature;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use App\Channels\Messages\ExpoPushMessage;
@@ -36,6 +37,7 @@ class ProcessExpoPushReceiptJob implements ShouldQueue
 
     public function handle(ExpoPushServiceContract $push): void
     {
+        Feature::flushCache();
         if (! $push->isEnabled()) {
             return;
         }
