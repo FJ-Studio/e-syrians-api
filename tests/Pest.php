@@ -13,6 +13,9 @@
 
 use Tests\TestCase;
 use App\Models\User;
+use Laravel\Pennant\Feature;
+use App\Enums\PlatformFeature;
+use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Artisan;
 
 pest()->extend(TestCase::class)
@@ -51,4 +54,9 @@ function authHeader(User $user): array
     return [
         'Authorization' => 'Bearer '.explode('|', $user->createToken('test')->plainTextToken)[1],
     ];
+}
+
+function setPlatformFeature(PlatformFeature $feature, bool $enabled = true): void
+{
+    Feature::for(FeatureFlagService::SCOPE)->activate($feature->value, $enabled);
 }

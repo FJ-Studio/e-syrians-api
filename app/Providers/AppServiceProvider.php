@@ -8,16 +8,19 @@ use App\Models\Poll;
 use App\Models\User;
 use App\Services\AuthService;
 use App\Services\PollService;
+use App\Models\FeatureRequest;
 use App\Services\StatsService;
 use App\Services\DeviceService;
 use App\Services\ReportService;
+use App\Models\UserVerification;
 use App\Services\ProfileService;
 use App\Services\AudienceService;
+use App\Services\ExpoPushService;
 use App\Services\PasswordService;
 use App\Services\UserPollService;
-use App\Services\OneSignalService;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\URL;
+use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Date;
 use App\Services\VerificationService;
 use Illuminate\Support\Facades\Event;
@@ -33,16 +36,18 @@ use App\Contracts\ReportServiceContract;
 use App\Services\AccountDeletionService;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\AudienceServiceContract;
+use App\Contracts\ExpoPushServiceContract;
 use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
-use App\Contracts\OneSignalServiceContract;
 use App\Contracts\FileUploadServiceContract;
 use App\Contracts\VerificationServiceContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Observers\PlatformNotificationObserver;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use App\Contracts\AccountDeletionServiceContract;
 use SocialiteProviders\Manager\SocialiteWasCalled;
+use App\Services\NotificationDeliverySettingsService;
 use SocialiteProviders\Apple\Provider as AppleProvider;
 use SocialiteProviders\Google\Provider as GoogleProvider;
 
@@ -60,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
         DeviceServiceContract::class => DeviceService::class,
         FeatureRequestServiceContract::class => FeatureRequestService::class,
         FileUploadServiceContract::class => FileUploadService::class,
-        OneSignalServiceContract::class => OneSignalService::class,
+        ExpoPushServiceContract::class => ExpoPushService::class,
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,
         ProfileServiceContract::class => ProfileService::class,
@@ -83,6 +88,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        foreach ([User::class, Poll::class, FeatureRequest::class, UserVerification::class] as $model) {
+            $model::observe(PlatformNotificationObserver::class);
+        }
+        FeatureFlagService::defineFeatures();
+        NotificationDeliverySettingsService::defineFeatures();
+
         // Force HTTPS on every URL Laravel generates (`url()`,
         // `route()`, `asset()`, `URL::to()`, etc.).
         //

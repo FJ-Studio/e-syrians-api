@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Mail\PasswordSetupOtp;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Cache;
@@ -20,8 +21,10 @@ class PasswordService implements PasswordServiceContract
             return ['success' => false, 'message' => 'current_password_incorrect', 'code' => 401];
         }
 
-        $user->password = Hash::make($newPassword);
-        $user->save();
+        DB::transaction(function () use ($user, $newPassword): void {
+            $user->password = Hash::make($newPassword);
+            $user->save();
+        });
 
         return ['success' => true, 'message' => 'password_updated', 'code' => 200];
     }
@@ -52,8 +55,10 @@ class PasswordService implements PasswordServiceContract
             return ['success' => false, 'message' => 'invalid_or_expired_otp', 'code' => 422];
         }
 
-        $user->password = Hash::make($newPassword);
-        $user->save();
+        DB::transaction(function () use ($user, $newPassword): void {
+            $user->password = Hash::make($newPassword);
+            $user->save();
+        });
 
         Cache::forget("password_setup_otp:{$user->id}");
 
@@ -89,9 +94,9 @@ class PasswordService implements PasswordServiceContract
                 'token' => $token,
             ],
             function ($user, $password): void {
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                ])->save();
+                DB::transaction(function () use ($user, $password): void {
+                    $user->forceFill(['password' => Hash::make($password)])->save();
+                });
             }
         );
 

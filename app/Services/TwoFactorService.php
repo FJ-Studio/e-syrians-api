@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\User;
 use BaconQrCode\Writer;
 use PragmaRX\Google2FA\Google2FA;
+use Illuminate\Support\Facades\DB;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -139,15 +140,11 @@ final class TwoFactorService
             return false;
         }
 
-        $user->update([
-            'two_factor_enabled' => true,
-            'two_factor_confirmed_at' => now(),
-        ]);
-
-        // Issue the initial recovery-codes batch through the service so
-        // the `recovery_codes_total` snapshot is set alongside the array
-        // (needed by the mobile + web UI to display "N of M remaining").
-        RecoveryCodeService::issueFor($user);
+        DB::transaction(function () use ($user): void {
+            $user->update(['two_factor_enabled' => true, 'two_factor_confirmed_at' => now()]);
+            // Keep the recovery-code batch and its total snapshot atomic with enabling 2FA.
+            RecoveryCodeService::issueFor($user);
+        });
 
         return true;
     }
@@ -157,11 +154,9 @@ final class TwoFactorService
      */
     public function disableTwoFactor(User $user): void
     {
-        $user->update([
-            'two_factor_secret' => null,
-            'two_factor_enabled' => false,
-            'two_factor_confirmed_at' => null,
-        ]);
+        DB::transaction(function () use ($user): void {
+            $user->update(['two_factor_secret' => null, 'two_factor_enabled' => false, 'two_factor_confirmed_at' => null]);
+        });
     }
 
     /**

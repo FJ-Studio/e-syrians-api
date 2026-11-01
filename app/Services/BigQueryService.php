@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Throwable;
+use App\Enums\PlatformFeature;
 use Illuminate\Support\Facades\Log;
 use Google\Cloud\BigQuery\BigQueryClient;
 
@@ -17,7 +18,9 @@ class BigQueryService
      */
     public function isEnabled(): bool
     {
-        return (bool) config('services.bigquery.enabled');
+        $flags = resolve(FeatureFlagService::class);
+        return $flags->enabled(PlatformFeature::BigQueryExport)
+            && $flags->unavailableReason(PlatformFeature::BigQueryExport) === null;
     }
 
     /**

@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -80,27 +79,16 @@ return [
     ],
 
     /*
-    | OneSignal push notifications — server-side credentials. The
-    | mobile SDK reads its own EXPO_PUBLIC_ONESIGNAL_APP_ID at build
-    | time; that value goes into the JS bundle. The REST API key here
-    | is SEPARATE — it's the server-side key used by our
-    | `OneSignalService` to fan out push sends. NEVER bundle it into
-    | the mobile JS or expose it to the browser.
-    |
-    | Both come from the OneSignal dashboard → Settings → Keys & IDs.
-    | The modern OneSignal API uses keys prefixed `os_v2_…`; older
-    | keys still work but use a different Authorization header format
-    | (auto-detected in `OneSignalService::isV2Key`).
+    | Runtime delivery is controlled by Pennant in Filament. The optional
+    | Expo enhanced-security token remains server-only configuration.
     */
-    'onesignal' => [
-        'app_id' => env('ONESIGNAL_APP_ID'),
-        'rest_api_key' => env('ONESIGNAL_REST_API_KEY'),
+    'expo_push' => [
+        'access_token' => env('EXPO_PUSH_ACCESS_TOKEN'),
     ],
 
     'internal_api_key' => env('INTERNAL_API_KEY'),
 
     'bigquery' => [
-        'enabled' => env('BIGQUERY_ENABLED', false),
         'project_id' => env('BIGQUERY_PROJECT_ID'),
         'dataset' => env('BIGQUERY_DATASET', 'e_syrians_audit'),
         'credentials' => env('BIGQUERY_CREDENTIALS'),

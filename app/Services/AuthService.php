@@ -100,7 +100,7 @@ class AuthService implements AuthServiceContract
             );
         }
 
-        $plainToken = $user->createToken($provider)->plainTextToken;
+        $plainToken = $this->issueLoginToken($user, $provider);
 
         return [
             'user' => $user,
@@ -164,7 +164,7 @@ class AuthService implements AuthServiceContract
             ];
         }
 
-        $plainToken = $user->createToken(date('Y-m-d-H:i:s'))->plainTextToken;
+        $plainToken = $this->issueLoginToken($user, date('Y-m-d-H:i:s'));
 
         return [
             'user' => $user,
@@ -195,6 +195,16 @@ class AuthService implements AuthServiceContract
         event(new Registered($user));
 
         return $user;
+    }
+
+    /** Called only after all required authentication factors succeeded. */
+    public function issueLoginToken(User $user, string $name): string
+    {
+        return DB::transaction(function () use ($user, $name): string {
+            $token = $user->createToken($name)->plainTextToken;
+            resolve(SecurityEventService::class)->recordSignIn($user);
+            return $token;
+        });
     }
 
     public function isEmailAvailable(string $email): bool
