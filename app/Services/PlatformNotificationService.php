@@ -8,7 +8,6 @@ use App\Models\User;
 use Ramsey\Uuid\Uuid;
 use App\Channels\ExpoPushChannel;
 use Illuminate\Support\Facades\DB;
-use App\Enums\NotificationCategory;
 use App\Notifications\PlatformNotification;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -24,19 +23,11 @@ class PlatformNotificationService
                     return;
                 }
                 if (! DB::table('notification_deliveries')->where('id', $notification->id)->exists()) {
-                    $category = NotificationCategory::forEvent($notification->event);
-                    $preferences = resolve(NotificationPreferenceService::class);
-                    $inApp = $preferences->allows($recipient, $category, 'in_app');
-                    $push = $preferences->allows($recipient, $category, 'push');
+                    $channels = $notification->via($recipient);
+                    $inApp = in_array('database', $channels, true);
+                    $push = in_array(ExpoPushChannel::class, $channels, true);
                     DB::table('notification_deliveries')->insert(['id' => $notification->id, 'user_id' => $recipient->id,
                         'in_app' => $inApp, 'push' => $push, 'created_at' => now()]);
-                    $channels = [];
-                    if ($inApp) {
-                        $channels[] = 'database';
-                    }
-                    if ($push) {
-                        $channels[] = ExpoPushChannel::class;
-                    }
                     if ($channels !== []) {
                         $recipient->notifyNow($notification, $channels);
                     }

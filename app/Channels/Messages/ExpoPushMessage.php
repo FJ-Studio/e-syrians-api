@@ -13,7 +13,8 @@ final readonly class ExpoPushMessage
     public function __construct(
         public array $data = ['type' => 'notification'],
         public string $locale = 'en',
-        public ?NotificationCategory $category = null
+        public ?NotificationCategory $category = null,
+        public ?string $event = null
     ) {
     }
 

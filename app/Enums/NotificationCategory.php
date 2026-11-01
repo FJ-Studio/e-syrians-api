@@ -18,15 +18,20 @@ enum NotificationCategory: string
 
     public static function forEvent(string $event): self
     {
-        return match (true) {
-            in_array($event, ['verification_received', 'verification_revoked'], true) => self::Verifications,
-            in_array($event, ['account_verified', 'account_unverified'], true) => self::AccountStatus,
-            $event === 'poll_opened' => self::PollInvitations,
-            $event === 'poll_closed' => self::PollResults,
-            $event === 'announcement' => self::Announcements,
-            str_starts_with($event, 'security_') => self::Security,
-            str_starts_with($event, 'feature_') => self::FeatureRequests,
-            default => throw new InvalidArgumentException('Unknown notification event.'),
+        return NotificationEvent::tryFrom($event)?->category()
+            ?? throw new InvalidArgumentException('Unknown notification event.');
+    }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Verifications => 'Verifications',
+            self::AccountStatus => 'Account verification status',
+            self::PollInvitations => 'Poll invitations',
+            self::PollResults => 'Poll closing / results',
+            self::FeatureRequests => 'Feature-request updates',
+            self::Announcements => 'Platform announcements',
+            self::Security => 'Security alerts',
         };
     }
 }

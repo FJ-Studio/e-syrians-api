@@ -109,7 +109,8 @@ it('rechecks category push opt-out when a queued delivery executes', function ()
     $device = granularDevice($user);
     $job = new SendExpoPushJob($device->id, $user->id, 1, 'queued', new ExpoPushMessage(
         ['type' => 'verification'],
-        category: NotificationCategory::AccountStatus
+        category: NotificationCategory::AccountStatus,
+        event: 'account_verified'
     ));
     resolve(NotificationPreferenceService::class)->update($user, NotificationCategory::AccountStatus, 'push', false);
     $job->handle(resolve(ExpoPushService::class));
