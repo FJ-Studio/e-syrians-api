@@ -1,6 +1,9 @@
 <?php
 
 use App\Models\Poll;
+use Laravel\Pennant\Feature;
+use App\Enums\PlatformFeature;
+use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Schedule;
 use App\Jobs\HardDeleteExpiredAccountsJob;
 use App\Jobs\FanOutPlatformNotificationJob;
@@ -16,7 +19,8 @@ Schedule::command('model:prune', ['--model' => 'App\\Models\\ProfileUpdate'])->d
 Schedule::job(new HardDeleteExpiredAccountsJob())->dailyAt('03:00');
 
 Schedule::call(function (): void {
-    if (! config('services.notification_events_enabled', true)) {
+    Feature::flushCache();
+    if (! resolve(FeatureFlagService::class)->enabled(PlatformFeature::NotificationEvents)) {
         return;
     }
     Poll::query()->whereNull('invitations_dispatched_at')
@@ -29,7 +33,8 @@ Schedule::call(function (): void {
 })->name('dispatch-open-poll-invitations')->everyMinute()->withoutOverlapping();
 
 Schedule::call(function (): void {
-    if (! config('services.notification_events_enabled', true)) {
+    Feature::flushCache();
+    if (! resolve(FeatureFlagService::class)->enabled(PlatformFeature::NotificationEvents)) {
         return;
     }
     Poll::withoutGlobalScope('public_polls')->whereNull('closure_notified_at')->where('end_date', '<=', now())

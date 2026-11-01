@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Laravel\Pennant\Feature;
 use App\Jobs\SendExpoPushJob;
 use App\Models\SecurityEvent;
+use App\Enums\PlatformFeature;
 use Filament\Facades\Filament;
 use App\Enums\NotificationEvent;
 use App\Services\ExpoPushService;
@@ -52,7 +53,7 @@ beforeEach(function (): void {
 it('defines a global persistent channel flag for every supported event without enabling the Expo transport', function (): void {
     $settings = resolve(NotificationDeliverySettingsService::class);
     $matrix = $settings->matrix();
-    expect($matrix)->toHaveCount(16)->and(config('services.expo_push.enabled'))->toBeFalse();
+    expect($matrix)->toHaveCount(16)->and(resolve(ExpoPushService::class)->isEnabled())->toBeFalse();
     foreach (NotificationEvent::cases() as $event) {
         expect($matrix[$event->value])->toBe(['in_app' => true, 'push' => true])
             ->and(NotificationCategory::forEvent($event->value))->toBe($event->category());
@@ -140,7 +141,7 @@ it('does not replay suppressed events after flags are re-enabled but delivers ne
 it('rechecks the exact event flag when a previously queued push executes using fresh database state', function (): void {
     Bus::fake();
     Http::fake();
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     $user = User::factory()->create();
     notificationPolicyDevice($user);
     resolve(PlatformNotificationService::class)->send($user, new PlatformNotification('account_verified', '1'), 'queued');
@@ -159,7 +160,7 @@ it('rechecks the exact event flag when a previously queued push executes using f
 
 it('does not block a queued push because a different event in the same category was muted', function (): void {
     Bus::fake();
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake(['*/send' => Http::response(['data' => ['status' => 'ok', 'id' => 'policy-receipt']])]);
     $user = User::factory()->create();
     notificationPolicyDevice($user);
@@ -183,7 +184,7 @@ it('refreshes flags for queued inbox fanout even after a worker previously cache
     Bus::assertNotDispatched(SendExpoPushJob::class);
 });
 
-it('keeps the Expo environment kill switch authoritative even with every admin flag enabled', function (): void {
+it('keeps the global push feature flag authoritative even with every admin flag enabled', function (): void {
     Http::fake();
     $user = User::factory()->create();
     $device = notificationPolicyDevice($user);
@@ -196,7 +197,7 @@ it('keeps the Expo environment kill switch authoritative even with every admin f
 
 it('applies an updated flag to receipt-triggered resends too', function (): void {
     Bus::fake();
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake(['*/getReceipts' => Http::response(['data' => ['receipt' => [
         'status' => 'error', 'details' => ['error' => 'MessageRateExceeded'],
     ]]])]);
@@ -215,7 +216,7 @@ it('applies an updated flag to receipt-triggered resends too', function (): void
 });
 
 it('fails closed for legacy or unknown push events instead of bypassing policy', function (?string $event): void {
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake();
     $user = User::factory()->create();
     $device = notificationPolicyDevice($user);
@@ -225,7 +226,7 @@ it('fails closed for legacy or unknown push events instead of bypassing policy',
 })->with([null, 'security_unknown']);
 
 it('handles pre-policy serialized messages with an uninitialized event property safely', function (): void {
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake();
     $user = User::factory()->create();
     $device = notificationPolicyDevice($user);
@@ -290,7 +291,7 @@ it('allows admins to save every per-event channel flag persistently through Fila
         ->assertNotified('Notification delivery settings saved');
     Feature::flushCache();
     expect(resolve(NotificationDeliverySettingsService::class)->matrix())->toBe($matrix)
-        ->and(config('services.expo_push.enabled'))->toBeFalse();
+        ->and(resolve(ExpoPushService::class)->isEnabled())->toBeFalse();
 });
 
 it('rechecks admin authorization on Livewire saves', function (): void {

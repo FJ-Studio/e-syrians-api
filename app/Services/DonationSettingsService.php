@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Laravel\Pennant\Feature;
+use App\Enums\PlatformFeature;
 use App\Models\DonationSetting;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +18,7 @@ class DonationSettingsService
 
     public function cryptoEnabled(): bool
     {
-        return Feature::for(self::FEATURE_SCOPE)->active(self::CRYPTO_FEATURE);
+        return resolve(FeatureFlagService::class)->enabled(PlatformFeature::CryptoDonations);
     }
 
     /**

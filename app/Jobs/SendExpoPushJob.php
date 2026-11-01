@@ -42,11 +42,11 @@ class SendExpoPushJob implements ShouldQueue
 
     public function handle(ExpoPushServiceContract $push): void
     {
+        // Check the master flag from fresh state too, including retries after failures.
+        Feature::flushCache();
         if (! $push->isEnabled()) {
             return;
         }
-        // Refresh at execution, including retries after a failed worker job.
-        Feature::flushCache();
         // Legacy jobs without an exact event cannot safely bypass the per-event policy.
         if (! resolve(NotificationDeliverySettingsService::class)->allows($this->message->event ?? null, 'push')) {
             return;

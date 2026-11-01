@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use Illuminate\Support\Str;
+use Laravel\Pennant\Feature;
 use Illuminate\Bus\Queueable;
 use App\Services\BigQueryService;
 use Illuminate\Queue\SerializesModels;
@@ -34,6 +35,7 @@ class LogPollVoteToBigQuery implements ShouldQueue
 
     public function handle(BigQueryService $bigQuery): void
     {
+        Feature::flushCache();
         if (! $bigQuery->isEnabled()) {
             return;
         }

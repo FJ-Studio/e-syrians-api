@@ -7,8 +7,10 @@ namespace App\Observers;
 use App\Models\Poll;
 use App\Models\User;
 use Illuminate\Support\Str;
+use App\Enums\PlatformFeature;
 use App\Models\FeatureRequest;
 use App\Models\UserVerification;
+use App\Services\FeatureFlagService;
 use App\Services\SecurityEventService;
 use App\Jobs\FanOutPlatformNotificationJob;
 
@@ -62,7 +64,7 @@ class PlatformNotificationObserver
 
     private function dispatch(string $event, int $id, ?string $sourceKey = null): void
     {
-        if (config('services.notification_events_enabled', true)) {
+        if (resolve(FeatureFlagService::class)->enabled(PlatformFeature::NotificationEvents)) {
             dispatch(new FanOutPlatformNotificationJob($event, $id, sourceKey: $sourceKey))->afterCommit();
         }
     }

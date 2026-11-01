@@ -6,7 +6,6 @@ namespace App\Providers;
 
 use App\Models\Poll;
 use App\Models\User;
-use Laravel\Pennant\Feature;
 use App\Services\AuthService;
 use App\Services\PollService;
 use App\Models\FeatureRequest;
@@ -21,6 +20,7 @@ use App\Services\PasswordService;
 use App\Services\UserPollService;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\URL;
+use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Date;
 use App\Services\VerificationService;
 use Illuminate\Support\Facades\Event;
@@ -35,7 +35,6 @@ use App\Contracts\DeviceServiceContract;
 use App\Contracts\ReportServiceContract;
 use App\Services\AccountDeletionService;
 use App\Contracts\ProfileServiceContract;
-use App\Services\DonationSettingsService;
 use App\Contracts\AudienceServiceContract;
 use App\Contracts\ExpoPushServiceContract;
 use App\Contracts\PasswordServiceContract;
@@ -92,7 +91,7 @@ class AppServiceProvider extends ServiceProvider
         foreach ([User::class, Poll::class, FeatureRequest::class, UserVerification::class] as $model) {
             $model::observe(PlatformNotificationObserver::class);
         }
-        Feature::define(DonationSettingsService::CRYPTO_FEATURE, false);
+        FeatureFlagService::defineFeatures();
         NotificationDeliverySettingsService::defineFeatures();
 
         // Force HTTPS on every URL Laravel generates (`url()`,

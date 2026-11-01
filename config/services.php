@@ -1,8 +1,6 @@
 <?php
 
 return [
-    'notification_events_enabled' => env('NOTIFICATION_EVENTS_ENABLED', true),
-
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
@@ -81,18 +79,16 @@ return [
     ],
 
     /*
-    | Expo Push stays off until APNs / FCM credentials and real-device
-    | delivery are verified. The optional security token is server-only.
+    | Runtime delivery is controlled by Pennant in Filament. The optional
+    | Expo enhanced-security token remains server-only configuration.
     */
     'expo_push' => [
-        'enabled' => env('EXPO_PUSH_ENABLED', false),
         'access_token' => env('EXPO_PUSH_ACCESS_TOKEN'),
     ],
 
     'internal_api_key' => env('INTERNAL_API_KEY'),
 
     'bigquery' => [
-        'enabled' => env('BIGQUERY_ENABLED', false),
         'project_id' => env('BIGQUERY_PROJECT_ID'),
         'dataset' => env('BIGQUERY_DATASET', 'e_syrians_audit'),
         'credentials' => env('BIGQUERY_CREDENTIALS'),

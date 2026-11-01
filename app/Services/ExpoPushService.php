@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\PlatformFeature;
 use Illuminate\Support\Facades\Http;
 use App\Exceptions\ExpoPushException;
 use App\Channels\Messages\ExpoPushMessage;
@@ -17,7 +18,7 @@ class ExpoPushService implements ExpoPushServiceContract
 
     public function isEnabled(): bool
     {
-        return (bool) config('services.expo_push.enabled', false);
+        return resolve(FeatureFlagService::class)->enabled(PlatformFeature::ExpoPush);
     }
 
     public function send(string $token, ExpoPushMessage $message): string

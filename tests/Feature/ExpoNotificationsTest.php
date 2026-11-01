@@ -8,6 +8,7 @@ use App\Models\Device;
 use Livewire\Livewire;
 use Illuminate\Support\Str;
 use App\Jobs\SendExpoPushJob;
+use App\Enums\PlatformFeature;
 use App\Models\FeatureRequest;
 use Filament\Facades\Filament;
 use App\Models\UserVerification;
@@ -61,7 +62,7 @@ it('delivers and deduplicates verification and account-verification inbox events
 
 it('wires observers to real transitions and not cosmetic timeline changes', function (): void {
     Bus::fake();
-    config(['services.notification_events_enabled' => true]);
+    setPlatformFeature(PlatformFeature::NotificationEvents);
     $user = User::factory()->create();
     $user->forceFill(['verified_at' => now()])->save();
     UserVerification::create(['user_id' => $user->id, 'verifier_id' => User::factory()->create()->id]);
@@ -128,7 +129,7 @@ it('fans announcements out only to opted-in nonpending accounts', function (): v
 
 it('sends a generic payload and processes tickets without persisting tokens in jobs', function (): void {
     Bus::fake();
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake(['*/send' => Http::response(['data' => ['status' => 'ok', 'id' => 'receipt-1']])]);
     $user = User::factory()->create();
     $device = pushTestDevice($user);
@@ -142,7 +143,7 @@ it('sends a generic payload and processes tickets without persisting tokens in j
 });
 
 it('drops stale jobs after reassignment and announcements after opting out', function (): void {
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake();
     $user = User::factory()->create();
     $device = pushTestDevice($user);
@@ -153,7 +154,7 @@ it('drops stale jobs after reassignment and announcements after opting out', fun
 });
 
 it('disables invalid registrations from tickets or receipts but not rotated tokens', function (): void {
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake(['*/send' => Http::response(['data' => ['status' => 'error', 'details' => ['error' => 'DeviceNotRegistered']]]),
         '*/getReceipts' => Http::response(['data' => ['receipt' => ['status' => 'error', 'details' => ['error' => 'DeviceNotRegistered']]]])]);
     $user = User::factory()->create();
@@ -232,7 +233,7 @@ it('allows only admins to queue validated announcements from Filament', function
 
 it('bounds receipt rate-limit resends and does not disable a healthy token', function (): void {
     Bus::fake();
-    config(['services.expo_push.enabled' => true]);
+    setPlatformFeature(PlatformFeature::ExpoPush);
     Http::fake(['*' => Http::response(['data' => ['receipt' => ['status' => 'error', 'details' => ['error' => 'MessageRateExceeded']]]])]);
     $user = User::factory()->create();
     $device = pushTestDevice($user);
