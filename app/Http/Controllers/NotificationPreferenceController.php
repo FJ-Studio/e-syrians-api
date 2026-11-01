@@ -25,7 +25,7 @@ class NotificationPreferenceController extends Controller
     {
         $validated = $request->validate([
             'category' => ['required', Rule::enum(NotificationCategory::class)],
-            'channel' => ['required', Rule::in(['in_app', 'push'])], 'enabled' => ['required', 'boolean'],
+            'channel' => ['required', Rule::in(['in_app', 'push', 'email'])], 'enabled' => ['required', 'boolean'],
             'user_uuid' => ['required', 'uuid', Rule::in([$request->user()->uuid])]]);
         $categories = $preferences->update(
             $request->user(),

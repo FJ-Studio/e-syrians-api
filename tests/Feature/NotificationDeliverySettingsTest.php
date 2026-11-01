@@ -54,7 +54,7 @@ it('defines a global persistent channel flag for every supported event without e
     $matrix = $settings->matrix();
     expect($matrix)->toHaveCount(16)->and(config('services.expo_push.enabled'))->toBeFalse();
     foreach (NotificationEvent::cases() as $event) {
-        expect($matrix[$event->value])->toBe(['in_app' => true, 'push' => true])
+        expect($matrix[$event->value])->toBe(array_fill_keys(NotificationDeliverySettingsService::channelsFor($event), true))
             ->and(NotificationCategory::forEvent($event->value))->toBe($event->category());
     }
 
@@ -74,7 +74,7 @@ it('rejects unknown events channels and nonboolean stored flag values', function
         'false',
     );
     expect($settings->allows('account_verified', 'push'))->toBeFalse()
-        ->and($settings->allows('account_verified', 'email'))->toBeFalse()
+        ->and($settings->allows('poll_opened', 'email'))->toBeFalse()
         ->and($settings->allows('security_unknown', 'push'))->toBeFalse()
         ->and($settings->allows(null, 'push'))->toBeFalse();
 });
@@ -282,6 +282,7 @@ it('allows admins to save every per-event channel flag persistently through Fila
     $matrix['verification_received']['push'] = false;
     $matrix['poll_opened']['in_app'] = false;
     $matrix['announcement'] = ['in_app' => false, 'push' => false];
+    $matrix['account_verified']['email'] = false;
     Livewire::test(ManageNotificationDelivery::class)
         ->assertSee('Expo push transport is currently')
         ->fillForm(['events' => $matrix])
@@ -312,7 +313,7 @@ it('rejects invalid settings atomically rather than partially saving flags', fun
     match ($invalid) {
         'missing-event' => $matrix = array_diff_key($matrix, ['account_verified' => true]),
         'unknown-event' => $matrix['security_unknown'] = ['in_app' => true, 'push' => true],
-        'unknown-channel' => $matrix['account_verified']['email'] = true,
+        'unknown-channel' => $matrix['poll_opened']['email'] = true,
         'missing-channel' => $matrix['account_verified'] = ['in_app' => true],
         'invalid-boolean' => $matrix['account_verified']['push'] = 'yes',
     };

@@ -55,13 +55,15 @@ class ManageNotificationDelivery extends Page
                 if ($event->category() !== $category) {
                     continue;
                 }
-                $events[] = Fieldset::make($event->label())
-                    ->schema([
-                        Toggle::make('events.'.$event->value.'.in_app')
-                            ->label('In app')->rules(['required', 'boolean']),
-                        Toggle::make('events.'.$event->value.'.push')
-                            ->label('Push')->rules(['required', 'boolean']),
-                    ])->columns(2);
+                $channels = [];
+                foreach (NotificationDeliverySettingsService::channelsFor($event) as $channel) {
+                    $channels[] = Toggle::make('events.'.$event->value.'.'.$channel)
+                        ->label(match ($channel) {
+                            'in_app' => 'In app', 'push' => 'Push', default => 'Email'
+                        })
+                        ->rules(['required', 'boolean']);
+                }
+                $events[] = Fieldset::make($event->label())->schema($channels)->columns(count($channels));
             }
             $sections[] = Section::make($category->label())->schema($events);
         }
