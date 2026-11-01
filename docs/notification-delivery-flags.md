@@ -42,7 +42,9 @@ flag does not resurrect them. Old queued pushes without an exact event fail clos
 instead of guessing which policy applies. Receipt-triggered resends pass through
 the same send job and policy check.
 
-Pennant clears its cache between Octane requests and completed worker jobs. A
+Pennant clears its cache between Octane requests and completed worker jobs. Both
+fanout and push jobs also refresh state explicitly, including retries after failed
+jobs. A
 currently running fanout can finish its batch using the flags it already read;
 every queued push still checks fresh state at execution. Flags cannot recall a
 request already accepted by Expo.

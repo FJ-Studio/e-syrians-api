@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\Poll;
 use App\Models\User;
+use Laravel\Pennant\Feature;
 use App\Models\SecurityEvent;
 use Illuminate\Bus\Queueable;
 use App\Models\FeatureRequest;
@@ -33,6 +34,8 @@ class FanOutPlatformNotificationJob implements ShouldQueue
 
     public function handle(PlatformNotificationService $notifications): void
     {
+        // Failed jobs do not emit JobProcessed, so a worker may still hold old Pennant values.
+        Feature::flushCache();
         $users = User::query()->whereNull('deletion_scheduled_for')->whereNull('marked_as_fake_at');
         $poll = null;
         $announcement = null;

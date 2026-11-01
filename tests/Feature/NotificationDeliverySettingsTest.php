@@ -169,6 +169,20 @@ it('does not block a queued push because a different event in the same category 
     Http::assertSentCount(1);
 });
 
+it('refreshes flags for queued inbox fanout even after a worker previously cached enabled values', function (): void {
+    Bus::fake();
+    $user = User::factory()->create(['verified_at' => now()]);
+    $settings = resolve(NotificationDeliverySettingsService::class);
+    $settings->matrix();
+    setNotificationPolicy(NotificationEvent::AccountVerified, 'push', false);
+    DB::table('features')->where('name', NotificationDeliverySettingsService::featureName(NotificationEvent::AccountVerified, 'in_app'))
+        ->update(['value' => 'false']);
+    expect($settings->allows('account_verified', 'in_app'))->toBeTrue();
+    (new FanOutPlatformNotificationJob('account_verified', $user->id))->handle(resolve(PlatformNotificationService::class));
+    expect($user->notifications()->count())->toBe(0);
+    Bus::assertNotDispatched(SendExpoPushJob::class);
+});
+
 it('keeps the Expo environment kill switch authoritative even with every admin flag enabled', function (): void {
     Http::fake();
     $user = User::factory()->create();
