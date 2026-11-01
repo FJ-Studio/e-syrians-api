@@ -9,14 +9,16 @@ use App\Models\User;
 use Laravel\Pennant\Feature;
 use App\Services\AuthService;
 use App\Services\PollService;
+use App\Models\FeatureRequest;
 use App\Services\StatsService;
 use App\Services\DeviceService;
 use App\Services\ReportService;
+use App\Models\UserVerification;
 use App\Services\ProfileService;
 use App\Services\AudienceService;
+use App\Services\ExpoPushService;
 use App\Services\PasswordService;
 use App\Services\UserPollService;
-use App\Services\OneSignalService;
 use App\Services\FileUploadService;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Date;
@@ -35,12 +37,13 @@ use App\Services\AccountDeletionService;
 use App\Contracts\ProfileServiceContract;
 use App\Services\DonationSettingsService;
 use App\Contracts\AudienceServiceContract;
+use App\Contracts\ExpoPushServiceContract;
 use App\Contracts\PasswordServiceContract;
 use App\Contracts\UserPollServiceContract;
-use App\Contracts\OneSignalServiceContract;
 use App\Contracts\FileUploadServiceContract;
 use App\Contracts\VerificationServiceContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Observers\PlatformNotificationObserver;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use App\Contracts\AccountDeletionServiceContract;
@@ -62,7 +65,7 @@ class AppServiceProvider extends ServiceProvider
         DeviceServiceContract::class => DeviceService::class,
         FeatureRequestServiceContract::class => FeatureRequestService::class,
         FileUploadServiceContract::class => FileUploadService::class,
-        OneSignalServiceContract::class => OneSignalService::class,
+        ExpoPushServiceContract::class => ExpoPushService::class,
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,
         ProfileServiceContract::class => ProfileService::class,
@@ -85,6 +88,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        foreach ([User::class, Poll::class, FeatureRequest::class, UserVerification::class] as $model) {
+            $model::observe(PlatformNotificationObserver::class);
+        }
         Feature::define(DonationSettingsService::CRYPTO_FEATURE, false);
 
         // Force HTTPS on every URL Laravel generates (`url()`,

@@ -14,14 +14,17 @@ use App\Http\Controllers\AudienceController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecoveryCodeController;
 use App\Http\Controllers\VerificationController;
+use App\Http\Controllers\SecurityEventController;
 use App\Http\Controllers\FeatureRequestController;
 use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\DonationSettingsController;
 use App\Http\Controllers\SuspiciousActivityController;
 use App\Http\Middleware\EnsureAccountNotPendingDeletion;
+use App\Http\Controllers\NotificationPreferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -161,6 +164,12 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
         Route::delete('/{id}', [NotificationController::class, 'destroy']);
     });
 
+    Route::get('/notification-preferences', [NotificationPreferenceController::class, 'show']);
+    Route::get('/security-events', [SecurityEventController::class, 'index']);
+    Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show'])->whereNumber('announcement');
+    Route::patch('/notification-preferences', [NotificationPreferenceController::class, 'update'])
+        ->middleware('throttle:60,1,notification_preferences');
+
     // Two-Factor Authentication
     Route::prefix('2fa')->group(function (): void {
         Route::get('/status', [TwoFactorController::class, 'status']);
@@ -190,12 +199,10 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
     Route::post('/verifications/{verification}/cancel', [VerificationController::class, 'cancel'])
         ->name('users.verifications.cancel');
 
-    // Push-notification device registration (OneSignal).
+    // Expo Push registration, scoped to the current bearer-token session.
     //
     // POST   /users/devices             — register or re-register
-    // DELETE /users/devices/{device}    — unregister (route binding
-    //                                     resolves by subscription_id,
-    //                                     see Device::getRouteKeyName)
+    // DELETE /users/devices/{device}    — disable by public device UUID
     //
     // Throttled per-user (30 writes/min) to absorb a buggy SDK build
     // that re-registers on every notification — generous enough that
@@ -206,10 +213,10 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
         // Raw string param (NOT implicit route-model binding). We
         // handle the "device not found" case ourselves and return
         // 204 either way — the spec says DELETE is idempotent and
-        // must not leak whether a given subscription_id exists.
+        // must not leak whether a given device UUID exists.
         // Implicit binding would 404 before the controller runs,
         // which contradicts that contract.
-        Route::delete('/devices/{subscription_id}', [DeviceController::class, 'destroy'])->name('users.devices.destroy');
+        Route::delete('/devices/{device}', [DeviceController::class, 'destroy'])->whereUuid('device')->name('users.devices.destroy');
     });
 
     // Profile updates — all protected by reCAPTCHA except language (silent
