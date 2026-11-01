@@ -43,7 +43,14 @@ it('defaults all transactional categories on and announcements off without grant
     expect(count($data))->toBe(7);
     foreach (NotificationCategory::cases() as $category) {
         $expected = $category !== NotificationCategory::Announcements;
-        expect($data[$category->value])->toBe(['in_app' => $expected, 'push' => $expected]);
+        $channels = ['in_app' => $expected, 'push' => $expected];
+        if ($category === NotificationCategory::Verifications) {
+            $channels['email'] = false;
+        }
+        if ($category === NotificationCategory::AccountStatus) {
+            $channels['email'] = true;
+        }
+        expect($data[$category->value])->toBe($channels);
     }
     expect($user->devices()->count())->toBe(0);
 });
@@ -59,7 +66,7 @@ it('updates only one account category and channel without overwriting other choi
     $data = $this->getJson('/users/notification-preferences', $headers)->assertOk()->json('data.categories');
     expect($data['security'])->toBe(['in_app' => true, 'push' => false])
         ->and($data['poll_results'])->toBe(['in_app' => false, 'push' => true])
-        ->and($data['verifications'])->toBe(['in_app' => true, 'push' => true])
+        ->and($data['verifications'])->toBe(['in_app' => true, 'push' => true, 'email' => false])
         ->and($other->fresh()->notification_preferences)->toBeNull();
 });
 

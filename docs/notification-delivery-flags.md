@@ -2,6 +2,9 @@
 
 Admins manage the API's notification policy in **Filament → Settings → Notification
 delivery**. Every supported event has separate **In app** and **Push** switches.
+Verification received and Account becomes verified also have an **Email** switch
+for the existing optional verification emails. No email option is exposed for
+events that do not have an email implementation.
 The 16 events are registered in `App\Enums\NotificationEvent` and grouped into the
 same seven categories used for account preferences.
 
@@ -27,6 +30,13 @@ The Filament page shows the current transport state but cannot turn it on.
 Authentication OTPs, password-recovery emails and other transactional mail are
 outside this notification matrix. Security Activity is always stored independently
 of delivery flags and user preferences.
+
+The two optional verification email preferences are included as `email` booleans
+in `GET /users/notification-preferences` under `verifications` and `account_status`.
+The owner-bound PATCH endpoint accepts `channel: email` only for these categories.
+It updates the existing email columns atomically without resetting other channels.
+Older clients using the legacy email endpoint stay compatible. Optional email
+delivery requires both the user's email preference and the global event/email flag.
 
 ## Timing and queued work
 
