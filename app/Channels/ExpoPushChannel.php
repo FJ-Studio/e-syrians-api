@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Jobs\SendExpoPushJob;
 use App\Channels\Messages\ExpoPushMessage;
 use Illuminate\Notifications\Notification;
+use App\Services\NotificationDeliverySettingsService;
 
 class ExpoPushChannel
 {
@@ -17,7 +18,8 @@ class ExpoPushChannel
             return;
         }
         $message = $notification->toExpoPush($notifiable);
-        if (! $message instanceof ExpoPushMessage) {
+        if (! $message instanceof ExpoPushMessage
+            || ! resolve(NotificationDeliverySettingsService::class)->allows($message->event ?? null, 'push')) {
             return;
         }
         $id = $notification->id;
@@ -27,7 +29,7 @@ class ExpoPushChannel
                 $notifiable->id,
                 $device->registration_version,
                 $id,
-                new ExpoPushMessage($message->data, $device->locale, $message->notificationCategory())
+                new ExpoPushMessage($message->data, $device->locale, $message->notificationCategory(), $message->event)
             ))->afterCommit();
         }
     }

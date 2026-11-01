@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\Device;
+use Laravel\Pennant\Feature;
 use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -15,6 +16,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use App\Services\NotificationPreferenceService;
 use App\Exceptions\InvalidExpoPushTokenException;
+use App\Services\NotificationDeliverySettingsService;
 
 /** Queue only identifiers and privacy-safe routing data, never the actual push token. */
 class SendExpoPushJob implements ShouldQueue
@@ -41,6 +43,12 @@ class SendExpoPushJob implements ShouldQueue
     public function handle(ExpoPushServiceContract $push): void
     {
         if (! $push->isEnabled()) {
+            return;
+        }
+        // Refresh at execution, including retries after a failed worker job.
+        Feature::flushCache();
+        // Legacy jobs without an exact event cannot safely bypass the per-event policy.
+        if (! resolve(NotificationDeliverySettingsService::class)->allows($this->message->event ?? null, 'push')) {
             return;
         }
         DB::transaction(function () use ($push): void {

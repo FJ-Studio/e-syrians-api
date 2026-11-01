@@ -48,6 +48,7 @@ use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use App\Contracts\AccountDeletionServiceContract;
 use SocialiteProviders\Manager\SocialiteWasCalled;
+use App\Services\NotificationDeliverySettingsService;
 use SocialiteProviders\Apple\Provider as AppleProvider;
 use SocialiteProviders\Google\Provider as GoogleProvider;
 
@@ -92,6 +93,7 @@ class AppServiceProvider extends ServiceProvider
             $model::observe(PlatformNotificationObserver::class);
         }
         Feature::define(DonationSettingsService::CRYPTO_FEATURE, false);
+        NotificationDeliverySettingsService::defineFeatures();
 
         // Force HTTPS on every URL Laravel generates (`url()`,
         // `route()`, `asset()`, `URL::to()`, etc.).

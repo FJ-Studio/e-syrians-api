@@ -132,7 +132,7 @@ it('sends a generic payload and processes tickets without persisting tokens in j
     Http::fake(['*/send' => Http::response(['data' => ['status' => 'ok', 'id' => 'receipt-1']])]);
     $user = User::factory()->create();
     $device = pushTestDevice($user);
-    $job = new SendExpoPushJob($device->id, $user->id, 1, 'notification-1', new ExpoPushMessage(['type' => 'verification']));
+    $job = new SendExpoPushJob($device->id, $user->id, 1, 'notification-1', new ExpoPushMessage(['type' => 'verification'], event: 'verification_received'));
     $job->handle(resolve(ExpoPushService::class));
     $job->handle(resolve(ExpoPushService::class));
     Http::assertSentCount(1);
@@ -146,8 +146,8 @@ it('drops stale jobs after reassignment and announcements after opting out', fun
     Http::fake();
     $user = User::factory()->create();
     $device = pushTestDevice($user);
-    (new SendExpoPushJob($device->id, $user->id, 0, 'old', new ExpoPushMessage()))->handle(resolve(ExpoPushService::class));
-    (new SendExpoPushJob($device->id, $user->id, 1, 'announcement', new ExpoPushMessage(['type' => 'announcement'])))
+    (new SendExpoPushJob($device->id, $user->id, 0, 'old', new ExpoPushMessage(event: 'account_verified')))->handle(resolve(ExpoPushService::class));
+    (new SendExpoPushJob($device->id, $user->id, 1, 'announcement', new ExpoPushMessage(['type' => 'announcement'], event: 'announcement')))
         ->handle(resolve(ExpoPushService::class));
     Http::assertNothingSent();
 });
@@ -158,7 +158,7 @@ it('disables invalid registrations from tickets or receipts but not rotated toke
         '*/getReceipts' => Http::response(['data' => ['receipt' => ['status' => 'error', 'details' => ['error' => 'DeviceNotRegistered']]]])]);
     $user = User::factory()->create();
     $device = pushTestDevice($user);
-    (new SendExpoPushJob($device->id, $user->id, 1, 'a', new ExpoPushMessage()))->handle(resolve(ExpoPushService::class));
+    (new SendExpoPushJob($device->id, $user->id, 1, 'a', new ExpoPushMessage(event: 'account_verified')))->handle(resolve(ExpoPushService::class));
     expect($device->fresh()->disabled_at)->not->toBeNull();
     $device->update(['disabled_at' => null, 'registration_version' => 2]);
     (new ProcessExpoPushReceiptJob('receipt', $device->id, $user->id, 1, 'a', new ExpoPushMessage()))->handle(resolve(ExpoPushService::class));

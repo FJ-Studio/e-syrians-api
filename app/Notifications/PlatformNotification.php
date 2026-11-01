@@ -9,6 +9,8 @@ use App\Channels\ExpoPushChannel;
 use App\Enums\NotificationCategory;
 use App\Channels\Messages\ExpoPushMessage;
 use Illuminate\Notifications\Notification;
+use App\Services\NotificationPreferenceService;
+use App\Services\NotificationDeliverySettingsService;
 
 class PlatformNotification extends Notification
 {
@@ -23,7 +25,21 @@ class PlatformNotification extends Notification
     /** @return list<string> */
     public function via(object $notifiable): array
     {
-        return ['database', ExpoPushChannel::class];
+        if (! $notifiable instanceof User) {
+            return [];
+        }
+        $category = NotificationCategory::forEvent($this->event);
+        $settings = resolve(NotificationDeliverySettingsService::class);
+        $preferences = resolve(NotificationPreferenceService::class);
+        $channels = [];
+        if ($settings->allows($this->event, 'in_app') && $preferences->allows($notifiable, $category, 'in_app')) {
+            $channels[] = 'database';
+        }
+        if ($settings->allows($this->event, 'push') && $preferences->allows($notifiable, $category, 'push')) {
+            $channels[] = ExpoPushChannel::class;
+        }
+
+        return $channels;
     }
 
     public function routingType(): string
@@ -53,6 +69,6 @@ class PlatformNotification extends Notification
     public function toExpoPush(User $user): ExpoPushMessage
     {
         return new ExpoPushMessage(['type' => $this->routingType(), 'subject_id' => $this->subjectId,
-            'recipient_uuid' => $user->uuid], category: NotificationCategory::forEvent($this->event));
+            'recipient_uuid' => $user->uuid], category: NotificationCategory::forEvent($this->event), event: $this->event);
     }
 }
