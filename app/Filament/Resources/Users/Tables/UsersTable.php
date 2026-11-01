@@ -31,21 +31,12 @@ class UsersTable
                     ->searchable(),
                 TextColumn::make('surname')
                     ->searchable(),
-                TextColumn::make('national_id')
-                    ->searchable(),
-                TextColumn::make('national_id_hashed')
-                    ->searchable(),
                 TextColumn::make('gender')
                     ->badge(),
                 TextColumn::make('birth_date')
                     ->searchable(),
                 TextColumn::make('hometown')
                     ->badge(),
-                TextColumn::make('email')
-                    ->label('Email address')
-                    ->searchable(),
-                TextColumn::make('email_hashed')
-                    ->searchable(),
                 TextColumn::make('email_verified_at')
                     ->dateTime()
                     ->sortable(),
@@ -130,8 +121,6 @@ class UsersTable
                     ->boolean(),
                 IconColumn::make('account_verified_email')
                     ->boolean(),
-                TextColumn::make('two_factor_secret')
-                    ->searchable(),
                 IconColumn::make('two_factor_enabled')
                     ->boolean(),
                 TextColumn::make('two_factor_confirmed_at')
