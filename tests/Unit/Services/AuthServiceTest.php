@@ -3,9 +3,36 @@
 use App\Models\User;
 use App\Services\AuthService;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Socialite\Facades\Socialite;
 
 beforeEach(function (): void {
     test()->authService = resolve(AuthService::class);
+});
+
+it('never stores a Google login email as the public name', function (?string $name): void {
+    $email = 'private-login@example.com';
+    $socialUser = (new Laravel\Socialite\Two\User())->map([
+        'id' => 'google-user-without-public-name', 'name' => $name, 'email' => $email,
+    ]);
+    Socialite::shouldReceive('driver->userFromToken')->with('test-access-token')->andReturn($socialUser);
+
+    $result = test()->authService->authenticateViaSocialProvider('google', 'test-access-token');
+
+    expect($result)->not->toBeNull()
+        ->and($result['user']->getRawOriginal('name'))->toBe(User::DEFAULT_DISPLAY_NAME)
+        ->and($result['user']->email)->toBe($email);
+})->with([null, 'private-login@example.com']);
+
+it('masks an existing email fallback in both public profile and partial model reads', function (): void {
+    $email = 'legacy-login@example.com';
+    $user = User::factory()->create(['name' => $email, 'surname' => '', 'email' => $email]);
+
+    $this->getJson('/users/verify/'.$user->uuid)->assertOk()
+        ->assertJsonPath('data.name', User::DEFAULT_DISPLAY_NAME)
+        ->assertJsonMissingPath('data.email');
+
+    expect(User::query()->select('id', 'name', 'surname')->findOrFail($user->id)->name)
+        ->toBe(User::DEFAULT_DISPLAY_NAME);
 });
 
 // ───────────────────────────────────────────────

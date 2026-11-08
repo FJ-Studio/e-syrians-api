@@ -49,6 +49,20 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     use HasRoles;
     use Notifiable;
     use SoftDeletes;
+    public const DEFAULT_DISPLAY_NAME = 'User';
+
+    // Older social accounts stored the login email in the name column. Mask
+    // it on read so every profile, poll and verification serializer is safe,
+    // including those that load only the name and not the private email.
+    protected function getNameAttribute(?string $value): ?string
+    {
+        return $value !== null && str_contains($value, '@') ? self::DEFAULT_DISPLAY_NAME : $value;
+    }
+
+    protected function getSurnameAttribute(?string $value): ?string
+    {
+        return $value !== null && str_contains($value, '@') ? '' : $value;
+    }
 
     protected static function boot()
     {

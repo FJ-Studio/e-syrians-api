@@ -103,7 +103,8 @@ it('retains every distinct native and web grant including repeat sign-ins', func
     $again = $service->authenticateViaSocialProvider('apple', $nativeIdentity, null, 'code-3');
     $service->authenticateViaSocialProvider('apple', $nativeIdentity, null, 'code-4');
 
-    expect($web['user']->id)->toBe($first['user']->id)
+    expect($first['user']->getRawOriginal('name'))->toBe(User::DEFAULT_DISPLAY_NAME)
+        ->and($web['user']->id)->toBe($first['user']->id)
         ->and($again['user']->id)->toBe($first['user']->id)
         ->and(AppleRefreshToken::count())->toBe(3)
         ->and(AppleRefreshToken::where('client_id', 'com.esyrians.app')->get()->pluck('refresh_token')->all())->toBe(['native-first', 'native-latest']);
