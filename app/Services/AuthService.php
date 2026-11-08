@@ -53,12 +53,13 @@ class AuthService implements AuthServiceContract
         }
 
         // resolveSocialUserData() guarantees `name` is a string (possibly empty).
-        $names = explode(' ', trim($userData['name']), 2);
+        $displayName = trim($userData['name']);
+        $names = str_contains($displayName, '@') ? [''] : explode(' ', $displayName, 2);
 
         if (! $user) {
             $user = User::create([
                 $providerColumn => $userData['id'],
-                'name' => $names[0] ?: ($userData['email'] ?? 'User'),
+                'name' => $names[0] ?: User::DEFAULT_DISPLAY_NAME,
                 'surname' => $names[1] ?? '',
                 'email' => $userData['email'] ?? null,
             ]);
@@ -74,10 +75,9 @@ class AuthService implements AuthServiceContract
                 $needsSave = true;
             }
 
-            // If we received a name from the client and the user doesn't have
-            // one yet (e.g. account was provisioned by another flow with only
-            // an email), backfill it now. We never overwrite an existing name.
-            if ($clientName !== '' && empty($user->name)) {
+            // A real client-supplied name can replace a missing or masked
+            // legacy name. Never overwrite an existing public name.
+            if ($clientName !== '' && $names[0] !== '' && (empty($user->name) || $user->name === User::DEFAULT_DISPLAY_NAME)) {
                 $user->name = $names[0];
                 if (empty($user->surname) && ! empty($names[1])) {
                     $user->surname = $names[1];

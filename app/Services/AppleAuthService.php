@@ -69,10 +69,9 @@ class AppleAuthService
 
         return [
             'id' => (string) $claims->sub,
-            // Apple doesn't return a name in the identity token after the first
-            // sign-in. Fallback to email-localpart so the user record always
-            // has a non-empty name.
-            'name' => self::deriveNameFromEmail((string) $claims->email),
+            // The client may send an explicit name on the first sign-in.
+            // Never derive public profile fields from the private email.
+            'name' => '',
             'email' => (string) $claims->email,
             'avatar' => null,
             'client_id' => (string) $claims->aud,
@@ -229,14 +228,4 @@ class AppleAuthService
         });
     }
 
-    /**
-     * Derive a human-friendly name from an email when Apple doesn't provide
-     * one. Strips the domain and replaces separators with spaces.
-     */
-    private static function deriveNameFromEmail(string $email): string
-    {
-        $localPart = strstr($email, '@', true) ?: $email;
-
-        return ucfirst(str_replace(['.', '_', '-'], ' ', $localPart));
-    }
 }
