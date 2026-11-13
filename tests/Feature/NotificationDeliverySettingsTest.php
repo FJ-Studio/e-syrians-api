@@ -53,7 +53,7 @@ beforeEach(function (): void {
 it('defines a global persistent channel flag for every supported event without enabling the Expo transport', function (): void {
     $settings = resolve(NotificationDeliverySettingsService::class);
     $matrix = $settings->matrix();
-    expect($matrix)->toHaveCount(16)->and(resolve(ExpoPushService::class)->isEnabled())->toBeFalse();
+    expect($matrix)->toHaveCount(count(NotificationEvent::cases()))->and(resolve(ExpoPushService::class)->isEnabled())->toBeFalse();
     foreach (NotificationEvent::cases() as $event) {
         expect($matrix[$event->value])->toBe(array_fill_keys(NotificationDeliverySettingsService::channelsFor($event), true))
             ->and(NotificationCategory::forEvent($event->value))->toBe($event->category());
@@ -92,15 +92,17 @@ it('applies independent event channel flags to delivery and keeps sibling events
     }
     setNotificationPolicy($event, 'in_app', $inApp);
     setNotificationPolicy($event, 'push', $push);
+    $effectivePush = $push && in_array('push', NotificationDeliverySettingsService::channelsFor($event), true);
 
     resolve(PlatformNotificationService::class)->send($user, new PlatformNotification($event->value, '1'), 'policy');
     expect($user->notifications()->count())->toBe($inApp ? 1 : 0);
-    Bus::assertDispatchedTimes(SendExpoPushJob::class, $push ? 1 : 0);
+    Bus::assertDispatchedTimes(SendExpoPushJob::class, $effectivePush ? 1 : 0);
     $delivery = DB::table('notification_deliveries')->first();
-    expect((bool) $delivery->in_app)->toBe($inApp)->and((bool) $delivery->push)->toBe($push);
+    expect((bool) $delivery->in_app)->toBe($inApp)->and((bool) $delivery->push)->toBe($effectivePush);
     foreach (NotificationEvent::cases() as $other) {
         if ($other !== $event) {
-            expect(resolve(NotificationDeliverySettingsService::class)->allows($other->value, 'push'))->toBeTrue();
+            expect(resolve(NotificationDeliverySettingsService::class)->allows($other->value, 'push'))
+                ->toBe(in_array('push', NotificationDeliverySettingsService::channelsFor($other), true));
         }
     }
 })->with(NotificationEvent::cases())->with([[false, true], [true, false], [false, false], [true, true]]);
@@ -284,6 +286,7 @@ it('allows admins to save every per-event channel flag persistently through Fila
     $matrix['poll_opened']['in_app'] = false;
     $matrix['announcement'] = ['in_app' => false, 'push' => false];
     $matrix['account_verified']['email'] = false;
+    $matrix['identity_credit_gifted']['in_app'] = false;
     Livewire::test(ManageNotificationDelivery::class)
         ->assertSee('Expo push transport is currently')
         ->fillForm(['events' => $matrix])

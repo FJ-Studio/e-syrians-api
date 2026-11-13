@@ -21,8 +21,10 @@ use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\SecurityEventController;
 use App\Http\Controllers\FeatureRequestController;
 use App\Http\Controllers\AccountDeletionController;
+use App\Http\Controllers\IdentitySandboxController;
 use App\Http\Controllers\DonationSettingsController;
 use App\Http\Controllers\SuspiciousActivityController;
+use App\Http\Controllers\IdentityVerificationController;
 use App\Http\Middleware\EnsureAccountNotPendingDeletion;
 use App\Http\Controllers\NotificationPreferenceController;
 
@@ -35,6 +37,9 @@ use App\Http\Controllers\NotificationPreferenceController;
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
 })->name('ping');
+
+Route::post('/webhooks/stripe/identity-verification', [IdentityVerificationController::class, 'stripeWebhook'])
+    ->name('webhooks.stripe.identity-verification');
 
 Route::get('/donations/settings', DonationSettingsController::class)
     ->middleware('throttle:60,1,donation_settings')
@@ -139,6 +144,26 @@ Route::prefix('users')->middleware(['auth:sanctum'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
+    Route::prefix('identity-verification')->controller(IdentityVerificationController::class)->middleware('throttle:30,1,identity-verification')->group(function (): void {
+        Route::get('/', 'show');
+        Route::get('/history', 'history');
+        Route::get('/checkout/{order}', 'checkoutStatus')->whereUuid('order');
+        Route::post('/checkout', 'createCheckout')->middleware('throttle:5,1,identity-checkout');
+        Route::post('/gift-code', 'giftCode');
+        Route::post('/{credit}/gift', 'gift')->whereUuid('credit');
+        Route::post('/{credit}/start', 'start')->whereUuid('credit');
+        Route::post('/{credit}/refresh', 'refresh')->whereUuid('credit');
+    });
+    Route::prefix('identity-sandbox')->controller(IdentitySandboxController::class)->middleware('throttle:30,1,identity-sandbox')->group(function (): void {
+        Route::get('/', 'show');
+        Route::get('/history', 'history');
+        Route::post('/claim', 'claim');
+        Route::post('/gift-code', 'giftCode');
+        Route::post('/{credit}/gift', 'gift')->whereUuid('credit');
+        Route::post('/{credit}/start', 'start')->whereUuid('credit');
+        Route::post('/{credit}/refresh', 'refresh')->whereUuid('credit');
+    });
+
     // Current user
     Route::get('/me', [UserController::class, 'me'])->name('users.me');
 
