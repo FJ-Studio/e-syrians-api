@@ -18,8 +18,11 @@ class NotificationDeliverySettingsService
     /** @return list<string> */
     public static function channelsFor(NotificationEvent $event): array
     {
-        return in_array($event, [NotificationEvent::VerificationReceived, NotificationEvent::AccountVerified], true)
-            ? self::CHANNELS : ['in_app', 'push'];
+        return match ($event) {
+            NotificationEvent::VerificationReceived, NotificationEvent::AccountVerified => self::CHANNELS,
+            NotificationEvent::IdentityCreditGranted, NotificationEvent::IdentityCreditGifted => ['in_app'],
+            default => ['in_app', 'push'],
+        };
     }
 
     public static function featureName(NotificationEvent $event, string $channel): string
@@ -47,7 +50,7 @@ class NotificationDeliverySettingsService
         return Feature::for(self::FEATURE_SCOPE)->value(self::featureName($notificationEvent, $channel)) === true;
     }
 
-    /** @return array<string, array{in_app: bool, push: bool, email?: bool}> */
+    /** @return array<string, array{in_app: bool, push?: bool, email?: bool}> */
     public function matrix(): array
     {
         $features = [];
@@ -60,19 +63,19 @@ class NotificationDeliverySettingsService
 
         $matrix = [];
         foreach (NotificationEvent::cases() as $event) {
-            $matrix[$event->value] = [
-                'in_app' => $this->allows($event->value, 'in_app'),
-                'push' => $this->allows($event->value, 'push'),
-            ];
-            if (in_array('email', self::channelsFor($event), true)) {
-                $matrix[$event->value]['email'] = $this->allows($event->value, 'email');
+            $channels = ['in_app' => $this->allows($event->value, 'in_app')];
+            foreach (['push', 'email'] as $channel) {
+                if (in_array($channel, self::channelsFor($event), true)) {
+                    $channels[$channel] = $this->allows($event->value, $channel);
+                }
             }
+            $matrix[$event->value] = $channels;
         }
 
         return $matrix;
     }
 
-    /** @param array<string, array{in_app: bool, push: bool, email?: bool}> $events */
+    /** @param array<string, array{in_app: bool, push?: bool, email?: bool}> $events */
     public function save(array $events): void
     {
         $rules = ['events' => ['required', 'array:'.implode(',', array_column(NotificationEvent::cases(), 'value'))]];

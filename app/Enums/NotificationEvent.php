@@ -8,6 +8,8 @@ enum NotificationEvent: string
 {
     case VerificationReceived = 'verification_received';
     case VerificationRevoked = 'verification_revoked';
+    case IdentityCreditGranted = 'identity_credit_granted';
+    case IdentityCreditGifted = 'identity_credit_gifted';
     case AccountVerified = 'account_verified';
     case AccountUnverified = 'account_unverified';
     case PollOpened = 'poll_opened';
@@ -28,6 +30,8 @@ enum NotificationEvent: string
         return match ($this) {
             self::VerificationReceived => 'Verification received',
             self::VerificationRevoked => 'Verification revoked',
+            self::IdentityCreditGranted => 'ID verification credit granted by an admin',
+            self::IdentityCreditGifted => 'ID verification credit received as a gift',
             self::AccountVerified => 'Account becomes verified',
             self::AccountUnverified => 'Account loses verified status',
             self::PollOpened => 'Eligible poll opens',
@@ -48,7 +52,8 @@ enum NotificationEvent: string
     public function category(): NotificationCategory
     {
         return match ($this) {
-            self::VerificationReceived, self::VerificationRevoked => NotificationCategory::Verifications,
+            self::VerificationReceived, self::VerificationRevoked,
+            self::IdentityCreditGranted, self::IdentityCreditGifted => NotificationCategory::Verifications,
             self::AccountVerified, self::AccountUnverified => NotificationCategory::AccountStatus,
             self::PollOpened => NotificationCategory::PollInvitations,
             self::PollClosed => NotificationCategory::PollResults,

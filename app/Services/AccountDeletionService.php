@@ -156,6 +156,10 @@ final class AccountDeletionService implements AccountDeletionServiceContract
         // leaves the row + encrypted grant available to the next daily sweep.
         AppleAuthService::revokeForUser($user);
 
+        // Keep the provider session IDs until erasure succeeds. The scheduled
+        // deletion sweep retries failures; disabling the feature is not an exemption.
+        resolve(IdentityVerificationService::class)->eraseSessions($user);
+
         // Remove the S3 avatar before the row disappears; if this
         // fails we log-and-continue rather than block the delete.
         if ($user->avatar) {

@@ -1,11 +1,12 @@
 # Notification delivery feature flags
 
 Admins manage the API's notification policy in **Filament → Settings → Notification
-delivery**. Every supported event has separate **In app** and **Push** switches.
+delivery**. Each event exposes switches only for the channels it supports.
+ID verification test credit grants and gifts have an **In app** switch only.
 Verification received and Account becomes verified also have an **Email** switch
 for the existing optional verification emails. No email option is exposed for
 events that do not have an email implementation.
-The 16 events are registered in `App\Enums\NotificationEvent` and grouped into the
+Events are registered in `App\Enums\NotificationEvent` and grouped into the
 same seven categories used for account preferences.
 
 ## Policy and defaults
@@ -29,6 +30,11 @@ Notification delivery page shows its current state and links to **Settings →
 Feature flags**, where administrators can change it without editing environment
 variables. Legacy environment values are imported only when initializing missing
 flags; they do not override saved administrator choices.
+
+Test credit grants and gifts use the recipient's **Verifications → In app**
+preference. They are queued only after the credit transaction commits and open
+**Account → ID verification**. The inbox item does not contain the credit ID,
+sender identity, grant reason, or gift code.
 
 Authentication OTPs, password-recovery emails and other transactional mail are
 outside this notification matrix. Security Activity is always stored independently

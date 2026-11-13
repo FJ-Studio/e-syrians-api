@@ -34,6 +34,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Contracts\DeviceServiceContract;
 use App\Contracts\ReportServiceContract;
 use App\Services\AccountDeletionService;
+use App\Services\IdentitySandboxService;
 use App\Contracts\ProfileServiceContract;
 use App\Contracts\AudienceServiceContract;
 use App\Contracts\ExpoPushServiceContract;
@@ -46,6 +47,7 @@ use App\Observers\PlatformNotificationObserver;
 use App\Contracts\FeatureRequestServiceContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use App\Contracts\AccountDeletionServiceContract;
+use App\Contracts\IdentitySandboxServiceContract;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use App\Services\NotificationDeliverySettingsService;
 use SocialiteProviders\Apple\Provider as AppleProvider;
@@ -66,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         FeatureRequestServiceContract::class => FeatureRequestService::class,
         FileUploadServiceContract::class => FileUploadService::class,
         ExpoPushServiceContract::class => ExpoPushService::class,
+        IdentitySandboxServiceContract::class => IdentitySandboxService::class,
         PasswordServiceContract::class => PasswordService::class,
         PollServiceContract::class => PollService::class,
         ProfileServiceContract::class => ProfileService::class,
