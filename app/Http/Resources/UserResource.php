@@ -27,6 +27,13 @@ class UserResource extends JsonResource
         $isOwner = ($request->user() && $request->user()->uuid === $this->uuid)
             || (isset($this->additional['isOwner']) && $this->additional['isOwner'] === true);
 
+        $user = $this->resource;
+        $badgeLoaded = array_key_exists('approved_identity_checks_exists', $user->getAttributes());
+        $idCheckApproved = $badgeLoaded
+            ? (bool) $user->getAttribute('approved_identity_checks_exists')
+            : ($isOwner && $user->approvedIdentityChecks()->exists());
+        $communityVerified = $user->isCommunityVerified();
+
         $avatarUrl = null;
         if ($this->avatar) {
             try {
@@ -76,7 +83,16 @@ class UserResource extends JsonResource
             'country' => $this->country,
             'gender' => $this->gender,
             'ethnicity' => $this->ethnicity,
-            'verified_at' => $this->verified_at,
+            'community_verified_at' => $user->verified_at,
+            'verified_at' => $user->verified_at, // Compatibility for older clients; community only.
+            // The public views opt in by loading approvedIdentityChecks existence. Do not
+            // expose verification records or query for each author at render time.
+            'verification_badge' => $this->when($badgeLoaded || $isOwner, fn () => match (true) {
+                $communityVerified && $idCheckApproved => 'both',
+                $idCheckApproved => 'identity',
+                $communityVerified => 'community',
+                default => null,
+            }),
 
             /*
              * Public profile stats trio. Mobile + web read these to
@@ -111,6 +127,7 @@ class UserResource extends JsonResource
             'github_link' => $this->github_link,
 
             // Owner-only fields
+            'id_verification_approved' => $this->when($isOwner, $idCheckApproved),
             $this->mergeWhen($isOwner, [
                 'birth_date' => $this->birth_date,
                 'record_id' => $this->record_id,
@@ -205,7 +222,7 @@ class UserResource extends JsonResource
     }
 
     /**
-     * Resolve the resource to an array, stripping null values.
+     * Strip legacy null fields. Keep explicit empty states for the new verification fields.
      *
      * @param  Request|null  $request
      * @return array<string, mixed>
@@ -214,6 +231,7 @@ class UserResource extends JsonResource
     {
         $resolved = parent::resolve($request);
 
-        return array_filter($resolved, fn ($value) => ! is_null($value));
+        return array_filter($resolved, fn ($value, $key) => $value !== null
+            || in_array($key, ['community_verified_at', 'verification_badge'], true), ARRAY_FILTER_USE_BOTH);
     }
 }

@@ -2,6 +2,8 @@
 
 Account → ID verification sells one €3 credit through Stripe Checkout on the web. The buyer can use the credit or gift it once using the recipient's private code. Admin grants in Filament are not transferable. A credit covers one check, not an approval. The API has separate live and sandbox wallets, histories and provider credentials. Do not migrate sandbox balances or decisions.
 
+Community verification remains the participation gate for publishing polls, voting or reacting, feature-request participation, and managing saved audiences. The API exposes it as `community_verified_at` and retains `verified_at` as a compatibility alias. Neither `id_verification_approved` nor the combined `verification_badge` grants any permissions.
+
 ## Stripe
 
 1. Use the existing Stripe account and a separate API key for this integration, installed on the Laravel server only as `IDENTITY_STRIPE_SECRET_KEY`. The integration needs Checkout Session write/read, Price read, and Payment Intent read (to correlate disputes). Configure `IDENTITY_STRIPE_PRICE_ID=price_1T2FrzIbFg7sfVM3s2Dhl4DW` in the environment that matches the Price's Stripe account and mode. Use a separate €3 one-time Price for the other mode. Do not change the donation route or copy secrets into Next.js or Expo.

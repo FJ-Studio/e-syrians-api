@@ -10,7 +10,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 class StoreFeatureRequest extends FormRequest
 {
     /**
-     * Authorization is handled upstream by auth:sanctum + UserIsVerified
+     * Authorization is handled upstream by auth:sanctum + RequireCommunityVerification
      * middleware. Any authenticated verified user can submit a feature.
      */
     public function authorize(): bool

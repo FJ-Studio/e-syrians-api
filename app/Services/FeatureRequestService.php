@@ -12,6 +12,7 @@ use App\Enums\FeatureRequestStatusEnum;
 use Illuminate\Database\Eloquent\Builder;
 use App\Exceptions\FeatureRequestException;
 use App\Contracts\FeatureRequestServiceContract;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\UniqueConstraintViolationException;
 
@@ -219,7 +220,7 @@ class FeatureRequestService implements FeatureRequestServiceContract
     private function buildQuery(?int $userId): Builder
     {
         return FeatureRequest::query()
-            ->with('user')
+            ->with(['user' => fn (Relation $relation) => $relation->getQuery()->withExists('approvedIdentityChecks')])
             ->withCount([
                 'ups as ups_aggregate_count',
                 'downs as downs_aggregate_count',
