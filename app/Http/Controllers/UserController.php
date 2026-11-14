@@ -51,7 +51,7 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
-        return ApiService::success(new UserResource($user));
+        return ApiService::success(new UserResource($user->loadExists('approvedIdentityChecks')));
     }
 
     /**
@@ -105,6 +105,7 @@ class UserController extends Controller
         }
 
         $users = User::whereIn('uuid', $uuids)
+            ->withExists('approvedIdentityChecks')
             ->orderBy('verified_at')
             ->get();
 

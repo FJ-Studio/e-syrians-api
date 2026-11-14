@@ -13,7 +13,7 @@ class StoreAudienceRequest extends FormRequest
     public function authorize(): bool
     {
         // Any authenticated user can create audiences. The route
-        // group already applies auth:sanctum + UserIsVerified.
+        // group already applies auth:sanctum + RequireCommunityVerification.
         return $this->user() !== null;
     }
 

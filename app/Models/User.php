@@ -408,9 +408,18 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         return $this->two_factor_enabled && $this->two_factor_confirmed_at !== null;
     }
 
-    public function isVerified(): bool
+    /** Participation uses community status only. Never substitute an approved ID check. */
+    public function isCommunityVerified(): bool
     {
         return (bool) $this->verified_at;
+    }
+
+    /** @return HasMany<IdentityVerificationCredit, $this> */
+    public function approvedIdentityChecks(): HasMany
+    {
+        return $this->hasMany(IdentityVerificationCredit::class, 'owner_id')
+            ->where('status', 'approved')
+            ->whereNotNull('provider_session_id');
     }
 
     /**
@@ -494,7 +503,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
             return [false, 'your_account_is_banned'];
         }
         // 2. check if user is verified
-        if (! $this->verified_at) {
+        if (! $this->isCommunityVerified()) {
             return [false, 'you_are_not_verified'];
         }
         // 3. check the user verifications status

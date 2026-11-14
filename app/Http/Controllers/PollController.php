@@ -10,6 +10,7 @@ use App\Models\Poll;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Resources\PollResource;
 use Illuminate\Support\Facades\Cache;
@@ -173,8 +174,18 @@ class PollController extends Controller
      */
     public function status(Request $request, int $pollId): JsonResponse
     {
+        try {
+            return DB::transaction(fn () => $this->toggleOwnedPoll($request, $pollId));
+        } catch (Exception $e) {
+            return ApiService::error(500, $e->getMessage());
+        }
+    }
+
+    private function toggleOwnedPoll(Request $request, int $pollId): JsonResponse
+    {
         $poll = Poll::withTrashed()
             ->withoutGlobalScope('public_polls')
+            ->lockForUpdate()
             ->find($pollId);
 
         if (! $poll) {
@@ -185,22 +196,19 @@ class PollController extends Controller
             return ApiService::error(403, 'not_your_poll');
         }
 
-        try {
-            $this->pollService->toggleStatus($pollId);
-
-            // Re-fetch so we surface the updated trashed state to
-            // the client (closed ↔ reopened).
-            $fresh = Poll::withTrashed()
-                ->withoutGlobalScope('public_polls')
-                ->findOrFail($pollId);
-
-            return ApiService::success([
-                'id' => $fresh->id,
-                'deleted_at' => $fresh->deleted_at?->toISOString(),
-            ]);
-        } catch (Exception $e) {
-            return ApiService::error(500, $e->getMessage());
+        // Reopening republishes a poll. Owners can still take a poll down
+        // even after losing community verification.
+        if ($poll->trashed() && ! $request->user()->isCommunityVerified()) {
+            return ApiService::error(403, 'you_are_not_verified');
         }
+
+        $this->pollService->toggleStatus($pollId);
+        $poll->refresh();
+
+        return ApiService::success([
+            'id' => $poll->id,
+            'deleted_at' => $poll->deleted_at?->toISOString(),
+        ]);
     }
 
     public function vote(StorePollVoteRequest $request): JsonResponse

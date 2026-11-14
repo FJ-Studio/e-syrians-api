@@ -20,6 +20,7 @@ use App\Exceptions\PollReactionException;
 use Illuminate\Database\Eloquent\Builder;
 use App\Contracts\AudienceServiceContract;
 use App\Jobs\SyncPollAudienceRulesToBigQuery;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class PollService implements PollServiceContract
@@ -359,7 +360,7 @@ class PollService implements PollServiceContract
 
     public function toggleStatus(int $pollId): void
     {
-        $poll = Poll::withTrashed()->findOrFail($pollId);
+        $poll = Poll::withTrashed()->withoutGlobalScope('public_polls')->findOrFail($pollId);
 
         if ($poll->trashed()) {
             $poll->restore();
@@ -566,7 +567,11 @@ class PollService implements PollServiceContract
      */
     private function buildPollQuery(?int $userId): Builder
     {
-        return Poll::with(['user', 'audienceRules', 'options' => fn ($q) => $q->withCount('votes')])
+        return Poll::with([
+            'user' => fn (Relation $relation) => $relation->getQuery()->withExists('approvedIdentityChecks'),
+            'audienceRules',
+            'options' => fn ($q) => $q->withCount('votes'),
+        ])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',

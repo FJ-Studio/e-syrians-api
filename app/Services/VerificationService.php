@@ -134,7 +134,7 @@ class VerificationService implements VerificationServiceContract
         // Recompute the recipient's verified status. Without this,
         // a peer-verified user who drops below the active-verifier
         // threshold (config('e-syrians.verification.min')) keeps
-        // `verified_at` set and continues to pass the `UserIsVerified`
+        // `verified_at` set and continues to pass the `RequireCommunityVerification`
         // middleware — i.e. they keep voting, creating polls, and
         // verifying others despite no longer meeting the bar. We
         // skip recompute for first_registrant users since their

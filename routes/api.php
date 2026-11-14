@@ -2,7 +2,6 @@
 
 use App\Http\Middleware\CanVerify;
 use Illuminate\Support\Facades\Route;
-use App\Http\Middleware\UserIsVerified;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PollController;
 use App\Http\Controllers\UserController;
@@ -23,6 +22,7 @@ use App\Http\Controllers\FeatureRequestController;
 use App\Http\Controllers\AccountDeletionController;
 use App\Http\Controllers\IdentitySandboxController;
 use App\Http\Controllers\DonationSettingsController;
+use App\Http\Middleware\RequireCommunityVerification;
 use App\Http\Controllers\SuspiciousActivityController;
 use App\Http\Controllers\IdentityVerificationController;
 use App\Http\Middleware\EnsureAccountNotPendingDeletion;
@@ -259,7 +259,7 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
     |----------------------------------------------------------------
     | Audiences — reusable identifier lists for poll audience gating.
     |----------------------------------------------------------------
-    | UserIsVerified gates the whole group: an unverified user has
+    | RequireCommunityVerification gates the whole group: an unverified user has
     | no legitimate reason to hoard other people's national IDs,
     | and the only place these lists are useful is a poll (which
     | already requires verification to create).
@@ -268,7 +268,7 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
     | the pattern used by profile updates and poll creation. Reads
     | are throttled but not recaptcha-gated.
     */
-    Route::prefix('audiences')->middleware([UserIsVerified::class])->group(function (): void {
+    Route::prefix('audiences')->middleware([RequireCommunityVerification::class])->group(function (): void {
         Route::get('/', [AudienceController::class, 'index'])
             ->middleware(['throttle:60,1,audiences_list']);
         Route::post('/', [AudienceController::class, 'store'])
@@ -305,7 +305,7 @@ Route::prefix('polls')->group(function (): void {
     Route::get('/', [PollController::class, 'index']);
     Route::middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
         Route::get('/option-voters', [PollController::class, 'optionVoters']);
-        Route::post('/', [PollController::class, 'store'])->middleware('recaptcha');
+        Route::post('/', [PollController::class, 'store'])->middleware([RequireCommunityVerification::class, 'recaptcha']);
         // Creator-only edit payload. Must be declared BEFORE
         // `/{poll}` so the literal segment doesn't get swallowed by
         // the dynamic show route. Sits under auth:sanctum; the
@@ -314,7 +314,7 @@ Route::prefix('polls')->group(function (): void {
         // Edit gate is in UpdatePollRequest::authorize (ownership +
         // zero-votes). Must be PATCH not POST so it doesn't collide
         // with the public `/{poll}` show route below.
-        Route::patch('/{poll}', [PollController::class, 'update'])->middleware('recaptcha');
+        Route::patch('/{poll}', [PollController::class, 'update'])->middleware([RequireCommunityVerification::class, 'recaptcha']);
         // Uses `{pollId}` (not `{poll}`) on purpose: the
         // AppServiceProvider's `Route::bind('poll', …)` resolves
         // the parameter to a Poll model without the `public_polls`
@@ -324,8 +324,8 @@ Route::prefix('polls')->group(function (): void {
         // lookup. A different parameter name keeps the binding
         // out of the way and lets `int $pollId` resolve naturally.
         Route::post('/status/{pollId}', [PollController::class, 'status'])->middleware('recaptcha');
-        Route::post('/vote', [PollController::class, 'vote'])->middleware([UserIsVerified::class, 'recaptcha']);
-        Route::post('/react', [PollController::class, 'react'])->middleware([UserIsVerified::class, 'recaptcha']);
+        Route::post('/vote', [PollController::class, 'vote'])->middleware([RequireCommunityVerification::class, 'recaptcha']);
+        Route::post('/react', [PollController::class, 'react'])->middleware([RequireCommunityVerification::class, 'recaptcha']);
     });
     Route::get('/audience', [PollController::class, 'audience']);
     Route::get('/{poll}', [PollController::class, 'show']);
@@ -340,11 +340,11 @@ Route::prefix('feature-requests')->group(function (): void {
     Route::get('/', [FeatureRequestController::class, 'index']);
     Route::middleware(['auth:sanctum', EnsureAccountNotPendingDeletion::class])->group(function (): void {
         Route::post('/', [FeatureRequestController::class, 'store'])
-            ->middleware([UserIsVerified::class, 'throttle:5,10,feature_request_store', 'recaptcha']);
+            ->middleware([RequireCommunityVerification::class, 'throttle:5,10,feature_request_store', 'recaptcha']);
         Route::post('/vote', [FeatureRequestController::class, 'vote'])
-            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote', 'recaptcha']);
+            ->middleware([RequireCommunityVerification::class, 'throttle:30,1,feature_request_vote', 'recaptcha']);
         Route::delete('/vote/{id}', [FeatureRequestController::class, 'unvote'])
-            ->middleware([UserIsVerified::class, 'throttle:30,1,feature_request_vote', 'recaptcha'])
+            ->middleware([RequireCommunityVerification::class, 'throttle:30,1,feature_request_vote', 'recaptcha'])
             ->whereNumber('id');
 
         // Admin-only moderation + timeline transitions. Gated by Spatie's

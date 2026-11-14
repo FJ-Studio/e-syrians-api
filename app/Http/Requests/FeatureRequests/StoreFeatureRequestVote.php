@@ -10,7 +10,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 class StoreFeatureRequestVote extends FormRequest
 {
     /**
-     * Authorization handled by auth:sanctum + UserIsVerified middleware.
+     * Authorization handled by auth:sanctum + RequireCommunityVerification middleware.
      */
     public function authorize(): bool
     {
