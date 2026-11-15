@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Contracts;
 
 use App\Models\User;
+use Laravel\Sanctum\Contracts\HasAbilities;
 
 interface AuthServiceContract
 {
@@ -49,9 +50,9 @@ interface AuthServiceContract
     public function isEmailAvailable(string $email): bool;
 
     /**
-     * Revoke all tokens for a user
+     * Revoke only the bearer token authenticating this request.
      */
-    public function logout(User $user): void;
+    public function logout(?HasAbilities $token): void;
 
     /**
      * Verify a user's email address

@@ -106,13 +106,18 @@ it('returns 401 for non-existent user login', function (): void {
 // Logout
 // ───────────────────────────────────────────────
 
-it('logs out authenticated user and revokes tokens', function (): void {
+it('revokes only the authenticated device session on logout', function (): void {
     $user = User::factory()->create();
+    $other = $user->createToken('other-device');
+    $current = $user->createToken('this-device');
 
-    $response = $this->postJson('/users/logout', [], authHeader($user));
+    $this->postJson('/users/logout', [], ['Authorization' => 'Bearer '.$current->plainTextToken])->assertOk();
 
-    $response->assertOk();
-    expect($user->tokens()->count())->toBe(0);
+    expect($user->tokens()->pluck('id')->all())->toBe([$other->accessToken->id]);
+    auth()->forgetGuards();
+    $this->getJson('/users/me', ['Authorization' => 'Bearer '.$current->plainTextToken])->assertUnauthorized();
+    auth()->forgetGuards();
+    $this->getJson('/users/me', ['Authorization' => 'Bearer '.$other->plainTextToken])->assertOk();
 });
 
 it('returns 401 when logging out without authentication', function (): void {
