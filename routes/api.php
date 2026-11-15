@@ -149,6 +149,7 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
         Route::get('/history', 'history');
         Route::get('/checkout/{order}', 'checkoutStatus')->whereUuid('order');
         Route::post('/checkout', 'createCheckout')->middleware('throttle:5,1,identity-checkout');
+        Route::post('/store-purchases', 'redeemStorePurchase')->middleware('throttle:12,1,identity-store');
         Route::post('/gift-code', 'giftCode');
         Route::post('/{credit}/gift', 'gift')->whereUuid('credit');
         Route::post('/{credit}/start', 'start')->whereUuid('credit');

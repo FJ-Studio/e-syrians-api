@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use App\Services\IdentityStoreCheckout;
 use App\Services\IdentityVerificationService;
 use App\Services\IdentityVerificationCheckout;
 
@@ -16,6 +17,7 @@ class IdentityVerificationController extends IdentitySandboxController
     public function __construct(
         private readonly IdentityVerificationService $wallet,
         private readonly IdentityVerificationCheckout $checkout,
+        private readonly IdentityStoreCheckout $storeCheckout,
     ) {
         parent::__construct($wallet);
     }
@@ -25,6 +27,8 @@ class IdentityVerificationController extends IdentitySandboxController
         return $this->respond([
             ...$this->wallet->summary($user),
             'mode' => 'live',
+            'account_approved' => $user->approvedIdentityChecks()->exists(),
+            'store_products' => $this->storeCheckout->products(),
             'can_purchase' => $this->checkout->ready(),
             'price_minor' => IdentityVerificationCheckout::AMOUNT,
             'currency' => strtoupper(IdentityVerificationCheckout::CURRENCY),
@@ -50,6 +54,18 @@ class IdentityVerificationController extends IdentitySandboxController
     public function checkoutStatus(Request $request, string $order): JsonResponse
     {
         return $this->respond($this->checkout->status($this->user($request), $order));
+    }
+
+    public function redeemStorePurchase(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        $data = $request->validate([
+            'platform' => ['required', 'in:ios,android'],
+            'proof' => ['required', 'string', 'max:2048', 'regex:/^[!-~]+$/D'],
+        ]);
+        $this->storeCheckout->redeem($user, $data['platform'], $data['proof']);
+
+        return $this->respond(['fulfilled' => true]);
     }
 
     public function stripeWebhook(Request $request): Response
