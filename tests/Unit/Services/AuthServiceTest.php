@@ -118,16 +118,14 @@ it('returns null for non-existent user', function (): void {
 // Logout
 // ───────────────────────────────────────────────
 
-it('revokes all tokens on logout', function (): void {
+it('revokes only the supplied personal access token', function (): void {
     $user = User::factory()->create();
-    $user->createToken('test-token');
-    $user->createToken('another-token');
+    $current = $user->createToken('this-device');
+    $other = $user->createToken('another-device');
 
-    expect($user->tokens()->count())->toBe(2);
+    test()->authService->logout($current->accessToken);
 
-    test()->authService->logout($user);
-
-    expect($user->tokens()->count())->toBe(0);
+    expect($user->tokens()->pluck('id')->all())->toBe([$other->accessToken->id]);
 });
 
 // ───────────────────────────────────────────────

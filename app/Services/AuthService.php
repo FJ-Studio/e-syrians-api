@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Hash;
 use App\Contracts\AuthServiceContract;
 use Illuminate\Auth\Events\Registered;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Socialite\Facades\Socialite;
+use Laravel\Sanctum\Contracts\HasAbilities;
 
 class AuthService implements AuthServiceContract
 {
@@ -219,9 +221,11 @@ class AuthService implements AuthServiceContract
         return ! User::query()->where('email', $normalized)->exists();
     }
 
-    public function logout(User $user): void
+    public function logout(?HasAbilities $token): void
     {
-        $user->tokens()->delete();
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
     }
 
     public function verifyEmail(int $userId, string $hash, string $signature): array
