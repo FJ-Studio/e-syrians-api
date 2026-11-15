@@ -15,24 +15,23 @@ use App\Services\IdentityVerificationCheckout;
 class IdentityVerificationController extends IdentitySandboxController
 {
     public function __construct(
-        private readonly IdentityVerificationService $wallet,
+        IdentityVerificationService $wallet,
         private readonly IdentityVerificationCheckout $checkout,
-        private readonly IdentityStoreCheckout $storeCheckout,
+        IdentityStoreCheckout $storeCheckout,
     ) {
-        parent::__construct($wallet);
+        parent::__construct($wallet, $storeCheckout);
     }
 
-    protected function summary(User $user): JsonResponse
+    /** @return array<string, mixed> */
+    protected function summaryData(User $user): array
     {
-        return $this->respond([
-            ...$this->wallet->summary($user),
-            'mode' => 'live',
+        return [
+            ...parent::summaryData($user),
             'account_approved' => $user->approvedIdentityChecks()->exists(),
-            'store_products' => $this->storeCheckout->products(),
             'can_purchase' => $this->checkout->ready(),
             'price_minor' => IdentityVerificationCheckout::AMOUNT,
             'currency' => strtoupper(IdentityVerificationCheckout::CURRENCY),
-        ]);
+        ];
     }
 
     public function start(Request $request, string $credit): JsonResponse
@@ -54,18 +53,6 @@ class IdentityVerificationController extends IdentitySandboxController
     public function checkoutStatus(Request $request, string $order): JsonResponse
     {
         return $this->respond($this->checkout->status($this->user($request), $order));
-    }
-
-    public function redeemStorePurchase(Request $request): JsonResponse
-    {
-        $user = $this->user($request);
-        $data = $request->validate([
-            'platform' => ['required', 'in:ios,android'],
-            'proof' => ['required', 'string', 'max:2048', 'regex:/^[!-~]+$/D'],
-        ]);
-        $this->storeCheckout->redeem($user, $data['platform'], $data['proof']);
-
-        return $this->respond(['fulfilled' => true]);
     }
 
     public function stripeWebhook(Request $request): Response

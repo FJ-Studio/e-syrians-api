@@ -5,10 +5,17 @@ declare(strict_types=1);
 namespace App\Contracts;
 
 use App\Models\User;
+use App\Models\IdentitySandboxCredit;
 
 interface IdentitySandboxServiceContract
 {
     public function allowed(User $user): bool;
+
+    public function mode(): string;
+
+    public function providerReady(): bool;
+
+    public function fulfillPurchase(User $buyer): IdentitySandboxCredit;
 
     public function canGrant(User $admin, User $recipient): bool;
 

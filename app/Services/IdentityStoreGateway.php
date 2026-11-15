@@ -125,6 +125,8 @@ class IdentityStoreGateway
         $item = is_array($lines) && count($lines) === 1 ? ($lines[0] ?? null) : null;
         abort_unless(is_array($item) && ($item['productId'] ?? null) === $product
             && data_get($item, 'productOfferDetails.quantity') === 1
+            && data_get($item, 'productOfferDetails.rentOfferDetails') === null
+            && data_get($item, 'productOfferDetails.preorderOfferDetails') === null
             && is_string($owner)
             && (is_array($response->json('testPurchaseContext')) === ($this->environment() === 'sandbox')), 422, 'identity_store_invalid_purchase');
         $state = match ($response->json('purchaseStateContext.purchaseState')) {

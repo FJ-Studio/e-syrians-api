@@ -204,6 +204,25 @@ class IdentitySandboxService implements IdentitySandboxServiceContract
         return 'sandbox';
     }
 
+    public function providerReady(): bool
+    {
+        return $this->didit->configured();
+    }
+
+    // The caller locks the buyer and registers the store purchase in this transaction.
+    public function fulfillPurchase(User $buyer): IdentitySandboxCredit
+    {
+        $credit = $this->newCredit();
+        $credit->forceFill([
+            'uuid' => (string) Str::uuid(),
+            'owner_id' => $buyer->id,
+            'source' => IdentitySandboxCredit::SOURCE_PURCHASE,
+        ])->save();
+        $this->recordCreditEvent($buyer, $credit, 'purchased', now());
+
+        return $credit;
+    }
+
     protected function canClaim(User $user): bool
     {
         return ! IdentitySandboxCredit::query()->where('issued_to_user_id', $user->id)->exists();

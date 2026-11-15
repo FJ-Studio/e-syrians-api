@@ -13,15 +13,17 @@ return new class () extends Migration {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('credit_id')->nullable()->constrained('identity_verification_credits')->nullOnDelete();
+            $table->foreignId('sandbox_credit_id')->nullable()->constrained('identity_sandbox_credits')->nullOnDelete();
             $table->string('platform', 8);
             $table->string('environment', 12);
             $table->string('product_id', 100);
             $table->char('proof_hash', 64);
             $table->text('proof');
+            $table->timestamp('play_consumed_at')->nullable();
             $table->timestamp('reversed_at')->nullable();
             $table->timestamp('check_after')->index();
             $table->timestamps();
-            $table->unique(['platform', 'proof_hash']);
+            $table->unique(['platform', 'environment', 'proof_hash']);
         });
     }
 

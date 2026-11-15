@@ -20,7 +20,7 @@ Schedule::command('model:prune', ['--model' => 'App\\Models\\ProfileUpdate'])->d
 Schedule::job(new HardDeleteExpiredAccountsJob())->dailyAt('03:00');
 
 Schedule::call(fn () => resolve(IdentityStoreCheckout::class)->reconcile())
-    ->name('identity-store-reconciliation')->everyTenMinutes()->withoutOverlapping();
+    ->name('identity-store-reconciliation')->everyMinute()->withoutOverlapping();
 
 Schedule::call(function (): void {
     Feature::flushCache();
