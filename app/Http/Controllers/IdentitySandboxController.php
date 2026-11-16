@@ -8,12 +8,16 @@ use App\Models\User;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Services\IdentityStoreCheckout;
 use App\Contracts\IdentitySandboxServiceContract;
+use App\Http\Requests\Identity\RedeemStorePurchaseRequest;
 
 class IdentitySandboxController extends Controller
 {
-    public function __construct(private readonly IdentitySandboxServiceContract $sandbox)
-    {
+    public function __construct(
+        private readonly IdentitySandboxServiceContract $sandbox,
+        private readonly IdentityStoreCheckout $storeCheckout,
+    ) {
     }
 
     public function show(Request $request): JsonResponse
@@ -67,9 +71,34 @@ class IdentitySandboxController extends Controller
         return $this->summary($user);
     }
 
+    public function redeemStorePurchase(RedeemStorePurchaseRequest $request): JsonResponse
+    {
+        $user = $this->user($request);
+        $data = $request->validated();
+        $playConsumed = $this->storeCheckout->redeem($this->sandbox, $user, $data['platform'], $data['proof']);
+
+        return $this->respond([
+            'fulfilled' => true,
+            'play_consumed' => $playConsumed,
+            'wallet' => $this->summaryData($user),
+            'history' => $this->sandbox->history($user, 1),
+        ]);
+    }
+
     protected function summary(User $user): JsonResponse
     {
-        return $this->respond($this->sandbox->summary($user));
+        return $this->respond($this->summaryData($user));
+    }
+
+    /** @return array<string, mixed> */
+    protected function summaryData(User $user): array
+    {
+        return [
+            ...$this->sandbox->summary($user),
+            'mode' => $this->sandbox->mode(),
+            'store_products' => $this->storeCheckout->products($this->sandbox),
+            'store_recovery_products' => $this->storeCheckout->recoveryProducts($this->sandbox),
+        ];
     }
 
     protected function user(Request $request): User

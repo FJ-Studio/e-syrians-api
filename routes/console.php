@@ -4,6 +4,7 @@ use App\Models\Poll;
 use Laravel\Pennant\Feature;
 use App\Enums\PlatformFeature;
 use App\Services\FeatureFlagService;
+use App\Services\IdentityStoreCheckout;
 use Illuminate\Support\Facades\Schedule;
 use App\Jobs\HardDeleteExpiredAccountsJob;
 use App\Jobs\FanOutPlatformNotificationJob;
@@ -17,6 +18,9 @@ Schedule::command('model:prune', ['--model' => 'App\\Models\\ProfileUpdate'])->d
 // user base and well after the daily-statistics job's 23:58 slot so
 // the two never contend for the DB.
 Schedule::job(new HardDeleteExpiredAccountsJob())->dailyAt('03:00');
+
+Schedule::call(fn () => resolve(IdentityStoreCheckout::class)->reconcile())
+    ->name('identity-store-reconciliation')->everyMinute()->withoutOverlapping();
 
 Schedule::call(function (): void {
     Feature::flushCache();

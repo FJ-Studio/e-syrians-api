@@ -37,7 +37,7 @@ class IdentitySandboxCredit extends Model
 
     public function isTransferableSource(): bool
     {
-        return $this->source === self::SOURCE_SELF_CLAIM;
+        return in_array($this->source, [self::SOURCE_SELF_CLAIM, self::SOURCE_PURCHASE], true);
     }
 
     protected function casts(): array

@@ -8,27 +8,30 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use App\Services\IdentityStoreCheckout;
 use App\Services\IdentityVerificationService;
 use App\Services\IdentityVerificationCheckout;
 
 class IdentityVerificationController extends IdentitySandboxController
 {
     public function __construct(
-        private readonly IdentityVerificationService $wallet,
+        IdentityVerificationService $wallet,
         private readonly IdentityVerificationCheckout $checkout,
+        IdentityStoreCheckout $storeCheckout,
     ) {
-        parent::__construct($wallet);
+        parent::__construct($wallet, $storeCheckout);
     }
 
-    protected function summary(User $user): JsonResponse
+    /** @return array<string, mixed> */
+    protected function summaryData(User $user): array
     {
-        return $this->respond([
-            ...$this->wallet->summary($user),
-            'mode' => 'live',
+        return [
+            ...parent::summaryData($user),
+            'account_approved' => $user->approvedIdentityChecks()->exists(),
             'can_purchase' => $this->checkout->ready(),
             'price_minor' => IdentityVerificationCheckout::AMOUNT,
             'currency' => strtoupper(IdentityVerificationCheckout::CURRENCY),
-        ]);
+        ];
     }
 
     public function start(Request $request, string $credit): JsonResponse

@@ -11,9 +11,11 @@ use App\Enums\PlatformFeature;
 use Illuminate\Support\Carbon;
 use App\Enums\NotificationEvent;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Date;
 use App\Models\IdentitySandboxCredit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Validator;
+use App\Models\IdentityVerificationCredit;
 use App\Jobs\NotifyIdentityCreditRecipient;
 use App\Contracts\IdentitySandboxServiceContract;
 
@@ -37,6 +39,7 @@ class IdentitySandboxService implements IdentitySandboxServiceContract
                 'status' => $credit->status,
                 'source' => $credit->source,
                 'can_gift' => $credit->canGift(),
+                ...($credit instanceof IdentityVerificationCredit ? ['attempted_at' => $credit->consented_at?->toIso8601String()] : []),
             ])->values()->all(),
         ];
     }
@@ -44,13 +47,13 @@ class IdentitySandboxService implements IdentitySandboxServiceContract
     public function history(User $user, int $page): array
     {
         $history = DB::table($this->ledgerTable())->where('user_id', $user->id)
-            ->orderByDesc('occurred_at')->orderByDesc('id')->paginate(10, ['id', 'event', 'occurred_at'], 'page', $page);
+            ->latest('occurred_at')->orderByDesc('id')->paginate(10, ['id', 'event', 'occurred_at'], 'page', $page);
 
         return [
             'items' => $history->getCollection()->map(static fn (object $entry): array => [
                 'id' => (int) $entry->id,
                 'event' => (string) $entry->event,
-                'occurred_at' => Carbon::parse($entry->occurred_at)->toIso8601String(),
+                'occurred_at' => Date::parse($entry->occurred_at)->toIso8601String(),
             ])->values()->all(),
             'page' => $history->currentPage(),
             'last_page' => $history->lastPage(),
@@ -122,7 +125,7 @@ class IdentitySandboxService implements IdentitySandboxServiceContract
             abort_unless($entry->canGift(), 409, 'identity_sandbox_credit_not_giftable');
 
             $gift = DB::table($this->giftTable())->where('code_hash', hash('sha256', $code))->lockForUpdate()->first();
-            $recipient = $gift && Carbon::parse($gift->expires_at)->isFuture() ? User::query()->find($gift->user_id) : null;
+            $recipient = $gift && Date::parse($gift->expires_at)->isFuture() ? User::query()->find($gift->user_id) : null;
             abort_unless($recipient instanceof User && $recipient->id !== $user->id
                 && $this->allowed($recipient) && ! $recipient->hasPendingDeletion()
                 && ! UserBlock::between($user->id, $recipient->id), 422, 'identity_sandbox_gift_code_invalid');
@@ -201,6 +204,25 @@ class IdentitySandboxService implements IdentitySandboxServiceContract
         return 'sandbox';
     }
 
+    public function providerReady(): bool
+    {
+        return $this->didit->configured();
+    }
+
+    // The caller locks the buyer and registers the store purchase in this transaction.
+    public function fulfillPurchase(User $buyer): IdentitySandboxCredit
+    {
+        $credit = $this->newCredit();
+        $credit->forceFill([
+            'uuid' => (string) Str::uuid(),
+            'owner_id' => $buyer->id,
+            'source' => IdentitySandboxCredit::SOURCE_PURCHASE,
+        ])->save();
+        $this->recordCreditEvent($buyer, $credit, 'purchased', now());
+
+        return $credit;
+    }
+
     protected function canClaim(User $user): bool
     {
         return ! IdentitySandboxCredit::query()->where('issued_to_user_id', $user->id)->exists();
@@ -229,7 +251,7 @@ class IdentitySandboxService implements IdentitySandboxServiceContract
     private function notifyRecipient(NotificationEvent $event, IdentitySandboxCredit $credit): void
     {
         if (resolve(FeatureFlagService::class)->enabled(PlatformFeature::NotificationEvents)) {
-            NotifyIdentityCreditRecipient::dispatch($event, $credit->id, $this->mode())->afterCommit();
+            dispatch(new NotifyIdentityCreditRecipient($event, $credit->id, $this->mode()))->afterCommit();
         }
     }
 
