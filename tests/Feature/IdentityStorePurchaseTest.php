@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use App\Http\Middleware\Recaptcha;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -31,6 +32,54 @@ beforeEach(function (): void {
         'identity-verification.store.ios.key_id' => 'example-key-id',
         'identity-verification.store.android.enabled' => true,
     ]);
+});
+
+it('requires reCAPTCHA before calling the store for either wallet', function (string $route): void {
+    $this->app->forgetInstance(Recaptcha::class);
+    Http::fake();
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->postJson($route, ['platform' => 'android', 'proof' => 'store-reference'])
+        ->assertStatus(400)
+        ->assertJsonPath('messages.0', 'recaptcha_token_required');
+    Http::assertNothingSent();
+})->with([STORE_IDV_REDEEM, STORE_IDV_SANDBOX.'/store-purchases']);
+
+it('returns raw purchase validation keys for either wallet', function (string $route): void {
+    Http::fake();
+    Sanctum::actingAs(User::factory()->create());
+
+    $this->postJson($route, ['platform' => 'unsupported'], ['Accept-Language' => 'ar'])
+        ->assertUnprocessable()
+        ->assertJsonPath('messages.platform.0', 'identity_store_platform_invalid')
+        ->assertJsonPath('messages.proof.0', 'identity_store_proof_required');
+    Http::assertNothingSent();
+})->with([STORE_IDV_REDEEM, STORE_IDV_SANDBOX.'/store-purchases']);
+
+it('fulfills a Play credit after valid purchase reCAPTCHA', function (): void {
+    $this->app->forgetInstance(Recaptcha::class);
+    config([
+        'services.recaptcha.project_id' => 'test-project',
+        'services.recaptcha.api_key' => 'test-key',
+        'services.recaptcha.site_key' => 'test-site-key',
+    ]);
+    idvStoreKey('android');
+    $buyer = User::factory()->create();
+    Sanctum::actingAs($buyer);
+    Http::fake([
+        'recaptchaenterprise.googleapis.com/*' => Http::response([
+            'tokenProperties' => ['valid' => true],
+            'riskAnalysis' => ['score' => 0.95],
+        ]),
+        'https://oauth2.googleapis.com/token' => Http::response(['access_token' => 'fake-access-token']),
+        STORE_IDV_GOOGLE.'productsv2/tokens/store-reference' => Http::response(googleStoreIdvPayload($buyer, 'PURCHASED')),
+        STORE_IDV_GOOGLE.'products/'.STORE_IDV_SKU.'/tokens/store-reference:consume' => Http::response(status: 204),
+    ]);
+
+    $this->postJson(STORE_IDV_REDEEM, ['platform' => 'android', 'proof' => 'store-reference', 'recaptcha_token' => 'test-token'])
+        ->assertOk()
+        ->assertJsonPath('data.wallet.credits.0.status', 'available')
+        ->assertJsonPath('data.play_consumed', true);
 });
 
 function idvStoreKey(string $platform): void

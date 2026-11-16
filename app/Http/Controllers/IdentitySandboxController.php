@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Services\IdentityStoreCheckout;
 use App\Contracts\IdentitySandboxServiceContract;
+use App\Http\Requests\Identity\RedeemStorePurchaseRequest;
 
 class IdentitySandboxController extends Controller
 {
@@ -70,13 +71,10 @@ class IdentitySandboxController extends Controller
         return $this->summary($user);
     }
 
-    public function redeemStorePurchase(Request $request): JsonResponse
+    public function redeemStorePurchase(RedeemStorePurchaseRequest $request): JsonResponse
     {
         $user = $this->user($request);
-        $data = $request->validate([
-            'platform' => ['required', 'in:ios,android'],
-            'proof' => ['required', 'string', 'max:2048', 'regex:/^[!-~]+$/D'],
-        ]);
+        $data = $request->validated();
         $playConsumed = $this->storeCheckout->redeem($this->sandbox, $user, $data['platform'], $data['proof']);
 
         return $this->respond([
