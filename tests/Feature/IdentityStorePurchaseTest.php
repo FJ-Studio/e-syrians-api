@@ -63,7 +63,7 @@ it('fulfills a Play credit after valid purchase reCAPTCHA', function (): void {
         'services.recaptcha.api_key' => 'test-key',
         'services.recaptcha.site_key' => 'test-site-key',
     ]);
-    idvStoreKey('android');
+    idvStoreKey('android', inline: true);
     $buyer = User::factory()->create();
     Sanctum::actingAs($buyer);
     Http::fake([
@@ -82,7 +82,20 @@ it('fulfills a Play credit after valid purchase reCAPTCHA', function (): void {
         ->assertJsonPath('data.play_consumed', true);
 });
 
-function idvStoreKey(string $platform): void
+it('keeps sales off for explicitly invalid inline Play credentials even with a readable fallback', function (string $json): void {
+    idvStoreKey('android');
+    config(['identity-verification.store.android.credentials_json' => $json]);
+    Sanctum::actingAs(User::factory()->create());
+    Http::fake();
+
+    $this->getJson(STORE_IDV_ROOT)->assertOk()->assertJsonPath('data.store_products.android', null);
+    $this->postJson(STORE_IDV_REDEEM, ['platform' => 'android', 'proof' => 'store-reference'])
+        ->assertServiceUnavailable()
+        ->assertJsonPath('messages.0', 'identity_store_unavailable');
+    Http::assertNothingSent();
+})->with(['not JSON', '{"client_email":"first-party-example@project.invalid"}']);
+
+function idvStoreKey(string $platform, bool $inline = false): void
 {
     $options = $platform === 'ios'
         ? ['private_key_type' => OPENSSL_KEYTYPE_EC, 'curve_name' => 'prime256v1']
@@ -94,6 +107,14 @@ function idvStoreKey(string $platform): void
         'client_email' => 'first-party-example@project.invalid',
         'private_key' => $pem,
     ], JSON_THROW_ON_ERROR);
+
+    if ($inline) {
+        // Exercise the actual .env quoting as well as the signing path.
+        $env = Dotenv\Dotenv::parse("IDENTITY_STORE_GOOGLE_CREDENTIALS_JSON='{$contents}'");
+        config(['identity-verification.store.android.credentials_json' => $env['IDENTITY_STORE_GOOGLE_CREDENTIALS_JSON']]);
+
+        return;
+    }
 
     $file = tmpfile();
     expect($file)->not->toBeFalse();
