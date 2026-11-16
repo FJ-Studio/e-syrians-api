@@ -27,6 +27,7 @@ return [
             'enabled' => env('IDENTITY_STORE_ANDROID_ENABLED', false),
             'bundle' => 'com.esyrians.app',
             'product' => env('IDENTITY_STORE_ANDROID_PRODUCT_ID', 'identity_verification_credit'),
+            'credentials_json' => env('IDENTITY_STORE_GOOGLE_CREDENTIALS_JSON'),
             'key_path' => env('IDENTITY_STORE_GOOGLE_CREDENTIALS_PATH'),
         ],
     ],

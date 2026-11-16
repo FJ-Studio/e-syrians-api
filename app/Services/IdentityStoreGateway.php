@@ -39,7 +39,7 @@ class IdentityStoreGateway
                 && filled(config('identity-verification.store.ios.issuer'))
                 && filled(config('identity-verification.store.ios.key_id'))
                 && $this->readable('ios'),
-            'android' => $this->readable('android'),
+            'android' => $this->googleCredentials() !== null,
             default => false,
         };
     }
@@ -145,10 +145,10 @@ class IdentityStoreGateway
 
     private function googleClient(): PendingRequest
     {
-        $credentials = json_decode($this->keyFile('android'), true, flags: JSON_THROW_ON_ERROR);
-        $email = is_array($credentials) ? ($credentials['client_email'] ?? null) : null;
-        $private = is_array($credentials) ? ($credentials['private_key'] ?? null) : null;
-        abort_unless(is_string($email) && is_string($private), 503, 'identity_store_unavailable');
+        $credentials = $this->googleCredentials();
+        abort_unless($credentials !== null, 503, 'identity_store_unavailable');
+        $email = $credentials['client_email'];
+        $private = $credentials['private_key'];
         $token = Cache::remember('identity-play-token:'.hash('sha256', $email), 240, function () use ($email, $private): string {
             $now = now()->getTimestamp();
             $assertion = $this->sign([
@@ -170,6 +170,29 @@ class IdentityStoreGateway
         $bundle = rawurlencode($this->bundle('android'));
 
         return $this->http()->withToken($token)->baseUrl(self::GOOGLE_ORIGIN.'/androidpublisher/v3/applications/'.$bundle);
+    }
+
+    /** @return array{client_email: string, private_key: string}|null */
+    private function googleCredentials(): ?array
+    {
+        $json = config('identity-verification.store.android.credentials_json');
+        if ($json === null || $json === '') {
+            // Compatibility with existing file-based installations. Never fall
+            // back when an explicit inline value is invalid or incomplete.
+            if (! $this->readable('android')) {
+                return null;
+            }
+
+            $json = file_get_contents((string) config('identity-verification.store.android.key_path'));
+        }
+
+        $credentials = is_string($json) ? json_decode($json, true) : null;
+        $email = is_array($credentials) ? ($credentials['client_email'] ?? null) : null;
+        $private = is_array($credentials) ? ($credentials['private_key'] ?? null) : null;
+
+        return is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false
+            && is_string($private) && trim($private) !== ''
+            ? ['client_email' => $email, 'private_key' => $private] : null;
     }
 
     private function bundle(string $platform): string
