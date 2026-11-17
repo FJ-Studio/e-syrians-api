@@ -17,10 +17,12 @@ return [
     'store' => [
         'ios' => [
             'enabled' => env('IDENTITY_STORE_IOS_ENABLED', false),
+            'sandbox_enabled' => env('IDENTITY_STORE_IOS_SANDBOX_ENABLED', false),
             'bundle' => 'com.esyrians.app',
             'product' => env('IDENTITY_STORE_IOS_PRODUCT_ID', 'identity_verification_credit'),
             'issuer' => env('IDENTITY_STORE_APPLE_ISSUER_ID'),
             'key_id' => env('IDENTITY_STORE_APPLE_KEY_ID'),
+            'private_key' => env('IDENTITY_STORE_APPLE_PRIVATE_KEY'),
             'key_path' => env('IDENTITY_STORE_APPLE_KEY_PATH'),
         ],
         'android' => [

@@ -9,6 +9,7 @@ use App\Http\Middleware\Recaptcha;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use App\Models\IdentitySandboxCredit;
 use App\Services\IdentityStoreCheckout;
 use App\Models\IdentityVerificationCredit;
 
@@ -110,8 +111,14 @@ function idvStoreKey(string $platform, bool $inline = false): void
 
     if ($inline) {
         // Exercise the actual .env quoting as well as the signing path.
-        $env = Dotenv\Dotenv::parse("IDENTITY_STORE_GOOGLE_CREDENTIALS_JSON='{$contents}'");
-        config(['identity-verification.store.android.credentials_json' => $env['IDENTITY_STORE_GOOGLE_CREDENTIALS_JSON']]);
+        if ($platform === 'ios') {
+            $contents = str_replace("\n", '\\n', $contents);
+            $env = Dotenv\Dotenv::parse("IDENTITY_STORE_APPLE_PRIVATE_KEY='{$contents}'");
+            config(['identity-verification.store.ios.private_key' => $env['IDENTITY_STORE_APPLE_PRIVATE_KEY']]);
+        } else {
+            $env = Dotenv\Dotenv::parse("IDENTITY_STORE_GOOGLE_CREDENTIALS_JSON='{$contents}'");
+            config(['identity-verification.store.android.credentials_json' => $env['IDENTITY_STORE_GOOGLE_CREDENTIALS_JSON']]);
+        }
 
         return;
     }
@@ -179,6 +186,19 @@ it('looks up Apple purchases directly, binds them to one account and credits the
         ->assertDatabaseCount('identity_verification_credit_events', 1);
     expect(DB::table('identity_store_purchases')->value('proof'))->not->toBe($proof['proof']);
     Http::assertSent(fn (Request $request): bool => $request->url() === STORE_IDV_APPLE && $request->hasHeader('Authorization'));
+});
+
+it('signs Apple verification with a server-only inline PEM and does not fall back for an invalid inline key', function (): void {
+    idvStoreKey('ios', inline: true);
+    $buyer = User::factory()->create();
+    Sanctum::actingAs($buyer);
+    Http::fake([STORE_IDV_APPLE => Http::response(appleStoreIdvPayload($buyer))]);
+    $this->getJson(STORE_IDV_ROOT)->assertOk()->assertJsonPath('data.store_products.ios', STORE_IDV_SKU);
+    $this->postJson(STORE_IDV_REDEEM, ['platform' => 'ios', 'proof' => '2000000123456789'])->assertOk();
+
+    idvStoreKey('ios'); // A valid file cannot rescue explicitly invalid inline configuration.
+    config(['identity-verification.store.ios.private_key' => 'invalid-inline-key']);
+    $this->getJson(STORE_IDV_ROOT)->assertOk()->assertJsonPath('data.store_products.ios', null);
 });
 
 it('does not mint Apple credits for other apps, products, environments, revoked purchases or extra quantities', function (array $change): void {
@@ -304,6 +324,81 @@ it('does not accept a Play license-test purchase into production', function (): 
 
     $this->postJson(STORE_IDV_REDEEM, ['platform' => 'android', 'proof' => 'example-store-token'])->assertUnprocessable();
     $this->assertDatabaseCount('identity_verification_credits', 0);
+});
+
+it('lets only approved review accounts use StoreKit sandbox purchases on the production API', function (): void {
+    idvStoreKey('ios');
+    [$buyer, $other] = User::factory()->count(2)->create()->all();
+    config([
+        'identity-verification.store.ios.sandbox_enabled' => true,
+        'identity-verification.store.ios.enabled' => false,
+        'identity-sandbox.test_users' => [(string) $buyer->uuid],
+        'identity-sandbox.api_key' => 'review-didit-key',
+        'identity-sandbox.workflow_id' => 'review-didit-workflow',
+    ]);
+    $headers = ['X-Identity-Store-Environment' => 'sandbox'];
+    Sanctum::actingAs($other);
+    $this->getJson(STORE_IDV_ROOT, $headers)->assertNotFound();
+    Http::assertNothingSent();
+
+    Sanctum::actingAs($buyer);
+    $this->getJson(STORE_IDV_ROOT, $headers)->assertOk()
+        ->assertJsonPath('data.mode', 'sandbox')->assertJsonPath('data.store_products.ios', STORE_IDV_SKU)
+        ->assertJsonPath('data.store_products.android', null)->assertJsonPath('data.can_purchase', false);
+    $session = (string) Str::uuid();
+    $attempt = null;
+    Http::fake([
+        STORE_IDV_APPLE_SANDBOX => Http::response(appleStoreIdvPayload($buyer, ['environment' => 'Sandbox'])),
+        'https://verification.didit.me/v3/session/' => function (Request $request) use ($session, &$attempt) {
+            $attempt = $request['vendor_data'];
+            expect($request['workflow_id'])->toBe('review-didit-workflow');
+            expect($request['sandbox_scenario'])->toBe('approve');
+
+            return Http::response([
+                'session_id' => $session, 'session_kind' => 'user', 'vendor_data' => $attempt,
+                'workflow_id' => 'review-didit-workflow', 'url' => 'https://verify.didit.me/session/test',
+            ]);
+        },
+        "https://verification.didit.me/v3/session/{$session}/decision/" => function () use ($session, &$attempt) {
+            return Http::response([
+                'session_id' => $session, 'session_kind' => 'user', 'vendor_data' => $attempt,
+                'workflow_id' => 'review-didit-workflow', 'environment' => 'sandbox', 'status' => 'Approved',
+            ]);
+        },
+    ]);
+    $proof = ['platform' => 'ios', 'proof' => '2000000123456789'];
+    foreach ([1, 2] as $deliveryAttempt) {
+        $this->postJson(STORE_IDV_REDEEM, $proof, $headers)->assertOk()
+            ->assertJsonPath('data.fulfilled', true)->assertJsonPath('data.wallet.mode', 'sandbox')
+            ->assertJsonCount(1, 'data.wallet.credits')->assertJsonPath('data.history.items.0.event', 'purchased');
+    }
+    $credit = IdentitySandboxCredit::query()->sole();
+    $this->postJson(STORE_IDV_ROOT.'/'.$credit->uuid.'/start', ['consent' => true], $headers)->assertOk();
+    $this->postJson(STORE_IDV_ROOT.'/'.$credit->uuid.'/refresh', [], $headers)->assertOk()
+        ->assertJsonPath('data.credits.0.status', 'approved')->assertJsonPath('data.account_approved', false);
+    $this->getJson(STORE_IDV_ROOT)->assertOk()->assertJsonPath('data.mode', 'live')
+        ->assertJsonCount(0, 'data.credits')->assertJsonPath('data.account_approved', false);
+    $this->assertDatabaseCount('identity_verification_credits', 0)->assertDatabaseCount('identity_sandbox_credits', 1)
+        ->assertDatabaseCount('identity_store_purchases', 1)
+        ->assertDatabaseHas('identity_store_purchases', ['environment' => 'sandbox', 'credit_id' => null]);
+    Http::assertSent(fn (Request $request): bool => $request->url() === STORE_IDV_APPLE_SANDBOX);
+    Http::assertNotSent(fn (Request $request): bool => $request->url() === STORE_IDV_APPLE);
+});
+
+it('fails closed for disabled review access or a production receipt in the sandbox wallet', function (): void {
+    idvStoreKey('ios');
+    $buyer = User::factory()->create();
+    Sanctum::actingAs($buyer);
+    $headers = ['X-Identity-Store-Environment' => 'sandbox'];
+    config(['identity-sandbox.test_users' => [(string) $buyer->uuid]]);
+    $this->getJson(STORE_IDV_ROOT, $headers)->assertNotFound();
+    Http::assertNothingSent();
+
+    config(['identity-verification.store.ios.sandbox_enabled' => true]);
+    Http::fake([STORE_IDV_APPLE_SANDBOX => Http::response(appleStoreIdvPayload($buyer))]);
+    $this->postJson(STORE_IDV_REDEEM, ['platform' => 'ios', 'proof' => '2000000123456789'], $headers)->assertUnprocessable();
+    $this->assertDatabaseCount('identity_sandbox_credits', 0)->assertDatabaseCount('identity_verification_credits', 0);
+    $this->postJson(STORE_IDV_ROOT.'/checkout', [], $headers)->assertNotFound();
 });
 
 it('rejects a Play rental or preorder for the same product', function (string $field): void {

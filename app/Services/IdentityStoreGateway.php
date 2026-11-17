@@ -7,6 +7,7 @@ namespace App\Services;
 use Throwable;
 use JsonException;
 use Firebase\JWT\JWT;
+use InvalidArgumentException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Client\PendingRequest;
@@ -15,6 +16,13 @@ use Illuminate\Http\Client\ConnectionException;
 /** Look up purchases directly with the stores; no client-supplied receipt fields are trusted. */
 class IdentityStoreGateway
 {
+    public function __construct(private readonly ?string $storeEnvironment = null)
+    {
+        if ($storeEnvironment !== null && ! in_array($storeEnvironment, ['production', 'sandbox'], true)) {
+            throw new InvalidArgumentException('Invalid store environment.');
+        }
+    }
+
     private const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
 
     private const GOOGLE_OAUTH = 'https://oauth2.googleapis.com/token';
@@ -22,7 +30,7 @@ class IdentityStoreGateway
     public function environment(): string
     {
         // Production never accepts App Store sandbox or Play license-test purchases.
-        return app()->environment('production') ? 'production' : 'sandbox';
+        return $this->storeEnvironment ?? (app()->environment('production') ? 'production' : 'sandbox');
     }
 
     public function product(string $platform): ?string
@@ -34,11 +42,15 @@ class IdentityStoreGateway
 
     public function configured(string $platform): bool
     {
+        if ($platform === 'android' && app()->environment('production') && $this->environment() === 'sandbox') {
+            return false;
+        }
+
         return match ($platform) {
             'ios' => is_string(config('identity-verification.store.ios.issuer'))
                 && filled(config('identity-verification.store.ios.issuer'))
                 && filled(config('identity-verification.store.ios.key_id'))
-                && $this->readable('ios'),
+                && $this->appleKey() !== null,
             'android' => $this->googleCredentials() !== null,
             default => false,
         };
@@ -209,11 +221,37 @@ class IdentityStoreGateway
 
     private function keyFile(string $platform): string
     {
+        if ($platform === 'ios') {
+            $key = $this->appleKey();
+            abort_unless($key !== null, 503, 'identity_store_unavailable');
+
+            return $key;
+        }
         abort_unless($this->readable($platform), 503, 'identity_store_unavailable');
         $contents = file_get_contents((string) config("identity-verification.store.{$platform}.key_path"));
         abort_unless(is_string($contents) && $contents !== '', 503, 'identity_store_unavailable');
 
         return $contents;
+    }
+
+    private function appleKey(): ?string
+    {
+        $contents = config('identity-verification.store.ios.private_key');
+        if ($contents === null || $contents === '') {
+            if (! $this->readable('ios')) {
+                return null;
+            }
+            $contents = file_get_contents((string) config('identity-verification.store.ios.key_path'));
+        }
+        if (! is_string($contents) || trim($contents) === '') {
+            return null;
+        }
+        $contents = str_replace('\\n', "\n", $contents);
+        $key = @openssl_pkey_get_private($contents);
+        $details = $key === false ? false : openssl_pkey_get_details($key);
+
+        return is_array($details) && ($details['type'] ?? null) === OPENSSL_KEYTYPE_EC
+            && ($details['ec']['curve_name'] ?? null) === 'prime256v1' ? $contents : null;
     }
 
     /** @param array<string, mixed> $claims */

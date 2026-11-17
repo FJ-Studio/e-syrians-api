@@ -30,27 +30,27 @@ class IdentitySandboxController extends Controller
         $user = $this->user($request);
         $validated = $request->validate(['page' => ['sometimes', 'integer', 'min:1', 'max:10000']]);
 
-        return $this->respond($this->sandbox->history($user, (int) ($validated['page'] ?? 1)));
+        return $this->respond($this->wallet()->history($user, (int) ($validated['page'] ?? 1)));
     }
 
     public function claim(Request $request): JsonResponse
     {
         $user = $this->user($request);
-        $this->sandbox->claim($user);
+        $this->wallet()->claim($user);
 
         return $this->summary($user);
     }
 
     public function giftCode(Request $request): JsonResponse
     {
-        return $this->respond($this->sandbox->giftCode($this->user($request)));
+        return $this->respond($this->wallet()->giftCode($this->user($request)));
     }
 
     public function gift(Request $request, string $credit): JsonResponse
     {
         $user = $this->user($request);
         $code = $request->validate(['code' => ['required', 'string', 'alpha_num:ascii', 'size:32']])['code'];
-        $this->sandbox->gift($user, $credit, $code);
+        $this->wallet()->gift($user, $credit, $code);
 
         return $this->summary($user);
     }
@@ -60,13 +60,13 @@ class IdentitySandboxController extends Controller
         $user = $this->user($request);
         $locale = $request->validate(['locale' => ['sometimes', 'in:en,ar']])['locale'] ?? 'en';
 
-        return $this->respond(['url' => $this->sandbox->start($user, $credit, $locale)]);
+        return $this->respond(['url' => $this->wallet()->start($user, $credit, $locale)]);
     }
 
     public function refresh(Request $request, string $credit): JsonResponse
     {
         $user = $this->user($request);
-        $this->sandbox->refresh($user, $credit);
+        $this->wallet()->refresh($user, $credit);
 
         return $this->summary($user);
     }
@@ -75,13 +75,13 @@ class IdentitySandboxController extends Controller
     {
         $user = $this->user($request);
         $data = $request->validated();
-        $playConsumed = $this->storeCheckout->redeem($this->sandbox, $user, $data['platform'], $data['proof']);
+        $playConsumed = $this->storeCheckout()->redeem($this->wallet(), $user, $data['platform'], $data['proof']);
 
         return $this->respond([
             'fulfilled' => true,
             'play_consumed' => $playConsumed,
             'wallet' => $this->summaryData($user),
-            'history' => $this->sandbox->history($user, 1),
+            'history' => $this->wallet()->history($user, 1),
         ]);
     }
 
@@ -94,19 +94,29 @@ class IdentitySandboxController extends Controller
     protected function summaryData(User $user): array
     {
         return [
-            ...$this->sandbox->summary($user),
-            'mode' => $this->sandbox->mode(),
-            'store_products' => $this->storeCheckout->products($this->sandbox),
-            'store_recovery_products' => $this->storeCheckout->recoveryProducts($this->sandbox),
+            ...$this->wallet()->summary($user),
+            'mode' => $this->wallet()->mode(),
+            'store_products' => $this->storeCheckout()->products($this->wallet()),
+            'store_recovery_products' => $this->storeCheckout()->recoveryProducts($this->wallet()),
         ];
     }
 
     protected function user(Request $request): User
     {
         $user = $request->user();
-        abort_unless($user instanceof User && $this->sandbox->allowed($user), 404);
+        abort_unless($user instanceof User && $this->wallet()->allowed($user), 404);
 
         return $user;
+    }
+
+    protected function wallet(): IdentitySandboxServiceContract
+    {
+        return $this->sandbox;
+    }
+
+    protected function storeCheckout(): IdentityStoreCheckout
+    {
+        return $this->storeCheckout;
     }
 
     /** @param array<string, mixed> $data */
