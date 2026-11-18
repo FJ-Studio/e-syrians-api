@@ -28,7 +28,7 @@ class IdentityStoreCheckout
             return ['ios' => null, 'android' => null];
         }
 
-        return ['ios' => $this->saleProduct('ios'), 'android' => $this->saleProduct('android')];
+        return ['ios' => $this->saleProduct('ios', $wallet instanceof AppStoreSandboxService), 'android' => $this->saleProduct('android')];
     }
 
     /** @return array{ios: ?string, android: ?string} */
@@ -99,6 +99,10 @@ class IdentityStoreCheckout
 
     public function reconcile(): void
     {
+        if (app()->environment('production') && $this->stores->environment() === 'production'
+            && config('identity-verification.store.ios.sandbox_enabled') === true) {
+            (new self(new IdentityStoreGateway('sandbox')))->reconcile();
+        }
         $platforms = array_values(array_filter(['ios', 'android'], $this->stores->configured(...)));
         if ($platforms === []) {
             return;
@@ -118,9 +122,11 @@ class IdentityStoreCheckout
             });
     }
 
-    private function saleProduct(string $platform): ?string
+    private function saleProduct(string $platform, bool $review = false): ?string
     {
-        return config("identity-verification.store.{$platform}.enabled") === true
+        $flag = $review ? 'sandbox_enabled' : 'enabled';
+
+        return config("identity-verification.store.{$platform}.{$flag}") === true
             && $this->stores->configured($platform) ? $this->stores->product($platform) : null;
     }
 

@@ -8,9 +8,12 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
+use App\Services\IdentityStoreGateway;
 use App\Services\IdentityStoreCheckout;
+use App\Services\AppStoreSandboxService;
 use App\Services\IdentityVerificationService;
 use App\Services\IdentityVerificationCheckout;
+use App\Contracts\IdentitySandboxServiceContract;
 
 class IdentityVerificationController extends IdentitySandboxController
 {
@@ -22,13 +25,32 @@ class IdentityVerificationController extends IdentitySandboxController
         parent::__construct($wallet, $storeCheckout);
     }
 
+    protected function wallet(): IdentitySandboxServiceContract
+    {
+        return $this->storeSandbox() ? resolve(AppStoreSandboxService::class) : parent::wallet();
+    }
+
+    protected function storeCheckout(): IdentityStoreCheckout
+    {
+        return $this->storeSandbox()
+            ? new IdentityStoreCheckout(new IdentityStoreGateway('sandbox')) : parent::storeCheckout();
+    }
+
+    private function storeSandbox(): bool
+    {
+        $environment = request()->header('X-Identity-Store-Environment');
+        abort_unless($environment === null || in_array($environment, ['production', 'sandbox'], true), 400);
+
+        return $environment === 'sandbox';
+    }
+
     /** @return array<string, mixed> */
     protected function summaryData(User $user): array
     {
         return [
             ...parent::summaryData($user),
             'account_approved' => $user->approvedIdentityChecks()->exists(),
-            'can_purchase' => $this->checkout->ready(),
+            'can_purchase' => ! $this->storeSandbox() && $this->checkout->ready(),
             'price_minor' => IdentityVerificationCheckout::AMOUNT,
             'currency' => strtoupper(IdentityVerificationCheckout::CURRENCY),
         ];
@@ -44,6 +66,7 @@ class IdentityVerificationController extends IdentitySandboxController
 
     public function createCheckout(Request $request): JsonResponse
     {
+        abort_if($this->storeSandbox(), 404);
         $user = $this->user($request);
         $data = $request->validate(['order' => ['required', 'uuid'], 'locale' => ['required', 'in:en,ar']]);
 
@@ -52,6 +75,7 @@ class IdentityVerificationController extends IdentitySandboxController
 
     public function checkoutStatus(Request $request, string $order): JsonResponse
     {
+        abort_if($this->storeSandbox(), 404);
         return $this->respond($this->checkout->status($this->user($request), $order));
     }
 

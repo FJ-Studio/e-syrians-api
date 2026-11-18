@@ -17,11 +17,22 @@ return [
     'store' => [
         'ios' => [
             'enabled' => env('IDENTITY_STORE_IOS_ENABLED', false),
+            'sandbox_enabled' => env('IDENTITY_STORE_IOS_SANDBOX_ENABLED', false),
             'bundle' => 'com.esyrians.app',
             'product' => env('IDENTITY_STORE_IOS_PRODUCT_ID', 'identity_verification_credit'),
             'issuer' => env('IDENTITY_STORE_APPLE_ISSUER_ID'),
             'key_id' => env('IDENTITY_STORE_APPLE_KEY_ID'),
+            'private_key' => env('IDENTITY_STORE_APPLE_PRIVATE_KEY'),
             'key_path' => env('IDENTITY_STORE_APPLE_KEY_PATH'),
+            'app_id' => env('IDENTITY_STORE_APPLE_APP_ID', 6776366211),
+            'node_binary' => env('IDENTITY_STORE_APPLE_NODE_BINARY', 'node'),
+            'root_certificates' => env('IDENTITY_STORE_APPLE_ROOT_CERTIFICATES')
+                ? array_values(array_filter(array_map('trim', explode(',', (string) env('IDENTITY_STORE_APPLE_ROOT_CERTIFICATES')))))
+                : [
+                    resource_path('certificates/apple/AppleIncRootCertificate.pem'),
+                    resource_path('certificates/apple/AppleRootCA-G2.pem'),
+                    resource_path('certificates/apple/AppleRootCA-G3.pem'),
+                ],
         ],
         'android' => [
             'enabled' => env('IDENTITY_STORE_ANDROID_ENABLED', false),
