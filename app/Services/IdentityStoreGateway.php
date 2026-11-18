@@ -50,7 +50,8 @@ class IdentityStoreGateway
             'ios' => is_string(config('identity-verification.store.ios.issuer'))
                 && filled(config('identity-verification.store.ios.issuer'))
                 && filled(config('identity-verification.store.ios.key_id'))
-                && $this->appleKey() !== null,
+                && $this->appleKey() !== null
+                && resolve(AppleSignedTransactionVerifier::class)->configured(),
             'android' => $this->googleCredentials() !== null,
             default => false,
         };
@@ -102,15 +103,13 @@ class IdentityStoreGateway
         abort_if($response->notFound(), 422, 'identity_store_invalid_purchase');
         abort_unless($response->successful(), 503, 'identity_store_unavailable');
 
-        // The signed envelope comes only from Apple's directly authenticated HTTPS API,
-        // never from the device. Redirects are disabled. Check each binding before use.
+        // HTTPS authentication and signed-data verification are separate layers.
+        // Do not decode or trust claims until Apple's certificate-chain, purpose,
+        // date, revocation and JWS signature checks have passed.
         $jws = $response->json('signedTransactionInfo');
-        $parts = is_string($jws) ? explode('.', $jws) : [];
-        abort_unless(count($parts) === 3 && $parts[2] !== '', 503, 'identity_store_unavailable');
-        $raw = base64_decode(strtr($parts[1], '-_', '+/'), true);
-        $data = $raw === false ? null : json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
-        abort_unless(is_array($data)
-            && ($data['transactionId'] ?? null) === $proof
+        abort_unless(is_string($jws), 503, 'identity_store_unavailable');
+        $data = resolve(AppleSignedTransactionVerifier::class)->verify($jws, $this->environment());
+        abort_unless(($data['transactionId'] ?? null) === $proof
             && ($data['bundleId'] ?? null) === $bundle
             && ($data['environment'] ?? null) === ($sandbox ? 'Sandbox' : 'Production')
             && ($data['productId'] ?? null) === $product
