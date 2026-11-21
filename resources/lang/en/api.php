@@ -4,6 +4,8 @@ return [
     // Auth
     'unauthenticated' => 'Unauthenticated',
     'logged_out' => 'Logged out successfully',
+    'session_this_device' => 'This device',
+    'session_unknown_device' => 'Unknown device',
     'user_already_verified' => 'User is already verified',
     'verification_email_sent' => 'Verification email sent',
     'email_verified' => 'Email verified successfully',

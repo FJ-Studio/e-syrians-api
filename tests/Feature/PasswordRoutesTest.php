@@ -33,7 +33,8 @@ it('rejects password change with wrong current password', function (): void {
         'new_password_confirmation' => 'new_password123',
     ], authHeader($user));
 
-    $response->assertStatus(401);
+    $response->assertUnprocessable();
+    expect($user->tokens()->count())->toBe(1);
 });
 
 it('returns 422 when new password is missing confirmation', function (): void {

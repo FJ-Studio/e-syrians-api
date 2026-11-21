@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\Poll;
 use App\Models\User;
+use App\Models\UserBlock;
 use Laravel\Pennant\Feature;
 use App\Models\SecurityEvent;
 use Illuminate\Bus\Queueable;
@@ -46,6 +47,7 @@ class FanOutPlatformNotificationJob implements ShouldQueue
                 return;
             }
             $users->whereKey($verification->user_id);
+            UserBlock::excludeFor($users, 'users.id', $verification->verifier_id);
         } elseif (in_array($this->event, ['account_verified', 'account_unverified'], true)) {
             $users->whereKey($this->subjectId);
             $this->event === 'account_verified' ? $users->whereNotNull('verified_at') : $users->whereNull('verified_at');
@@ -57,6 +59,7 @@ class FanOutPlatformNotificationJob implements ShouldQueue
             }
             $users->whereNotNull('verified_at')->where('id', '!=', $poll->created_by)
                 ->whereDoesntHave('votes', fn (Builder $votes) => $votes->where('poll_id', $poll->id));
+            UserBlock::excludeFor($users, 'users.id', $poll->created_by);
         } elseif ($this->event === 'poll_closed') {
             $poll = Poll::withoutGlobalScope('public_polls')->with('audienceRules')->find($this->subjectId);
             if (! $poll || $poll->closure_notified_at || $poll->end_date > now()) {
@@ -64,6 +67,7 @@ class FanOutPlatformNotificationJob implements ShouldQueue
             }
             $users->where(fn (Builder $q) => $q->whereKey($poll->created_by)
                 ->orWhereHas('votes', fn (Builder $votes) => $votes->where('poll_id', $poll->id)));
+            UserBlock::excludeFor($users, 'users.id', $poll->created_by);
             if ($poll->is_private) {
                 $users->whereKey($poll->created_by);
             }
@@ -87,6 +91,7 @@ class FanOutPlatformNotificationJob implements ShouldQueue
             }
             $users->where(fn (Builder $q) => $q->whereKey($feature->created_by)
                 ->orWhereIn('id', $feature->votes()->select('user_id')));
+            UserBlock::excludeFor($users, 'users.id', $feature->created_by);
         } else {
             return;
         }

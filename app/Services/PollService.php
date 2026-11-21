@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollVote;
+use App\Models\UserBlock;
 use App\Models\PollOption;
 use InvalidArgumentException;
 use App\Enums\RevealResultsEnum;
@@ -382,7 +383,8 @@ class PollService implements PollServiceContract
         // totals on the poll detail screen.
         DB::transaction(function () use ($pollId, $optionIds, $userId): void {
             /** @var Poll $poll */
-            $poll = Poll::whereKey($pollId)->lockForUpdate()->firstOrFail();
+            $poll = UserBlock::excludeFor(Poll::whereKey($pollId), 'polls.created_by', $userId)
+                ->lockForUpdate()->firstOrFail();
             $poll->load('audienceRules');
 
             if ($poll->start_date->isFuture()) {
@@ -441,7 +443,7 @@ class PollService implements PollServiceContract
 
     public function react(int $pollId, string $reaction, int $userId): void
     {
-        $poll = Poll::findOrFail($pollId);
+        $poll = UserBlock::excludeFor(Poll::query(), 'polls.created_by', $userId)->findOrFail($pollId);
 
         if ($poll->start_date->isFuture()) {
             throw new PollReactionException('poll_has_not_started_yet');
@@ -481,17 +483,19 @@ class PollService implements PollServiceContract
         return false;
     }
 
-    public function getOptionVoters(int $optionId, int $perPage = 20): LengthAwarePaginator
+    public function getOptionVoters(int $optionId, int $perPage = 20, ?int $viewer = null): LengthAwarePaginator
     {
         $option = PollOption::findOrFail($optionId);
 
         // Ensure the poll has voters_are_visible enabled
         $poll = $option->poll;
+        abort_unless($poll instanceof Poll, 404);
+        abort_if(UserBlock::between($viewer, $poll->created_by), 404);
         if (! $poll->voters_are_visible) {
             abort(403, 'voters_not_visible');
         }
 
-        return PollVote::where('poll_option_id', $optionId)
+        return UserBlock::excludeFor(PollVote::where('poll_option_id', $optionId), 'poll_votes.user_id', $viewer)
             ->with('user:id,uuid,name,surname,avatar')
             ->latest()
             ->paginate($perPage);
@@ -567,11 +571,12 @@ class PollService implements PollServiceContract
      */
     private function buildPollQuery(?int $userId): Builder
     {
-        return Poll::with([
-            'user' => fn (Relation $relation) => $relation->getQuery()->withExists('approvedIdentityChecks'),
-            'audienceRules',
-            'options' => fn ($q) => $q->withCount('votes'),
-        ])
+        return UserBlock::excludeFor(Poll::query(), 'polls.created_by', $userId)
+            ->with([
+                'user' => fn (Relation $relation) => $relation->getQuery()->withExists('approvedIdentityChecks'),
+                'audienceRules',
+                'options' => fn ($q) => $q->withCount('votes'),
+            ])
             ->withCount([
                 'ups as ups_count',
                 'downs as downs_count',

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\UserBlock;
 use Illuminate\Http\Request;
 use App\Contracts\PollServiceContract;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PollResource extends JsonResource
 {
@@ -120,10 +122,15 @@ class PollResource extends JsonResource
 
             'options' => $this->relationLoaded('options')
                 ? PollOptionResource::collection(
-                    $this->options->map(function ($option) use ($revealResults) {
+                    $this->options->map(function ($option) use ($revealResults, $userId) {
                         // Load voters preview when voters are visible
                         if ($this->voters_are_visible) {
-                            $option->load(['latestVoters.user:id,uuid,name,surname,avatar']);
+                            $option->load([
+                                'latestVoters' => function (HasMany $votes) use ($userId): void {
+                                    UserBlock::excludeFor($votes->getQuery(), 'poll_votes.user_id', $userId)->whereHas('user');
+                                },
+                                'latestVoters.user:id,uuid,name,surname,avatar',
+                            ]);
                         }
 
                         if (! $revealResults) {

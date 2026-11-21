@@ -51,7 +51,6 @@ use App\Contracts\IdentitySandboxServiceContract;
 use SocialiteProviders\Manager\SocialiteWasCalled;
 use App\Services\NotificationDeliverySettingsService;
 use SocialiteProviders\Apple\Provider as AppleProvider;
-use SocialiteProviders\Google\Provider as GoogleProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -125,7 +124,8 @@ class AppServiceProvider extends ServiceProvider
         URL::forceScheme('https');
 
         Event::listen(function (SocialiteWasCalled $event): void {
-            $event->extendSocialite('google', GoogleProvider::class);
+            // Laravel's built-in provider verifies ID tokens as well as legacy
+            // access tokens. The third-party override only supports userinfo.
             $event->extendSocialite('apple', AppleProvider::class);
         });
 

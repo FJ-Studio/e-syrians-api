@@ -33,7 +33,7 @@ it('rejects change when current password is wrong', function (): void {
 
     expect($result['success'])->toBeFalse();
     expect($result['message'])->toBe('current_password_incorrect');
-    expect($result['code'])->toBe(401);
+    expect($result['code'])->toBe(422);
 });
 
 // ───────────────────────────────────────────────

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\UserBlock;
 use App\Models\FeatureRequest;
 use App\Models\FeatureRequestVote;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ class FeatureRequestService implements FeatureRequestServiceContract
             throw new FeatureRequestException('invalid_vote_direction', 400);
         }
 
-        $feature = FeatureRequest::findOrFail($featureId);
+        $feature = UserBlock::excludeFor(FeatureRequest::query(), 'feature_requests.created_by', $userId)->findOrFail($featureId);
 
         // We treat a soft-deleted feature as gone for voting purposes.
         if ($feature->trashed()) {
@@ -89,7 +90,7 @@ class FeatureRequestService implements FeatureRequestServiceContract
 
     public function unvote(int $featureId, int $userId): void
     {
-        $feature = FeatureRequest::findOrFail($featureId);
+        $feature = UserBlock::excludeFor(FeatureRequest::query(), 'feature_requests.created_by', $userId)->findOrFail($featureId);
 
         $deleted = FeatureRequestVote::where('feature_request_id', $feature->id)
             ->where('user_id', $userId)
@@ -219,7 +220,7 @@ class FeatureRequestService implements FeatureRequestServiceContract
      */
     private function buildQuery(?int $userId): Builder
     {
-        return FeatureRequest::query()
+        return UserBlock::excludeFor(FeatureRequest::query(), 'feature_requests.created_by', $userId)
             ->with(['user' => fn (Relation $relation) => $relation->getQuery()->withExists('approvedIdentityChecks')])
             ->withCount([
                 'ups as ups_aggregate_count',

@@ -109,15 +109,21 @@ it('returns 401 for non-existent user login', function (): void {
 it('revokes only the authenticated device session on logout', function (): void {
     $user = User::factory()->create();
     $other = $user->createToken('other-device');
-    $current = $user->createToken('this-device');
+    $thisDevice = $user->createToken('this-device');
 
-    $this->postJson('/users/logout', [], ['Authorization' => 'Bearer '.$current->plainTextToken])->assertOk();
+    $response = $this->postJson('/users/logout', [], ['Authorization' => 'Bearer '.$thisDevice->plainTextToken]);
 
+    $response->assertOk();
     expect($user->tokens()->pluck('id')->all())->toBe([$other->accessToken->id]);
     auth()->forgetGuards();
-    $this->getJson('/users/me', ['Authorization' => 'Bearer '.$current->plainTextToken])->assertUnauthorized();
+    $this->getJson('/users/me', ['Authorization' => 'Bearer '.$thisDevice->plainTextToken])->assertUnauthorized();
     auth()->forgetGuards();
     $this->getJson('/users/me', ['Authorization' => 'Bearer '.$other->plainTextToken])->assertOk();
+});
+
+it('rejects a client-supplied Google identity at registration', function (): void {
+    $this->postJson(route('users.register'), ['google_id' => 'untrusted-subject'])
+        ->assertUnprocessable()->assertJsonStructure(['messages' => ['google_id']]);
 });
 
 it('returns 401 when logging out without authentication', function (): void {

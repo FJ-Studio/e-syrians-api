@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use Exception;
 use Throwable;
 use App\Models\Poll;
+use App\Models\UserBlock;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,7 @@ use App\Http\Requests\Polls\StorePollRequest;
 use App\Http\Requests\Polls\StorePollReaction;
 use App\Http\Requests\Polls\UpdatePollRequest;
 use App\Http\Requests\Polls\StorePollVoteRequest;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class PollController extends Controller
 {
@@ -237,6 +239,7 @@ class PollController extends Controller
         try {
             $voters = $this->pollService->getOptionVoters(
                 (int) $request->input('poll_option_id'),
+                viewer: $request->user()->id,
             );
 
             $fileService = resolve(FileUploadServiceContract::class);
@@ -269,6 +272,8 @@ class PollController extends Controller
                 'last_page' => $voters->lastPage(),
                 'total' => $voters->total(),
             ]);
+        } catch (NotFoundHttpException $e) {
+            throw $e;
         } catch (Exception $e) {
             return ApiService::error(403, $e->getMessage());
         }
@@ -296,6 +301,10 @@ class PollController extends Controller
         ]);
 
         $pollId = (int) $request->input('poll_id');
+        $viewer = auth('sanctum')->id();
+        if ($viewer !== null) {
+            UserBlock::excludeFor(Poll::query(), 'polls.created_by', $viewer)->findOrFail($pollId);
+        }
 
         // Cache-decision branch: the historical `rememberForever`
         // was safe because inline demographic rules on a poll are
