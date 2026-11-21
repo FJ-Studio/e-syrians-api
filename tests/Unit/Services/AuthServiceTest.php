@@ -2,26 +2,85 @@
 
 use App\Models\User;
 use App\Services\AuthService;
+use Laravel\Sanctum\TransientToken;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Facades\Socialite;
 
 beforeEach(function (): void {
     test()->authService = resolve(AuthService::class);
+    config(['services.google.client_id' => 'e-syrians-test-client']);
 });
 
-it('never stores a Google login email as the public name', function (?string $name): void {
-    $email = 'private-login@example.com';
-    $socialUser = (new Laravel\Socialite\Two\User())->map([
-        'id' => 'google-user-without-public-name', 'name' => $name, 'email' => $email,
+function mockGoogleIdentity(string $email, string $subject, ?string $name, array $claims = [], bool $signed = true): string
+{
+    $token = $signed ? str_repeat('a', 105).'.b.c' : 'test-access-token';
+    $verifiedClaims = ['email_verified' => true];
+    if ($signed) {
+        $verifiedClaims += ['aud' => 'e-syrians-test-client', 'iss' => 'https://accounts.google.com', 'exp' => time() + 600];
+    }
+    $socialUser = (new Laravel\Socialite\Two\User())->setRaw([...$verifiedClaims, ...$claims])->map([
+        'id' => $subject, 'name' => $name, 'email' => $email,
     ]);
-    Socialite::shouldReceive('driver->userFromToken')->with('test-access-token')->andReturn($socialUser);
+    Socialite::shouldReceive('driver->userFromToken')->with($token)->andReturn($socialUser);
 
-    $result = test()->authService->authenticateViaSocialProvider('google', 'test-access-token');
+    return $token;
+}
+
+it('never stores a Google login email as the public name', function (?string $name): void {
+    $email = 'private-login@gmail.com';
+    $token = mockGoogleIdentity($email, 'google-user-without-public-name', $name);
+
+    $result = test()->authService->authenticateViaSocialProvider('google', $token);
 
     expect($result)->not->toBeNull()
         ->and($result['user']->getRawOriginal('name'))->toBe(User::DEFAULT_DISPLAY_NAME)
         ->and($result['user']->email)->toBe($email);
-})->with([null, 'private-login@example.com']);
+})->with([null, 'private-login@gmail.com']);
+
+it('requires verified Google claims and rejects conflicts with an existing account', function (array $attributes, array $claims): void {
+    $email = 'linking-test@gmail.com';
+    $user = User::factory()->create(['email' => $email, ...$attributes]);
+    $token = mockGoogleIdentity($email, 'verified-google-subject', 'Google Member', $claims);
+
+    expect(test()->authService->authenticateViaSocialProvider('google', $token))->toBeNull()
+        ->and($user->tokens()->count())->toBe(0)
+        ->and($user->fresh()->google_id)->toBe($user->google_id);
+})->with([
+    'unverified local email' => [['email_verified_at' => null], ['email_verified' => true]],
+    'unverified provider email' => [[], ['email_verified' => false]],
+    'different linked subject' => [['google_id' => 'other-subject'], ['email_verified' => true]],
+    'wrong audience' => [[], ['aud' => 'different-client']],
+    'expired token' => [[], ['exp' => 1]],
+]);
+
+it('links a verified matching Google identity and keeps repeat sign-in on the same account', function (): void {
+    $email = 'linking-verified@gmail.com';
+    $user = User::factory()->create(['email' => $email, 'email_verified_at' => now()]);
+    $token = mockGoogleIdentity($email, 'verified-google-subject', 'Google Member');
+    foreach (range(1, 2) as $_) {
+        $result = test()->authService->authenticateViaSocialProvider('google', $token);
+        expect($result['user']->id)->toBe($user->id);
+    }
+    expect($user->fresh()->google_id)->toBe('verified-google-subject');
+});
+
+it('limits older Google access tokens to accounts already linked to the verified identity', function (): void {
+    $email = 'existing-login@gmail.com';
+    $user = User::factory()->create(['email' => $email, 'email_verified_at' => now()]);
+    $token = mockGoogleIdentity($email, 'legacy-subject', 'Google Member', signed: false);
+
+    expect(test()->authService->authenticateViaSocialProvider('google', $token))->toBeNull();
+    $user->update(['google_id' => 'legacy-subject']);
+    expect(test()->authService->authenticateViaSocialProvider('google', $token)['user']->id)->toBe($user->id);
+});
+
+it('does not accept a legacy subject without its matching verified email', function (): void {
+    $legacy = User::factory()->create(['google_id' => 'legacy-subject']);
+    $token = mockGoogleIdentity('different-owner@gmail.com', 'legacy-subject', 'Google Member');
+
+    expect(test()->authService->authenticateViaSocialProvider('google', $token))->toBeNull()
+        ->and($legacy->tokens()->count())->toBe(0);
+});
 
 it('masks an existing email fallback in both public profile and partial model reads', function (): void {
     $email = 'legacy-login@example.com';
@@ -126,6 +185,17 @@ it('revokes only the supplied personal access token', function (): void {
     test()->authService->logout($current->accessToken);
 
     expect($user->tokens()->pluck('id')->all())->toBe([$other->accessToken->id]);
+});
+
+it('leaves bearer sessions alone without a current bearer token', function (): void {
+    $user = User::factory()->create();
+    $user->createToken('this-device');
+    $user->createToken('another-device');
+
+    test()->authService->logout(null);
+    test()->authService->logout(new TransientToken());
+
+    expect($user->tokens()->count())->toBe(2);
 });
 
 // ───────────────────────────────────────────────

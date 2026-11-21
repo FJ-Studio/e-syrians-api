@@ -18,7 +18,7 @@ class PasswordService implements PasswordServiceContract
     public function changePassword(User $user, string $currentPassword, string $newPassword): array
     {
         if (! Hash::check($currentPassword, $user->password)) {
-            return ['success' => false, 'message' => 'current_password_incorrect', 'code' => 401];
+            return ['success' => false, 'message' => 'current_password_incorrect', 'code' => 422];
         }
 
         DB::transaction(function () use ($user, $newPassword): void {

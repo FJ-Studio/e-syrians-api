@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Exception;
 use App\Models\User;
 use App\Models\AppleRefreshToken;
 use Illuminate\Support\Facades\DB;
@@ -44,13 +45,35 @@ class AuthService implements AuthServiceContract
         // to email lookup. This keeps the same user across multiple logins
         // even if Apple's email-relay address changes.
         $providerColumn = $provider.'_id';
-        $user = User::where($providerColumn, $userData['id'])->first();
-
-        if (! $user && ! empty($userData['email'])) {
-            $user = User::where('email', $userData['email'])->first();
+        if ($provider === 'google') {
+            // Old registration requests could write google_id. Require a
+            // verified matching email too; never authenticate on that value alone.
+            $email = $userData['email'];
+            $user = User::where('email', $email)->lockForUpdate()->first();
+            if ($user && (! $user->hasVerifiedEmail() || ($user->google_id !== null && $user->google_id !== $userData['id']))) {
+                return null;
+            }
+            if ($user && $user->google_id === null && $user->hasTwoFactorEnabled()) {
+                return null;
+            }
+            // Older mobile builds still send an OAuth access token. Those
+            // can only sign in to an already-linked, matching account; a new
+            // account or association requires a signed token for this app.
+            if ((! $user || $user->google_id === null) && (! $userData['client_bound'] || ! $userData['authoritative_email'])) {
+                return null;
+            }
+            if ((! $user || $user->google_id === null) && User::where('google_id', $userData['id'])->exists()) {
+                // Conflicting legacy association: require recovery, don't reassign it.
+                return null;
+            }
+        } else {
+            $user = User::where($providerColumn, $userData['id'])->first();
+            if (! $user && ! empty($userData['email'])) {
+                $user = User::where('email', $userData['email'])->first();
+            }
         }
 
-        if ($provider === 'apple' && $user && $user->apple_id && $user->apple_id !== $userData['id']) {
+        if ($user && $user->{$providerColumn} && $user->{$providerColumn} !== $userData['id']) {
             return null;
         }
 
@@ -115,7 +138,7 @@ class AuthService implements AuthServiceContract
      * identity token plus a code exchanged for a revocable grant; other
      * providers go through Laravel Socialite's userFromToken().
      *
-     * @return array{id: string, name: string, email: ?string, avatar: ?string, client_id?: string, refresh_token?: string}|null
+     * @return array{id: string, name: string, email: string, avatar: ?string, client_id?: string, refresh_token?: string, authoritative_email?: bool, client_bound?: bool}|null
      */
     private function resolveSocialUserData(string $provider, string $token, ?string $authorizationCode): ?array
     {
@@ -123,17 +146,42 @@ class AuthService implements AuthServiceContract
             return AppleAuthService::exchangeAuthorizationCode($token, $authorizationCode ?? '');
         }
 
-        $socialUser = Socialite::driver($provider)->userFromToken($token);
+        try {
+            $socialUser = Socialite::driver($provider)->userFromToken($token);
+        } catch (Exception) {
+            return null;
+        }
 
-        if (! $socialUser) {
+        if (! $socialUser || ! $socialUser->getId()) {
+            return null;
+        }
+
+        $claims = $socialUser->getRaw();
+        $email = mb_strtolower(trim((string) $socialUser->getEmail()));
+        if ($email === '' || ($claims['email_verified'] ?? null) !== true) {
+            return null;
+        }
+
+        // Socialite verifies the JWT signature, issuer, and audience. Require
+        // expiration explicitly; userinfo for an older access token is not
+        // proof that Google issued a signed identity token for this app.
+        $isIdToken = substr_count($token, '.') === 2 && strlen($token) > 100;
+        $clientId = config('services.google.client_id');
+        $clientBound = $isIdToken && is_string($clientId) && $clientId !== ''
+            && ($claims['aud'] ?? null) === $clientId
+            && ($claims['iss'] ?? null) === 'https://accounts.google.com'
+            && is_int($claims['exp'] ?? null) && $claims['exp'] > time();
+        if ($isIdToken && ! $clientBound) {
             return null;
         }
 
         return [
             'id' => (string) $socialUser->getId(),
             'name' => (string) ($socialUser->getName() ?? ''),
-            'email' => $socialUser->getEmail(),
+            'email' => $email,
             'avatar' => $socialUser->getAvatar(),
+            'authoritative_email' => str_ends_with($email, '@gmail.com') || ! empty($claims['hd']),
+            'client_bound' => $clientBound,
         ];
     }
 
@@ -176,6 +224,7 @@ class AuthService implements AuthServiceContract
 
     public function register(array $data): User
     {
+        unset($data['google_id'], $data['apple_id']);
         if (isset($data['languages'])) {
             $data['languages'] = implode(',', $data['languages']);
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserBlock;
 use App\Services\ApiService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -51,6 +52,8 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
+        abort_if(UserBlock::between(auth('sanctum')->id(), $user->id), 404);
+
         return ApiService::success(new UserResource($user->loadExists('approvedIdentityChecks')));
     }
 
@@ -104,9 +107,9 @@ class UserController extends Controller
             return ApiService::success([]);
         }
 
-        $users = User::whereIn('uuid', $uuids)
+        $users = UserBlock::excludeFor(User::whereIn('uuid', $uuids), 'id', auth('sanctum')->id())
             ->withExists('approvedIdentityChecks')
-            ->orderBy('verified_at')
+            ->oldest('verified_at')
             ->get();
 
         return ApiService::success(UserResource::collection($users));

@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\User;
 use DomainException;
+use App\Models\UserBlock;
 use App\Models\UserVerification;
 use App\Events\VerificationReceived;
 use App\Contracts\VerificationServiceContract;
@@ -28,7 +29,7 @@ class VerificationService implements VerificationServiceContract
         }
 
         $target = $this->resolveUser($target);
-        if (! $target) {
+        if (! $target || UserBlock::between($verifier->id, $target->id)) {
             return [false, 'target_user_not_found'];
         }
 
@@ -56,6 +57,9 @@ class VerificationService implements VerificationServiceContract
     public function verifyUser(User $verifier, string $targetUuid, ?string $ipAddress, ?string $userAgent): void
     {
         $targetUser = User::where('uuid', $targetUuid)->firstOrFail();
+        if (UserBlock::between($verifier->id, $targetUser->id)) {
+            throw new DomainException('target_user_not_found');
+        }
 
         // Validate target user has required data
         if (
@@ -87,14 +91,14 @@ class VerificationService implements VerificationServiceContract
         // wraps `items()` in UserVerificationResource — keeping
         // the resource at the controller layer is the same
         // pattern UserPollController::myPolls follows.
-        return $user->verifications()
+        return UserBlock::excludeFor($user->verifications()->getQuery(), 'user_id', $user->id)
             ->with(['user' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->latest()
             ->paginate($perPage);
     }
 
     public function getVerifiersForUser(User $user, int $perPage = 25): LengthAwarePaginator
     {
-        return $user->verifiers()
+        return UserBlock::excludeFor($user->verifiers()->getQuery(), 'verifier_id', $user->id)
             ->with(['verifier' => fn ($q) => $q->select('id', 'uuid', 'name', 'middle_name', 'surname', 'avatar')])->latest()
             ->paginate($perPage);
     }

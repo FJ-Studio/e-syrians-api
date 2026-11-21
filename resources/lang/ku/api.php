@@ -4,6 +4,8 @@ return [
     // Nasname / Authentication
     'unauthenticated' => 'Nasname nehat erêkirin',
     'logged_out' => 'Bi serkeftî hatî derketin',
+    'session_this_device' => 'Ev amûr',
+    'session_unknown_device' => 'Amûra nenas',
     'user_already_verified' => 'Bikarhêner berê hatiye testkirin',
     'verification_email_sent' => 'Lînka testkirinê hat şandin',
     'email_verified' => 'E-name bi serkeftî hat testkirin',

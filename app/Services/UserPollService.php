@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use stdClass;
+use App\Models\Poll;
 use App\Models\User;
 use App\Models\PollVote;
+use App\Models\UserBlock;
 use Illuminate\Support\Facades\DB;
 use App\Contracts\UserPollServiceContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -49,8 +51,8 @@ class UserPollService implements UserPollServiceContract
     public function getUserReactions(User $user, int $perPage = 25): LengthAwarePaginator
     {
         return $user->reactions()
-            ->whereHas('poll', function ($query): void {
-                $query->whereNull('deleted_at');
+            ->whereHas('poll', function ($query) use ($user): void {
+                UserBlock::excludeFor($query->whereNull('deleted_at'), 'polls.created_by', $user->id);
             })
             ->with(['poll:id,question'])
             ->paginate($perPage);
@@ -96,6 +98,7 @@ class UserPollService implements UserPollServiceContract
             ->whereNull('poll_options.deleted_at')
             ->whereNull('polls.deleted_at')
             ->where('polls.is_private', false)
+            ->whereIn('polls.id', UserBlock::excludeFor(Poll::query()->select('id'), 'polls.created_by', $user->id))
             ->select([
                 'polls.id as poll_id',
                 'polls.question as question',

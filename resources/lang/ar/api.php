@@ -4,6 +4,8 @@ return [
     // المصادقة
     'unauthenticated' => 'غير مصادق',
     'logged_out' => 'تم تسجيل الخروج بنجاح',
+    'session_this_device' => 'هذا الجهاز',
+    'session_unknown_device' => 'جهاز غير معروف',
     'user_already_verified' => 'المستخدم موثق مسبقاً',
     'verification_email_sent' => 'تم إرسال رابط التحقق',
     'email_verified' => 'تم التحقق من البريد الإلكتروني بنجاح',

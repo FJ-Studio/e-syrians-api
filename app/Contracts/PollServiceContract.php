@@ -62,5 +62,5 @@ interface PollServiceContract
     /**
      * Get paginated voters for a specific poll option
      */
-    public function getOptionVoters(int $optionId, int $perPage = 20): LengthAwarePaginator;
+    public function getOptionVoters(int $optionId, int $perPage = 20, ?int $viewer = null): LengthAwarePaginator;
 }

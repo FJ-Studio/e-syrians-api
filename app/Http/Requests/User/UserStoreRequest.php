@@ -46,7 +46,7 @@ class UserStoreRequest extends FormRequest
             // E-data
             'email' => ['required', 'email:rfc,dns,spoof,strict', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:255'],
-            'google_id' => ['nullable', 'string', 'max:255'],
+            'google_id' => ['missing'],
             'password' => ['required', 'string', 'min:6'],
             // Location
             'country' => ['required', 'in:'.implode(',', array_map(fn ($case) => $case->value, CountryEnum::cases()))],

@@ -9,10 +9,12 @@ use App\Http\Controllers\StatsController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SessionController;
 use App\Http\Controllers\AudienceController;
 use App\Http\Controllers\PasswordController;
 use App\Http\Controllers\UserPollController;
 use App\Http\Controllers\TwoFactorController;
+use App\Http\Controllers\UserBlockController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RecoveryCodeController;
@@ -166,6 +168,10 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
         Route::post('/{credit}/refresh', 'refresh')->whereUuid('credit');
     });
 
+    Route::get('/blocks', [UserBlockController::class, 'index'])->middleware('throttle:60,1');
+    Route::put('/blocks/{uuid}', [UserBlockController::class, 'store'])->whereUuid('uuid')->middleware('throttle:30,1');
+    Route::delete('/blocks/{uuid}', [UserBlockController::class, 'destroy'])->whereUuid('uuid')->middleware('throttle:30,1');
+
     // Current user
     Route::get('/me', [UserController::class, 'me'])->name('users.me');
 
@@ -193,6 +199,9 @@ Route::prefix('users')->middleware(['auth:sanctum', EnsureAccountNotPendingDelet
 
     Route::get('/notification-preferences', [NotificationPreferenceController::class, 'show']);
     Route::get('/security-events', [SecurityEventController::class, 'index']);
+    Route::get('/sessions', [SessionController::class, 'index'])->middleware('throttle:60,1,sessions_read');
+    Route::delete('/sessions', [SessionController::class, 'destroyOthers'])->middleware('throttle:15,1,sessions_write');
+    Route::delete('/sessions/{session}', [SessionController::class, 'destroy'])->whereNumber('session')->middleware('throttle:15,1,sessions_write');
     Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show'])->whereNumber('announcement');
     Route::patch('/notification-preferences', [NotificationPreferenceController::class, 'update'])
         ->middleware('throttle:60,1,notification_preferences');
