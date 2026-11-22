@@ -143,9 +143,21 @@ class DemoDataSeeder extends Seeder
             );
         }
 
-        return User::query()
+        $users = User::query()
             ->whereLike('email', '%@' . self::EMAIL_DOMAIN)
+            ->with('roles')
             ->get();
+
+        // Normal registration assigns this role before a member can
+        // publish. Repair existing demo accounts too, without changing
+        // verification status or removing an additional admin role.
+        foreach ($users as $user) {
+            if (! $user->hasRole('citizen')) {
+                $user->assignRole('citizen');
+            }
+        }
+
+        return $users;
     }
 
     /**
