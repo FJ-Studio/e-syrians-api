@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\ProfileUpdate;
 use InvalidArgumentException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\EmailChangedNotification;
@@ -177,45 +178,41 @@ class ProfileService implements ProfileServiceContract
             }
         }
 
-        $changes = $this->buildChanges($user, $data);
+        // Persist the census values and every associated audit together.
+        // A failed audit must not leave a saved value behind a failed request.
+        $audits = DB::transaction(function () use ($user, $data, $request, $religionChanged, $oldReligion): array {
+            $changes = $this->buildChanges($user, $data);
+            $user->update($data);
 
-        $user->update($data);
-
-        $profileUpdate = $this->createAuditRecord(
-            $user,
-            ProfileChangeTypeEnum::Regular,
-            $changes,
-            $request,
-        );
-
-        dispatch(new LogProfileChangeToBigQuery($profileUpdate));
-
-        // Religion changes also get a dedicated audit row so the
-        // per-year counter (getReligionUpdatesCount) can count
-        // them without filtering through the generic Regular bag.
-        // We log only the religion delta — the broader census
-        // changes are already covered by the Regular audit above.
-        //
-        // The old value is taken from the pre-update snapshot we
-        // captured above, NOT from `$user->getOriginal(...)`:
-        // Eloquent's `update()` calls `syncOriginal()` internally,
-        // so by the time we get here `getOriginal` returns the
-        // freshly-saved new value and the audit would record
-        // old=new, defeating the audit's purpose.
-        if ($religionChanged) {
-            $religionAudit = $this->createAuditRecord(
+            $audits = [$this->createAuditRecord(
                 $user,
-                ProfileChangeTypeEnum::Religion,
-                [
-                    'religious_affiliation' => [
-                        'old' => $oldReligion,
-                        'new' => $data['religious_affiliation'],
-                    ],
-                ],
+                ProfileChangeTypeEnum::Regular,
+                $changes,
                 $request,
-            );
+            )];
 
-            dispatch(new LogProfileChangeToBigQuery($religionAudit));
+            if ($religionChanged) {
+                // Use the pre-save snapshot: update() syncs Eloquent's original
+                // values, so reading getOriginal() here would record old=new.
+                $audits[] = $this->createAuditRecord(
+                    $user,
+                    ProfileChangeTypeEnum::Religion,
+                    [
+                        'religious_affiliation' => [
+                            'old' => $oldReligion,
+                            'new' => $data['religious_affiliation'],
+                        ],
+                    ],
+                    $request,
+                );
+            }
+
+            return $audits;
+        });
+
+        // No jobs for rolled-back audits; also respect an outer transaction.
+        foreach ($audits as $audit) {
+            dispatch(new LogProfileChangeToBigQuery($audit))->afterCommit();
         }
     }
 
