@@ -185,18 +185,9 @@ class AuthService implements AuthServiceContract
         ];
     }
 
-    public function authenticateViaCredentials(string $identifier, string $password): ?array
+    public function authenticateViaCredentials(string $email, string $password): ?array
     {
-        $hashedIdentifier = StrService::hash($identifier);
-
-        $user = User::whereNotNull('email_hashed')->where('email_hashed', $hashedIdentifier)
-            ->orWhere(function ($query) use ($hashedIdentifier): void {
-                $query->whereNotNull('phone_hashed')->where('phone_hashed', $hashedIdentifier);
-            })
-            ->orWhere(function ($query) use ($hashedIdentifier): void {
-                $query->whereNotNull('national_id_hashed')->where('national_id_hashed', $hashedIdentifier);
-            })
-            ->first();
+        $user = User::where('email_hashed', StrService::hash($email))->first();
 
         if (! $user || ! Hash::check($password, $user->password)) {
             return null;

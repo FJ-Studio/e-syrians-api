@@ -102,6 +102,66 @@ it('returns 401 for non-existent user login', function (): void {
     $response->assertStatus(401);
 });
 
+it('rejects phone and national ID credentials even when they belong to an account', function (string $identifier): void {
+    $user = User::factory()->create([
+        'email' => 'email-only@gmail.com',
+        'phone' => '+905551234567',
+        'national_id' => '12345678901',
+        'password' => Hash::make('secret123'),
+    ]);
+
+    $this->postJson('/users/login', ['identifier' => $identifier, 'password' => 'secret123'])
+        ->assertUnprocessable()
+        ->assertJsonStructure(['messages' => ['identifier']]);
+
+    expect($user->tokens()->count())->toBe(0);
+})->with(['+905551234567', '12345678901']);
+
+it('requires a bounded email string for password login', function (array $payload): void {
+    $this->postJson('/users/login', ['password' => 'secret123', ...$payload])
+        ->assertUnprocessable()
+        ->assertJsonStructure(['messages' => ['identifier']]);
+})->with([
+    'missing' => [[]],
+    'null' => [['identifier' => null]],
+    'empty' => [['identifier' => '']],
+    'whitespace' => [['identifier' => '   ']],
+    'malformed email' => [['identifier' => 'member@']],
+    'array' => [['identifier' => ['member@gmail.com']]],
+    'number' => [['identifier' => 12345678901]],
+    'too long' => [['identifier' => str_repeat('a', 250).'@gmail.com']],
+]);
+
+it('trims the email without altering password whitespace', function (): void {
+    User::factory()->create([
+        'email' => 'spaced-email@gmail.com',
+        'password' => Hash::make(' secret123 '),
+    ]);
+
+    $this->postJson('/users/login', [
+        'identifier' => ' spaced-email@gmail.com ',
+        'password' => ' secret123 ',
+    ])->assertOk()->assertJsonStructure(['data' => ['user', 'token']]);
+});
+
+it('still requires the second factor after valid email credentials', function (): void {
+    $user = User::factory()->create([
+        'email' => 'email-two-factor@gmail.com',
+        'password' => Hash::make('secret123'),
+        'two_factor_enabled' => true,
+        'two_factor_confirmed_at' => now(),
+    ]);
+
+    $this->postJson('/users/login', [
+        'identifier' => 'email-two-factor@gmail.com',
+        'password' => 'secret123',
+    ])->assertOk()->assertJsonPath('data.requires_2fa', true)
+        ->assertJsonStructure(['data' => ['challenge_token', 'expires_at']])
+        ->assertJsonMissingPath('data.token');
+
+    expect($user->tokens()->count())->toBe(0);
+});
+
 // ───────────────────────────────────────────────
 // Logout
 // ───────────────────────────────────────────────

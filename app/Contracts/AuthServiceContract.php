@@ -24,13 +24,13 @@ interface AuthServiceContract
     public function authenticateViaSocialProvider(string $provider, string $token, ?string $clientName = null, ?string $authorizationCode = null): ?array;
 
     /**
-     * Authenticate via credentials (email/phone/national_id + password)
+     * Authenticate via email and password only.
      *
      * Returns token on success, or 2FA challenge data if 2FA is enabled.
      *
      * @return array{user: User, token?: string, requires_2fa?: bool, challenge_token?: string, expires_at?: string}|null
      */
-    public function authenticateViaCredentials(string $identifier, string $password): ?array;
+    public function authenticateViaCredentials(string $email, string $password): ?array;
 
     /**
      * Register a new user

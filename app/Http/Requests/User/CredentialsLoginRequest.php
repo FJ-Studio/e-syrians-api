@@ -25,7 +25,8 @@ class CredentialsLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'identifier' => ['nullable', 'string'], // email | phone | national_id
+            // Keep the request key compatible with installed clients; only email is accepted.
+            'identifier' => ['required', 'string', 'email:rfc', 'max:255'],
             'password' => ['required', 'string'],
         ];
     }

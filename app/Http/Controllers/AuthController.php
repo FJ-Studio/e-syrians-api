@@ -67,8 +67,8 @@ class AuthController extends Controller
     public function login(CredentialsLoginRequest $request): JsonResponse
     {
         $result = $this->authService->authenticateViaCredentials(
-            $request->input('identifier'),
-            $request->input('password'),
+            $request->validated('identifier'),
+            $request->validated('password'),
         );
 
         if (! $result) {
