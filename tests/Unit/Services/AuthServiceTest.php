@@ -173,6 +173,22 @@ it('returns null for non-existent user', function (): void {
     expect($result)->toBeNull();
 });
 
+it('never authenticates against phone or national ID hashes', function (string $field, string $value): void {
+    $user = User::factory()->create([
+        'email' => 'only-this-email@gmail.com',
+        $field => $value,
+        'password' => Hash::make('secret123'),
+    ]);
+
+    expect(test()->authService->authenticateViaCredentials($value, 'secret123'))->toBeNull()
+        ->and($user->tokens()->count())->toBe(0);
+})->with([
+    'phone' => ['phone', '+905551234567'],
+    'national ID' => ['national_id', '12345678901'],
+    'email-shaped phone value' => ['phone', 'not-a-login@gmail.com'],
+    'email-shaped national ID value' => ['national_id', 'not-a-login@gmail.com'],
+]);
+
 // ───────────────────────────────────────────────
 // Logout
 // ───────────────────────────────────────────────
