@@ -49,8 +49,10 @@ class AuthService implements AuthServiceContract
             // Old registration requests could write google_id. Require a
             // verified matching email too; never authenticate on that value alone.
             $email = $userData['email'];
-            $user = User::where('email', $email)->lockForUpdate()->first();
-            if ($user && (! $user->hasVerifiedEmail() || ($user->google_id !== null && $user->google_id !== $userData['id']))) {
+            // Soft-deleted rows still reserve their email in the database.
+            // Detect them before registration, but never restore them by login.
+            $user = User::withTrashed()->where('email', $email)->lockForUpdate()->first();
+            if ($user && ($user->trashed() || ! $user->hasVerifiedEmail() || ($user->google_id !== null && $user->google_id !== $userData['id']))) {
                 return null;
             }
             if ($user && $user->google_id === null && $user->hasTwoFactorEnabled()) {
