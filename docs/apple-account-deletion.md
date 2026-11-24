@@ -54,6 +54,33 @@ settings. Until all existing Apple users have signed in again, direct legacy use
 after permanent deletion. This fallback is not a substitute for collecting codes
 on every new Apple sign-in.
 
+## Legacy soft-deleted accounts and email reuse
+
+The daily deletion job includes active and soft-deleted accounts with an expired
+`deletion_scheduled_for`. For a legacy soft-deleted account **without** that
+deadline, eligibility starts 15 days after `deleted_at`, using the same
+`AccountDeletionService::GRACE_DAYS` as self-service deletion. An explicit future
+deadline always takes precedence, even if the soft-deletion date is older.
+Active accounts without a deadline are not eligible.
+
+Every candidate is locked and checked again inside its own transaction before
+cleanup. A cancellation, restoration or postponed deadline committed before that
+check prevents deletion. Apple revocation, Didit session erasure and the existing
+local cleanup apply to legacy rows too. Provider/local failures retain the row
+for retry; the job continues with other eligible users.
+
+The email remains reserved while its user row exists, including throughout soft
+deletion. Only successful permanent deletion releases it. A later registration
+creates a new account; social login does not restore or reuse the deleted account.
+
+Before a future production rollout, review retention policy, backups and the
+eligible legacy cohort: deploying this change makes already-expired legacy rows
+eligible for the existing daily job. The read-only command
+`php artisan accounts:preview-deletions` prints aggregate scheduled/legacy counts,
+with no emails, provider requests or deletion side effects. It does not change
+the scheduler or run the cleanup job. Do not run a production cleanup or deploy
+this behavior without the separate rollout approval.
+
 ## Verification before store submission
 
 - Configure the real server credentials before deploying the API requirement.

@@ -10,6 +10,8 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Handler\MockHandler;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\GoogleProvider;
+use App\Jobs\HardDeleteExpiredAccountsJob;
+use App\Contracts\AccountDeletionServiceContract;
 
 function googleIdentityFixture(array $overrides = [], bool $wrongSignature = false): string
 {
@@ -109,11 +111,17 @@ it('keeps a pending-deletion Google account on its existing grace-period workflo
         ->and(User::withTrashed()->count())->toBe($count);
 });
 
-it('allows fresh Google registration after the old account was permanently deleted', function (): void {
+it('allows fresh Google registration after scheduled or legacy permanent cleanup', function (bool $legacy): void {
     $email = 'hard-deleted-google-fixture@gmail.com';
-    $user = User::factory()->create(['email' => $email, 'google_id' => 'fixture-subject']);
+    $user = User::factory()->create([
+        'email' => $email, 'google_id' => 'fixture-subject',
+        ...($legacy ? ['deleted_at' => now()->subDays(16)] : [
+            'deletion_requested_at' => now()->subDays(16), 'deletion_scheduled_for' => now()->subDay(),
+        ]),
+    ]);
     $previousUuid = (string) $user->uuid;
-    $user->forceDelete();
+    (new HardDeleteExpiredAccountsJob())->handle(resolve(AccountDeletionServiceContract::class));
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
     $count = User::withTrashed()->count();
     $token = googleIdentityFixture(['email' => $email]);
 
@@ -127,7 +135,7 @@ it('allows fresh Google registration after the old account was permanently delet
         ->and($registered->hasVerifiedEmail())->toBeTrue()
         ->and($registered->hasRole('citizen'))->toBeTrue()
         ->and(User::withTrashed()->count())->toBe($count + 1);
-});
+})->with(['scheduled' => [false], 'legacy soft-deleted' => [true]]);
 
 it('does not bypass two-factor protection when linking an active Google email', function (): void {
     $email = 'two-factor-google-fixture@gmail.com';

@@ -68,6 +68,10 @@ class UpdatePollRequest extends FormRequest
             return false;
         }
 
+        if ($poll->end_date->lte(now()) || $poll->resultSnapshot()->exists()) {
+            return false;
+        }
+
         // Vote-lock — once any vote lands, the poll is immutable.
         // We check via the votes relationship rather than a cached
         // count column so a freshly-cast vote (in flight when the

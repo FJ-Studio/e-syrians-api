@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\Poll;
 use App\Models\UserBlock;
+use App\Models\PollOption;
 use Illuminate\Http\Request;
 use App\Contracts\PollServiceContract;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,6 +27,19 @@ class PollResource extends JsonResource
 
         $pollService = resolve(PollServiceContract::class);
         $revealResults = $pollService->shouldRevealResults($this->resource, $user);
+        /** @var Poll $poll */
+        $poll = $this->resource;
+        $snapshot = $poll->resultSnapshot;
+        $uniqueVoters = $snapshot->unique_voters_count ?? $this->unique_voters_count ?? 0;
+        $totalVotes = $snapshot->total_votes ?? $this->total_votes ?? 0;
+        $options = $snapshot !== null
+            ? collect($snapshot->options)->map(function (array $attributes): PollOption {
+                $option = new PollOption();
+                $option->forceFill($attributes);
+
+                return $option;
+            })
+            : ($poll->relationLoaded('options') ? $this->options : collect());
 
         [$isInAudience, $audienceFailures] = $this->resource->audienceCheckFor($user);
 
@@ -54,10 +69,11 @@ class PollResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'question' => $this->question,
-            'start_date' => $this->start_date->toISOString(),
-            'end_date' => $this->end_date->toISOString(),
-            'max_selections' => $this->max_selections,
+            'question' => $snapshot->question ?? $this->question,
+            'start_date' => ($snapshot->start_date ?? $this->start_date)->toISOString(),
+            'end_date' => ($snapshot->end_date ?? $this->end_date)->toISOString(),
+            'max_selections' => $snapshot->max_selections ?? $this->max_selections,
+            'results_finalized_at' => $snapshot?->captured_at->toISOString(),
             'audience_can_add_options' => $this->audience_can_add_options,
             'is_in_audience' => $isInAudience,
             'audience_failures' => $audienceFailures,
@@ -95,9 +111,9 @@ class PollResource extends JsonResource
             // show the "Edit poll" action.
             'is_editable' => $this->when(
                 $isCreator,
-                fn () => ($this->unique_voters_count ?? 0) === 0,
+                fn () => $snapshot === null && $poll->end_date->isFuture() && $uniqueVoters === 0,
             ),
-            'unique_voters_count' => $this->unique_voters_count ?? 0,
+            'unique_voters_count' => $uniqueVoters,
             /*
              * Backward-compat alias. Before UserPollController::myPolls
              * was wrapped in PollResource, it returned raw model rows
@@ -114,15 +130,17 @@ class PollResource extends JsonResource
              * multi-select votes), but that's a separate change —
              * this alias unblocks the deploy.
              */
-            'votes_count' => $this->votes_count ?? $this->unique_voters_count ?? 0,
+            'votes_count' => $snapshot !== null
+                ? ($poll->getAttribute('votes_count') !== null ? $snapshot->total_votes : $snapshot->unique_voters_count)
+                : ($this->votes_count ?? $uniqueVoters),
 
             'user' => $this->relationLoaded('user')
                 ? new UserResource($this->user)
                 : null,
 
-            'options' => $this->relationLoaded('options')
+            'options' => $snapshot !== null || $this->relationLoaded('options')
                 ? PollOptionResource::collection(
-                    $this->options->map(function ($option) use ($revealResults, $userId) {
+                    $options->map(function ($option) use ($revealResults, $userId, $totalVotes, $snapshot) {
                         // Load voters preview when voters are visible
                         if ($this->voters_are_visible) {
                             $option->load([
@@ -138,10 +156,10 @@ class PollResource extends JsonResource
 
                             return new PollOptionResource($option);
                         }
-                        $totalVotes = $this->total_votes ?? 0;
-                        $optionVotes = $option->votes_count ?? 0;
-                        $percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0;
-                        $option->percentage = $percentage;
+                        if ($snapshot === null) {
+                            $optionVotes = $option->votes_count ?? 0;
+                            $option->percentage = $totalVotes > 0 ? round(($optionVotes / $totalVotes) * 100, 2) : 0;
+                        }
 
                         return new PollOptionResource($option);
                     })

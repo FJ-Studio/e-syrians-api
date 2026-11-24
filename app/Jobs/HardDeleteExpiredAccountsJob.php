@@ -17,8 +17,8 @@ use App\Contracts\AccountDeletionServiceContract;
 
 /**
  * Runs daily (see `routes/console.php`). Sweeps every user whose
- * `deletion_scheduled_for` has passed and hard-deletes them via
- * AccountDeletionService.
+ * explicit deadline has passed, plus legacy soft-deleted users whose
+ * grace period has elapsed, and hard-deletes via AccountDeletionService.
  *
  * One transaction per user — a single malformed row must not halt
  * the whole batch. Failures are logged and reported but do not
@@ -49,14 +49,18 @@ class HardDeleteExpiredAccountsJob implements ShouldQueue
         // Each row's cascade runs inside its own transaction + try/
         // catch so a single malformed row logs and moves on rather
         // than halting the whole batch.
-        User::query()
-            ->whereNotNull('deletion_scheduled_for')
-            ->where('deletion_scheduled_for', '<=', now())
+        User::dueForPermanentDeletion()
             ->chunkById(50, function ($users) use ($accountDeletionService): void {
                 foreach ($users as $user) {
                     try {
                         DB::transaction(function () use ($accountDeletionService, $user): void {
-                            $accountDeletionService->hardDeleteAccount($user);
+                            // The batch is only a list of candidates. Cancellation,
+                            // restoration or rescheduling may have happened since
+                            // it was loaded; lock and recheck before provider erasure.
+                            $current = User::dueForPermanentDeletion()->lockForUpdate()->find($user->id);
+                            if ($current !== null) {
+                                $accountDeletionService->hardDeleteAccount($current);
+                            }
                         });
                     } catch (Throwable $e) {
                         Log::error('HardDeleteExpiredAccountsJob: failed to hard-delete user', [

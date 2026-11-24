@@ -296,8 +296,10 @@ it('requires consent, rejects a sandbox provider session, and stores only the co
     expect(DB::table('identity_verification_credit_events')->where('event', 'admin_granted')->count())->toBe(1);
 });
 
-it('retains the provider session reference on erasure failure and retries after the feature is disabled', function (): void {
-    $user = User::factory()->create(['deletion_scheduled_for' => now()->subDay()]);
+it('retains the provider session reference on erasure failure and retries after the feature is disabled', function (bool $legacy): void {
+    $user = User::factory()->create($legacy ? [
+        'deleted_at' => now()->subDays(16),
+    ] : ['deletion_scheduled_for' => now()->subDay()]);
     $session = (string) Str::uuid();
     $credit = new IdentityVerificationCredit();
     $credit->forceFill([
@@ -317,8 +319,11 @@ it('retains the provider session reference on erasure failure and retries after 
     $service = resolve(AccountDeletionServiceContract::class);
     (new HardDeleteExpiredAccountsJob())->handle($service);
     expect($credit->fresh()?->provider_session_id)->toBe($session);
+    expect(User::withTrashed()->find($user->id))->not->toBeNull();
+    Http::assertSentCount(1);
     $status = 200;
     (new HardDeleteExpiredAccountsJob())->handle($service);
     expect($credit->fresh())->toBeNull();
     $this->assertDatabaseMissing('users', ['id' => $user->id]);
-});
+    Http::assertSentCount(2);
+})->with(['scheduled' => [false], 'legacy soft-deleted' => [true]]);

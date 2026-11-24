@@ -26,7 +26,9 @@ class IdentityVerificationService extends IdentitySandboxService
 
     public function eraseSessions(User $user): void
     {
-        User::query()->lockForUpdate()->findOrFail($user->id);
+        // Erasure is part of permanent deletion, including legacy soft-deleted
+        // accounts. Normal verification actions still use active-only lookups.
+        User::withTrashed()->lockForUpdate()->findOrFail($user->id);
         $credits = IdentityVerificationCredit::query()->where('owner_id', $user->id)
             ->whereNotNull('provider_session_id')->lockForUpdate()->get(['provider_session_id']);
         $didit = resolve(DiditLive::class);

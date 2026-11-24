@@ -230,19 +230,24 @@ it('revokes every client grant before permanent deletion and removes encrypted t
         && JWT::decode($request['client_secret'], new Key($this->appleClientPublicKey, 'ES256'))->sub === 'com.esyrians.web');
 });
 
-it('preserves accounts and grants on revocation failure and succeeds on the next sweep', function (): void {
+it('preserves accounts and grants on revocation failure and succeeds on the next sweep', function (bool $legacy): void {
     Exceptions::fake();
     Http::fake(['https://appleid.apple.com/auth/revoke' => Http::sequence()->push('', 503)->push('', 200)]);
     $user = User::factory()->create([
-        'apple_id' => 'apple-test-subject', 'deletion_requested_at' => now()->subDays(16), 'deletion_scheduled_for' => now()->subDay(),
+        'apple_id' => 'apple-test-subject',
+        ...($legacy ? ['deleted_at' => now()->subDays(16)] : [
+            'deletion_requested_at' => now()->subDays(16), 'deletion_scheduled_for' => now()->subDay(),
+        ]),
     ]);
     AppleRefreshToken::create(['user_id' => $user->id, 'client_id' => 'com.esyrians.app', 'refresh_token' => 'retry-me']);
     $job = new HardDeleteExpiredAccountsJob();
     $job->handle(resolve(AccountDeletionServiceContract::class));
-    expect(User::find($user->id))->not->toBeNull()->and(AppleRefreshToken::sole()->refresh_token)->toBe('retry-me');
+    expect(User::withTrashed()->find($user->id))->not->toBeNull()->and(AppleRefreshToken::sole()->refresh_token)->toBe('retry-me');
+    Http::assertSentCount(1);
     $job->handle(resolve(AccountDeletionServiceContract::class));
     expect(User::withTrashed()->find($user->id))->toBeNull()->and(AppleRefreshToken::count())->toBe(0);
-});
+    Http::assertSentCount(2);
+})->with(['scheduled' => [false], 'legacy soft-deleted' => [true]]);
 
 it('still deletes a legacy Apple account without a stored refresh token', function (): void {
     $user = User::factory()->create(['apple_id' => 'legacy-subject']);

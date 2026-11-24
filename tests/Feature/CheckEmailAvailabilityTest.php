@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Models\User;
 use App\Http\Middleware\Recaptcha;
 use Illuminate\Support\Facades\Http;
+use App\Jobs\HardDeleteExpiredAccountsJob;
+use App\Contracts\AccountDeletionServiceContract;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 
 /**
@@ -46,6 +48,19 @@ it('returns available=false for an email that is already registered', function (
 
     $response->assertOk();
     $response->assertJsonPath('data.available', false);
+});
+
+it('reserves a soft-deleted email until permanent cleanup succeeds', function (): void {
+    $user = User::factory()->create(['email' => 'deleted-email@gmail.com', 'deleted_at' => now()->subDays(16)]);
+
+    $this->postJson(route('users.check_email_availability'), ['email' => $user->email])
+        ->assertOk()->assertJsonPath('data.available', false);
+
+    (new HardDeleteExpiredAccountsJob())->handle(resolve(AccountDeletionServiceContract::class));
+
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    $this->postJson(route('users.check_email_availability'), ['email' => $user->email])
+        ->assertOk()->assertJsonPath('data.available', true);
 });
 
 it('treats the email comparison as case-insensitive', function (): void {

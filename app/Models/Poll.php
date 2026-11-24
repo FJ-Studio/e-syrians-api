@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use App\Contracts\AudienceServiceContract;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -20,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
  * @property bool $is_restricted Dynamically set by PollService::getPollById()
  * @property Carbon|null $invitations_dispatched_at
  * @property Carbon|null $closure_notified_at
+ * @property-read PollResultSnapshot|null $resultSnapshot
  *
  * @method static Builder<static> visibleTo(?User $user)
  */
@@ -61,6 +63,12 @@ class Poll extends Model
     public function reports(): MorphMany
     {
         return $this->morphMany(Report::class, 'reportable');
+    }
+
+    /** @return HasOne<PollResultSnapshot, $this> */
+    public function resultSnapshot(): HasOne
+    {
+        return $this->hasOne(PollResultSnapshot::class);
     }
 
     protected static function booted(): void

@@ -210,6 +210,10 @@ class PollService implements PollServiceContract
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            if ($poll->end_date->lte(now()) || $poll->resultSnapshot()->exists()) {
+                throw new PollVotingException('poll_has_expired', 403);
+            }
+
             // Inside the locked region: re-check the vote-lock.
             // FormRequest::authorize already ran this once, but a
             // vote could have committed between authorize() and
@@ -391,7 +395,7 @@ class PollService implements PollServiceContract
                 throw new PollVotingException('poll_has_not_started_yet');
             }
 
-            if ($poll->end_date->isPast()) {
+            if ($poll->end_date->lte(now()) || $poll->resultSnapshot()->exists()) {
                 throw new PollVotingException('poll_has_expired');
             }
 
@@ -449,7 +453,7 @@ class PollService implements PollServiceContract
             throw new PollReactionException('poll_has_not_started_yet');
         }
 
-        if ($poll->end_date->isPast()) {
+        if ($poll->end_date->lte(now()) || $poll->resultSnapshot()->exists()) {
             throw new PollReactionException('poll_has_expired');
         }
 
@@ -469,7 +473,7 @@ class PollService implements PollServiceContract
         }
 
         if ($poll->reveal_results === RevealResultsEnum::AfterExpiration->value) {
-            return now()->isAfter($poll->end_date);
+            return $poll->resultSnapshot !== null || now()->gte($poll->end_date);
         }
 
         if (! $user) {
@@ -573,6 +577,7 @@ class PollService implements PollServiceContract
     {
         return UserBlock::excludeFor(Poll::query(), 'polls.created_by', $userId)
             ->with([
+                'resultSnapshot',
                 'user' => fn (Relation $relation) => $relation->getQuery()->withExists('approvedIdentityChecks'),
                 'audienceRules',
                 'options' => fn ($q) => $q->withCount('votes'),

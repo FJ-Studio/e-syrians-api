@@ -385,10 +385,12 @@ it('leaves users still in the grace period untouched', function (): void {
     expect(User::withTrashed()->find($stillGrace->id))->not->toBeNull();
 });
 
-it('hard-deletes (not soft-deletes) related UserVerification, FeatureRequest and FeatureRequestVote rows', function (): void {
+it('hard-deletes related rows for both scheduled and legacy soft-deleted users', function (bool $legacy): void {
     $user = User::factory()->create([
-        'deletion_requested_at' => now()->subDays(16),
-        'deletion_scheduled_for' => now()->subDay(),
+        ...($legacy ? ['deleted_at' => now()->subDays(16)] : [
+            'deletion_requested_at' => now()->subDays(16),
+            'deletion_scheduled_for' => now()->subDay(),
+        ]),
     ]);
     $other = User::factory()->create();
 
@@ -432,7 +434,7 @@ it('hard-deletes (not soft-deletes) related UserVerification, FeatureRequest and
 
     // The other user's own feature request is untouched.
     $this->assertDatabaseHas('feature_requests', ['id' => $othersRequest->id]);
-});
+})->with(['scheduled' => [false], 'legacy soft-deleted' => [true]]);
 
 // ───────────────────────────────────────────────
 // UserResource — deletion fields owner-gated

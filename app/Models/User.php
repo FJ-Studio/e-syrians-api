@@ -13,7 +13,9 @@ use Database\Factories\UserFactory;
 use App\Enums\ProfileChangeTypeEnum;
 use Illuminate\Support\Facades\Date;
 use Spatie\Permission\Traits\HasRoles;
+use App\Services\AccountDeletionService;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
 use App\Contracts\AudienceServiceContract;
 use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -50,6 +52,26 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
     use Notifiable;
     use SoftDeletes;
     public const DEFAULT_DISPLAY_NAME = 'User';
+
+    /**
+     * Explicit deadlines take precedence. Legacy soft-deleted rows without
+     * one use the same grace period, measured from their soft-deletion date.
+     *
+     * @param Builder<User> $query
+     * @return Builder<User>
+     */
+    protected function scopeDueForPermanentDeletion(Builder $query): Builder
+    {
+        $now = now();
+
+        return $query->withTrashed()->where(function (Builder $query) use ($now): void {
+            $query->where('deletion_scheduled_for', '<=', $now)
+                ->orWhere(function (Builder $query) use ($now): void {
+                    $query->whereNull('deletion_scheduled_for')
+                        ->where('deleted_at', '<=', $now->copy()->subDays(AccountDeletionService::GRACE_DAYS));
+                });
+        });
+    }
 
     // Older social accounts stored the login email in the name column. Mask
     // it on read so every profile, poll and verification serializer is safe,

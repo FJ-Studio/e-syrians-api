@@ -13,6 +13,10 @@ Schedule::command('app:daily-statistics')->dailyAt('23:58');
 Schedule::command('app:send-weekly-newsletter')->weeklyOn(6, '09:00'); // Saturday at 9 AM
 Schedule::command('model:prune', ['--model' => 'App\\Models\\ProfileUpdate'])->daily();
 
+// Final results belong to the poll lifecycle, independently of notifications
+// and account deletion. The command also retries incomplete expiry captures.
+Schedule::command('polls:finalize-results')->everyMinute()->withoutOverlapping();
+
 // Sweep every user whose 15-day deletion grace period has expired and
 // hard-delete their account. Runs at 03:00 UTC — quiet hours for the
 // user base and well after the daily-statistics job's 23:58 slot so

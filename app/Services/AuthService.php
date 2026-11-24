@@ -260,7 +260,9 @@ class AuthService implements AuthServiceContract
         // no encryption), so a direct `where()` is correct.
         $normalized = mb_strtolower(trim($email));
 
-        return ! User::query()->where('email', $normalized)->exists();
+        // Soft deletion does not release the unique email. Keep this probe
+        // consistent with registration until permanent cleanup removes the row.
+        return ! User::withTrashed()->where('email', $normalized)->exists();
     }
 
     public function logout(?HasAbilities $token): void

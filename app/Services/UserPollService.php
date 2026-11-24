@@ -38,6 +38,7 @@ class UserPollService implements UserPollServiceContract
         return $user->polls()
             ->withoutGlobalScope('public_polls')
             ->withTrashed()
+            ->with('resultSnapshot')
             ->withCount('votes')
             ->selectSub(
                 PollVote::selectRaw('COUNT(DISTINCT user_id)')
